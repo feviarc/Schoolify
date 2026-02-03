@@ -1,0 +1,73 @@
+div.subjects-container {
+  margin-top: 1rem;
+}
+
+ion-accordion ion-label {
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+
+ion-chip {
+  margin: 0.5rem 0.5rem 0 0;
+}
+
+ion-item p {
+  color: #6a6a6a;
+}
+
+ion-label p {
+  text-align: center;
+  padding: 1rem;
+}
+
+ion-note {
+  margin-left: 1rem;
+}
+
+ion-text {
+  font-size: 0.8rem;
+}
+
+.margin-left--none {
+  margin-left: 0;
+}
+
+.margin-top--none {
+  margin-top: 0;
+}
+
+.date-button__color--primary {
+  --background: var(--ion-color-primary);
+  --color: var(--ion-color-primary-contrast);
+}
+
+.date-button__color--primary::part(native) {
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+/* Notifications history */
+ion-label strong {
+  display: block;
+  max-width: calc(100% - 60px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.3rem;
+}
+
+ion-label ion-note {
+  font-size: 0.9rem;
+}
+
+.metadata-end-wrapper {
+  align-items: center;
+  display: flex;
+  font-size: 0.8rem;
+  inset-inline-end: 10px;
+  position: absolute;
+  top: 10px;
+}
+
+.metadata-end-wrapper ion-note {
+  font-size: 0.7rem;
+}

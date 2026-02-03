@@ -1,0 +1,27 @@
+p {
+  margin-top: 16px;
+  color: var(--ion-color-medium);
+}
+
+.form__button {
+  margin: 0 auto;
+  width: 92%;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.modal__img {
+  padding: 1.5rem;
+}
+
+ion-img::part(image) {
+  border-radius: 12px;
+  margin: 2rem 0;
+  width: 99%;
+}

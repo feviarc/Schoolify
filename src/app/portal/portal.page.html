@@ -1,0 +1,108 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>ESCUELA - v1.03</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+@if(isLoading) {
+  <div class="loading-container">
+    <ion-spinner color="primary"></ion-spinner>
+    <p>Cargando...</p>
+  </div>
+}
+
+@if(isStandalone && !isLoading ) {
+  <ion-content class="ion-padding ion-text-center" color="light">
+
+    <ion-list [inset]="true">
+      <ion-item>
+        <ion-input
+          label="Clave del Centro de Trabajo (CCT)"
+          labelPlacement="stacked"
+          placeholder="Escribe la clave aquí"
+          maxlength="10"
+          [(ngModel)]="cct"
+        >
+        </ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-list [inset]="true">
+        <ion-input-otp [(ngModel)]="pin">
+          <ion-label>Ingresa los 4 digitos del PIN</ion-label>
+        </ion-input-otp>
+    </ion-list>
+
+    <ion-button
+      expand="block"
+      fill="solid"
+      [disabled]="isInvalidForm()"
+      (click)="onContinue()"
+    >
+      Continuar
+    </ion-button>
+
+    <ion-toast
+    cssClass="page__toast"
+    [message]="toastMessage"
+    [isOpen]="isToastOpen"
+    [duration]="3000"
+    (didDismiss)="setOpenToast(false)"
+    ></ion-toast>
+
+  </ion-content>
+}
+
+@if(!isStandalone && !isLoading) {
+  <ion-content class="ion-padding ion-text-center" color="light">
+
+    <p class="app-description">
+      Plataforma de notificaciones escolares para comunicación efectiva entre la escuela y padres de familia.
+    </p>
+
+    <ion-img src="../../assets/img/logo-portal.png"></ion-img>
+
+    @if(!isIOS) {
+      @if(installAppService.promptStatus) {
+        <ion-button
+         expand="block"
+         (click)="showInstallAppBanner()"
+        >
+          <ion-icon slot="start" [name]="detectedOS"></ion-icon>
+          Instalar
+        </ion-button>
+      }
+      @if(!installAppService.promptStatus) {
+        <p>ESCUELA está instalada y lista para usarse, búscala en tu pantalla de inicio.</p>
+      }
+    }
+
+    @if(isIOS) {
+      <ion-button
+        expand="block"
+        id="open-modal"
+      >
+        <ion-icon slot="start" [name]="detectedOS"></ion-icon>
+        Instalar
+      </ion-button>
+
+      <ion-modal trigger="open-modal">
+        <ng-template>
+          <ion-header>
+            <ion-toolbar color="primary">
+              <ion-buttons slot="start">
+                <ion-button (click)="onCloseModal()">Cerrar</ion-button>
+              </ion-buttons>
+              <ion-title>Instalar</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <img class="modal__img" src="../../assets/img/ios-install.jpg" alt="">
+          </ion-content>
+        </ng-template>
+      </ion-modal>
+    }
+
+  </ion-content>
+}
+

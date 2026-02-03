@@ -1,0 +1,266 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Administrar grupos</ion-title>
+    @if(isLoading) {
+      <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+    }
+    <ion-buttons slot="end">
+      <ion-button id="open-action-sheet">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+@if(isSpinnerActive) {
+  <div class="container__spinner">
+    <ion-spinner color="primary"></ion-spinner>
+    <p>{{ spinnerText }}</p>
+  </div>
+}
+
+@if(!isSpinnerActive) {
+  <ion-content>
+    @if(studentGroups.length === 0 && !isLoading) {
+      <div class="center-box">
+        <p>No hay grupos registrados todavía.</p>
+      </div>
+    }
+    <ion-list>
+      @for(group of studentGroups; track group.gid) {
+        <ion-item-sliding class="sliding-item-card" #groupSlidingItem>
+          <ion-item-options side="start">
+            <ion-item-option
+             color="danger"
+             id="delete-{{ group.gid }}"
+            >
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+          <ion-item class="custom-item">
+            <ion-label>
+              <h2>Grupo {{ group.grado }}° "{{ group.letra }}"</h2>
+            </ion-label>
+            <ion-chip>{{ studentsCounterByGroup?.[group.gid] || 0 }}</ion-chip>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option
+             color="primary"
+             id="add-student-{{ group.gid }}"
+            >
+              <ion-icon slot="icon-only" name="person-add"></ion-icon>
+            </ion-item-option>
+            <ion-item-option
+             color="danger"
+             id="delete-student-{{ group.gid }}"
+            >
+              <ion-icon slot="icon-only" name="person-remove"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+
+        <!-- Action Sheet (Eliminar Grupo) -->
+        <ion-action-sheet
+         trigger="delete-{{ group.gid }}"
+         header="Estás a punto de eliminar"
+         subHeader='Grupo {{ group.grado }}° "{{ group.letra }}"'
+         [buttons]="actionSheetButtons"
+         (didDismiss)="onDeleteGroup($event, groupSlidingItem, group)"
+        >
+        </ion-action-sheet>
+
+        <!-- Modal (Agregar estudiante) -->
+        <ion-modal
+          trigger="add-student-{{ group.gid }}"
+          [initialBreakpoint]="1.0"
+          [breakpoints]="[0, 1.0]"
+          (willDismiss)="groupSlidingItem.close()"
+          (didDismiss)="onDidDismissAddStudentModal()"
+          #addStudentsModal
+        >
+          <ng-template>
+            <ion-header>
+              <ion-toolbar color="primary">
+                <ion-buttons slot="start">
+                  <ion-button
+                  (click)="addStudentsModal.dismiss(null, 'cancel')"
+                  >
+                    Cerrar
+                  </ion-button>
+                </ion-buttons>
+                <ion-title>Agregar a {{ group.grado }}° "{{ group.letra }}"</ion-title>
+              </ion-toolbar>
+              <ion-toolbar color="primary">
+                <ion-searchbar
+                 placeholder="Buscar..."
+                 [debounce]="500"
+                 (ionInput)="handleInputAddModalSearchbar($event)"
+                 #addSearchbar
+                >
+                </ion-searchbar>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content>
+              @if(filteredStudentsWithoutGroup.length === 0) {
+                <div class="center-box">
+                  <p>{{ tabMessage }}</p>
+                </div>
+              }
+              <ion-list>
+                <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
+                  @for (student of filteredStudentsWithoutGroup; track student.id) {
+                  <ion-item>
+                    <ion-radio [value]="student">{{ student.nombreCompleto }}</ion-radio>
+                  </ion-item>
+                  }
+                </ion-radio-group>
+              </ion-list>
+            </ion-content>
+            <ion-footer>
+              <ion-toolbar>
+                <ion-button
+                 expand="block"
+                 [disabled]="!selectedStudent"
+                 (click)="onAddStudent(group, addSearchbar)"
+                >
+                  <ion-icon slot="start" name="person-add"></ion-icon>
+                  Agregar
+                </ion-button>
+              </ion-toolbar>
+            </ion-footer>
+          </ng-template>
+        </ion-modal>
+
+        <!-- Modal (Eliminar estudiante) -->
+        <ion-modal
+          trigger="delete-student-{{ group.gid }}"
+          [initialBreakpoint]="1.0"
+          [breakpoints]="[0, 1.0]"
+          (willDismiss)="groupSlidingItem.close()"
+          (willPresent)="loadStudentsListByGroup(group)"
+          #deleteStudentsModal
+        >
+          <ng-template>
+            <ion-header>
+              <ion-toolbar color="primary">
+                <ion-buttons slot="start">
+                  <ion-button
+                  (click)="deleteStudentsModal.dismiss(null, 'cancel')"
+                  >
+                    Cerrar
+                  </ion-button>
+                </ion-buttons>
+                <ion-title>Eliminar de {{ group.grado }}° "{{ group.letra }}"</ion-title>
+              </ion-toolbar>
+              <ion-toolbar color="primary">
+                <ion-searchbar
+                 placeholder="Buscar..."
+                 [debounce]="500"
+                 (ionInput)="handleInputDeleteModalSearchbar($event, group)"
+                 #deleteSearchbar
+                >
+                </ion-searchbar>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content>
+              <ion-list>
+                <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
+                  @for (student of studentsListByGroup; track student.id) {
+                  <ion-item>
+                    <ion-radio [value]="student">{{ student.nombreCompleto }}</ion-radio>
+                  </ion-item>
+                  }
+                </ion-radio-group>
+              </ion-list>
+            </ion-content>
+            <ion-footer>
+              <ion-toolbar>
+                <ion-button
+                 expand="block"
+                 [disabled]="!selectedStudent"
+                 (click)="onDeleteStudent(group, deleteSearchbar)"
+                >
+                  <ion-icon slot="start" name="person-remove"></ion-icon>
+                  Quitar
+                </ion-button>
+              </ion-toolbar>
+            </ion-footer>
+          </ng-template>
+        </ion-modal>
+      }
+    </ion-list>
+  </ion-content>
+}
+
+<!-- Botón (Agregar grupo) -->
+<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab-button size="small" id="add-group-btn">
+    <ion-icon name="add"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
+
+<!-- Modal (Agregar grupo) -->
+<ion-modal
+ trigger="add-group-btn"
+ [initialBreakpoint]="initialBreakpoint"
+ [breakpoints]="breakpoints"
+ (didDismiss)="onDidDismiss($event)"
+ #addGroupModal
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-buttons slot="start">
+          <ion-button
+           (click)="addGroupModal.dismiss(null, 'cancel')"
+          >
+            Cancelar
+          </ion-button>
+        </ion-buttons>
+        <ion-title>Grupo</ion-title>
+        <ion-buttons slot="end">
+          <ion-button
+           [strong]="true"
+           [disabled]="!pickerValue"
+           (click)="addGroupModal.dismiss(pickerValue, 'confirm')"
+          >
+            Agregar
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-picker>
+        <ion-picker-column [value]="" (ionChange)="onIonChange($event)">
+          <ion-picker-column-option value=""></ion-picker-column-option>
+          @for(group of groupsInfo; track group.id) {
+            <ion-picker-column-option
+             value="{{group.id}}"
+            >
+              {{ group.nombre }}
+            </ion-picker-column-option>
+          }
+        </ion-picker-column>
+      </ion-picker>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Action Sheet (Cerrar sesión) -->
+<ion-action-sheet
+ trigger="open-action-sheet"
+ header="Estás a punto de cerrar sesión"
+ subHeader="¿Deseas continuar?"
+ [buttons]="logoutActionSheetButtons"
+ (didDismiss)="onLogout($event)"
+>
+</ion-action-sheet>
+
+<ion-toast
+ cssClass="page__toast"
+ [message]="toastMessage"
+ [isOpen]="isToastOpen"
+ [duration]="3000"
+ (didDismiss)="isToastOpen = false"
+>
+</ion-toast>

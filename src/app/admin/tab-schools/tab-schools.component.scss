@@ -1,0 +1,42 @@
+h2 {
+  color: #666666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+ion-chip strong {
+    font-size: 1.2rem;
+}
+
+ion-grid.background--light {
+  background-color: #f4f5f8;
+}
+
+ion-list.margin-bottom--none {
+  margin-bottom: 0;
+}
+
+ion-list.margin-top--none {
+  margin-top: 0;
+}
+
+ion-modal.modal-classes__item ion-label{
+  --color: #666666 !important;
+  font-size: 1rem !important;
+  font-weight: 600;
+}
+
+ion-modal.modal-classes__item ion-label > p {
+  text-align: center;
+}
+
+.add-subject-btn {
+  --border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  margin: 0 0.5rem 0 0;
+
+  ion-icon {
+    font-size: 24px;
+  }
+}

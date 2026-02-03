@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Notificaciones</ion-title>
+    @if(isLoadingData) {
+      <ion-progress-bar color="warning" type="indeterminate"></ion-progress-bar>
+    }
+    <ion-buttons slot="end">
+      <ion-button id="open-action-sheet">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+  @for(notification of notifications; track notification.id){
+    <ion-item-sliding class="sliding-item-card">
+      <ion-item class="item-background__color--warm-glow">
+        <ion-label>
+          <h2>{{ notification.body }}</h2>
+          <p>
+            <small>
+              {{ notification.createdAt | dateFormat }}
+            </small>
+          </p>
+        </ion-label>
+      </ion-item>
+    </ion-item-sliding>
+  }
+  </ion-list>
+</ion-content>
+
+<ion-action-sheet
+ trigger="open-action-sheet"
+ header="Estás a punto de cerrar sesión"
+ subHeader="¿Deseas continuar?"
+ [buttons]="actionSheetButtons"
+ (didDismiss)="onLogout($event)"
+>
+</ion-action-sheet>

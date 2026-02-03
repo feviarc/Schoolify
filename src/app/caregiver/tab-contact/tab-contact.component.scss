@@ -1,0 +1,108 @@
+.btn-call {
+  align-items: center;
+  animation: pulse-animation 2s infinite;
+  background: radial-gradient(circle at 50% 120%, #44d62c, #28a745 80%, #1e7e34 100%);
+  border-radius: 50%;
+  border: 8px solid #bbb;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 0 15px rgba(0,0,0,0.4);
+  display: flex;
+  height: 150px;
+  justify-content: center;
+  position: relative;
+  text-decoration: none;
+  transition: transform 0.1s ease;
+  width: 150px;
+  z-index: 1;
+
+  &::before {
+    content: '';
+    background: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+    border-radius: 50% 50% 40% 40%;
+    height: 40%;
+    left: 15%;
+    position: absolute;
+    top: 5%;
+    width: 70%;
+    z-index: 2;
+  }
+
+  ion-icon {
+    color: white;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+    font-size: 80px;
+    transform: rotate(-10deg);
+    z-index: 3;
+  }
+
+  &:active {
+    animation: none;
+    filter: brightness(1.1);
+    transform: scale(0.95);
+  }
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 30px 0;
+}
+
+.container-center {
+  align-items: center;
+  background-color: #f4f5f8;
+  display: flex;
+  justify-content: center;
+  min-height: 100%;
+  width: 100%;
+}
+
+.phone-number {
+  color: #28a745;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.school-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  max-width: 400px;
+  text-align: center;
+  width: 90%;
+
+  ion-card-title {
+    color: #222;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-top: 5px;
+  }
+
+  ion-card-subtitle {
+    color: #666;
+    letter-spacing: 2px;
+  }
+}
+
+.tap-instruction {
+  color: #999;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 15px;
+  text-transform: uppercase;
+}
+
+@keyframes pulse-animation {
+  0% {
+    box-shadow: 0 0 0 0px rgba(68, 214, 44, 0.7);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 25px rgba(68, 214, 44, 0);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(68, 214, 44, 0);
+    transform: scale(1);
+  }
+}

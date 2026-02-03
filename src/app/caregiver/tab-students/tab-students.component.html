@@ -1,0 +1,101 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Mis hijos (Alumnos)</ion-title>
+      @if(isLoading) {
+        <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+      }
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    @for(student of studentsByTutor; track student.id) {
+      <ion-item-sliding class="sliding-item-card" #studentSlidingItem>
+        <ion-item class="custom-item">
+          <ion-label>
+            <h2>
+              @if(student.validado) {
+                🟢
+              }
+              @else {
+                🟡
+              }
+              {{ student.nombreCompleto }}
+            </h2>
+            @if(!student.validado) {
+              <ion-note>Validación de notificaciones pendiente.</ion-note>
+            }
+          </ion-label>
+        </ion-item>
+      </ion-item-sliding>
+    }
+  </ion-list>
+</ion-content>
+
+<!-- Botón (Agregar hijo/alumno) -->
+<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab-button size="small" id="add-student-btn">
+    <ion-icon name="add"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
+
+<!-- Modal (Agregar estudiante) -->
+<ion-modal
+ trigger="add-student-btn"
+ [initialBreakpoint]="1.0"
+ [breakpoints]="[0, 1.0]"
+ (willPresent)="loadStudentsWithoutTutor(cct)"
+ (didDismiss)="selectedStudent=null"
+ #addStudentModal
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-buttons slot="start">
+          <ion-button
+           (click)="addStudentModal.dismiss(null, 'cancel')"
+          >
+          Cerrar
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+      <ion-toolbar color="primary">
+        <ion-searchbar
+         placeholder="Buscar..."
+         [debounce]="500"
+         (ionInput)="handleInputSearchbar($event)"
+         #addSearchbar
+        >
+        </ion-searchbar>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      @if(filteredStudentsWithoutTutor.length === 0) {
+        <div class="center-box">
+          <p>{{ tabMessage }}</p>
+        </div>
+      }
+      <ion-list>
+        <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
+          @for (student of filteredStudentsWithoutTutor; track student.id) {
+          <ion-item>
+            <ion-radio [value]="student">{{ student.nombreCompleto }}</ion-radio>
+          </ion-item>
+          }
+        </ion-radio-group>
+      </ion-list>
+    </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-button
+         expand="block"
+         [disabled]="!selectedStudent"
+         (click)="onAssingTutor()"
+        >
+          <ion-icon slot="start" name="person-add"></ion-icon>
+          Agregar
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>

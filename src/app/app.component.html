@@ -1,0 +1,13 @@
+<ion-app>
+
+  <ion-toast
+   color="warning"
+   message="¡Nueva versión disponible!"
+   [buttons]="toastButtons"
+   [isOpen]="!!(updateAvailable$ | async)"
+  >
+  </ion-toast>
+
+  <ion-router-outlet></ion-router-outlet>
+
+</ion-app>

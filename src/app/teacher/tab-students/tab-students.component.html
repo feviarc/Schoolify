@@ -1,0 +1,253 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Administrar alumnos</ion-title>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-searchbar
+     placeholder="Buscar..."
+     [debounce]="500"
+     (ionInput)="handleInput($event)"
+    >
+    </ion-searchbar>
+    @if(isLoading) {
+      <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+    }
+  </ion-toolbar>
+</ion-header>
+
+@if(isSpinnerActive) {
+  <div class="container__spinner">
+    <ion-spinner color="primary"></ion-spinner>
+    <p>{{ spinnerText }}</p>
+  </div>
+}
+
+@if(!isSpinnerActive) {
+  <ion-content>
+    @if(filteredStudents.length === 0 && !isLoading) {
+      <div class="center-box">
+        <p>{{ tabMessage }}</p>
+      </div>
+    }
+    <ion-list>
+    @for(filteredStudent of filteredStudents; track filteredStudent.id) {
+      <ion-item-sliding class="sliding-item-card" #studentSlidingItem>
+        <ion-item-options side="start">
+          <ion-item-option
+            color="danger"
+            id="delete-{{ filteredStudent.id }}"
+          >
+            <ion-icon slot="icon-only" name="trash"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+        <ion-item class="custom-item">
+          <ion-label>
+            <h2>{{ filteredStudent.nombreCompleto }}</h2>
+          </ion-label>
+          @if(filteredStudent.gid) {
+            <ion-chip>{{ filteredStudent.gid.slice(-2)}}</ion-chip>
+          }
+        </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option
+            id="update-{{ filteredStudent.id }}"
+          >
+            <ion-icon slot="icon-only" name="create"></ion-icon>
+          </ion-item-option>
+          <ion-action-sheet
+            trigger="delete-{{ filteredStudent.id }}"
+            header="Estás a punto de eliminar"
+            subHeader='a {{ filteredStudent.nombreCompleto }}. Con esta acción se perderán todos los datos del alumno.'
+            [buttons]="actionSheetButtons"
+            (didDismiss)="onDeleteStudent($event, studentSlidingItem, filteredStudent)"
+          >
+          </ion-action-sheet>
+        </ion-item-options>
+      </ion-item-sliding>
+      <!-- Modal (Actualizar Estudiante) -->
+      <ion-modal
+       trigger="update-{{ filteredStudent.id }}"
+       [initialBreakpoint]="0.80"
+       [breakpoints]="breakpoints"
+       (willDismiss)="onModalDismiss(studentSlidingItem)"
+       (willPresent)="loadStudentData(filteredStudent)"
+       #updateStudentModal
+      >
+        <ng-template>
+          <ion-header>
+            <ion-toolbar color="primary">
+              <ion-buttons slot="start">
+                <ion-button
+                (click)="closeModal('update-'+filteredStudent.id)"
+                >
+                  Cancelar
+                </ion-button>
+              </ion-buttons>
+              <ion-title>Actualizar</ion-title>
+              <ion-buttons slot="end">
+                <ion-button
+                [disabled]="isSameStudentData() || !form.valid || isSaving"
+                [strong]="true"
+                (click) = "onUpdateStudent(filteredStudent)"
+                >
+                  Guardar
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding" color="light">
+            <form [formGroup]="form">
+              <ion-list-header>
+                Nombre
+              </ion-list-header>
+              <ion-note>
+                Corrige el nombre o apellidos del estudiante.
+              </ion-note>
+              <ion-list [inset]="true">
+                <ion-item>
+                  <ion-input
+                    formControlName="nombre"
+                    label="Nombre(s):"
+                    labelPlacement="floating"
+                    placeholder="Escribe aquí..."
+                  >
+                  </ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-input
+                    formControlName="apellidoPaterno"
+                    label="Apellido Paterno:"
+                    labelPlacement="floating"
+                    placeholder="Escribe aquí..."
+                  >
+                  </ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-input
+                    formControlName="apellidoMaterno"
+                    label="Apellido Materno:"
+                    labelPlacement="floating"
+                    placeholder="Escribe aquí..."
+                  >
+                  </ion-input>
+                </ion-item>
+              </ion-list>
+              @if(filteredStudent.validado) {
+                <ion-list-header>
+                  Tutor (Mamá / Papá)
+                </ion-list-header>
+                <ion-note>
+                  Presiona el botón para desvincular la cuenta.
+                </ion-note>
+                <ion-list [inset]="true">
+                  <ion-item lines="none">
+                    <ion-input
+                     label="Nombre:"
+                     labelPlacement="floating"
+                     value=" {{ filteredStudent.nombreTutor }}"
+                     readonly
+                    >
+                    </ion-input>
+                    <ion-button
+                     (click)="onRemoveTutor(filteredStudent.id??'')"
+                    >
+                      Quitar
+                    </ion-button>
+                  </ion-item>
+                </ion-list>
+              }
+            </form>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
+    }
+    </ion-list>
+  </ion-content>
+}
+
+<!-- Botón (Agregar estudiante) -->
+<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab-button size="small" id="add-student-btn">
+    <ion-icon name="add"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
+
+<!-- Modal (Nuevo Estudiante) -->
+<ion-modal
+ trigger="add-student-btn"
+ [initialBreakpoint]="initialBreakpoint"
+ [breakpoints]="breakpoints"
+ #addStudentModal
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-buttons slot="start">
+          <ion-button
+           (click)="closeModal('add-student-btn')"
+          >
+            Cancelar
+          </ion-button>
+        </ion-buttons>
+        <ion-title>Nuevo</ion-title>
+        <ion-buttons slot="end">
+          <ion-button
+           [disabled]="!form.valid || isSaving"
+           [strong]="true"
+           (click) = "onAddStudent()"
+          >
+            Guardar
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding" color="light">
+      <form [formGroup]="form">
+        <ion-list-header>
+          Nombre
+        </ion-list-header>
+        <ion-note>
+          Escribe el nombre completo del estudiante.
+        </ion-note>
+        <ion-list [inset]="true">
+          <ion-item>
+            <ion-input
+              formControlName="nombre"
+              label="Nombre(s):"
+              labelPlacement="floating"
+              placeholder="Escribe aquí..."
+            >
+            </ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              formControlName="apellidoPaterno"
+              label="Apellido Paterno:"
+              labelPlacement="floating"
+              placeholder="Escribe aquí..."
+            >
+            </ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input
+              formControlName="apellidoMaterno"
+              label="Apellido Materno:"
+              labelPlacement="floating"
+              placeholder="Escribe aquí..."
+            >
+            </ion-input>
+          </ion-item>
+        </ion-list>
+      </form>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<ion-toast
+ cssClass="page__toast"
+ [message]="toastMessage"
+ [isOpen]="isToastOpen"
+ [duration]="3000"
+ (didDismiss)="isToastOpen = false"
+>
+</ion-toast>

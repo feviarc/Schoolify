@@ -1,0 +1,96 @@
+@if(isUserActive) {
+  <ion-tabs>
+    <ion-tab-bar slot="bottom">
+      <ion-tab-button tab="tab-notifications">
+        <ion-icon name="notifications"></ion-icon>
+        Notificaciones
+      </ion-tab-button>
+      <ion-tab-button tab="tab-students">
+        <ion-icon name="people"></ion-icon>
+        Mis hijos (Alumnos)
+      </ion-tab-button>
+      <ion-tab-button tab="tab-contact">
+        <ion-icon name="call"></ion-icon>
+        Contacto
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
+}
+
+@if(!isUserActive && !isLoading) {
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>Completa tu perfil</ion-title>
+    </ion-toolbar>
+  </ion-header>
+   <ion-content class="ion-padding" color="light">
+    <form [formGroup]="form">
+      <ion-list-header>
+        Escuela
+      </ion-list-header>
+      <ion-list [inset]="true">
+        <ion-item lines="none">
+          <ion-input
+           formControlName="escuela"
+           readonly
+          >
+          </ion-input>
+        </ion-item>
+      </ion-list>
+      <ion-list-header>
+        Tus datos
+      </ion-list-header>
+      <ion-note>
+        Nombre completo y tu número de celular.
+      </ion-note>
+      <ion-list [inset]="true">
+        <ion-item>
+          <ion-input
+           formControlName="nombre"
+           label="Nombre:"
+           maxlength="100"
+          >
+          </ion-input>
+        </ion-item>
+        @if (nombre.touched && nombre.invalid) {
+          <ion-text color="danger">
+            @if (nombre.errors?.['required']) {
+              <small class="ion-padding">El nombre es obligatorio.</small>
+            }
+            @if (nombre.errors?.['pattern']) {
+              <small class="ion-padding">Solo se permiten letras en el nombre.</small>
+            }
+          </ion-text>
+        }
+        <ion-item>
+          <ion-input
+           formControlName="celular"
+           label="Celular:"
+           maxlength="10"
+           type="tel"
+          >
+          </ion-input>
+        </ion-item>
+        @if (celular.touched && celular.invalid) {
+          <ion-text color="danger">
+            @if (celular.errors?.['required']) {
+              <small class="ion-padding">El celular es obligatorio.</small>
+            }
+            @if (celular.errors?.['pattern']) {
+              <small class="ion-padding">El celular debe tener 10 dígitos numéricos.</small>
+            }
+          </ion-text>
+        }
+      </ion-list>
+      <ion-list [inset]="true" class="background--light">
+        <ion-button
+        expand="block"
+        [disabled]="!form.valid || isSavingData"
+        (click)="onUpdateUserProfile()"
+        >
+          Guardar
+        </ion-button>
+      </ion-list>
+    </form>
+  </ion-content>
+}

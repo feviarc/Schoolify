@@ -1,0 +1,7 @@
+{
+  "name": "escuela-mx",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

@@ -1,0 +1,42 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Contacto</ion-title>
+    @if(isLoading) {
+      <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+    }
+    <ion-buttons slot="end">
+      <ion-button id="open-action-sheet">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+<div class="container-center">
+    <ion-card class="school-card">
+      <ion-card-header>
+        <ion-card-subtitle>{{ cct }}</ion-card-subtitle>
+        <ion-card-title>{{ escuela }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="phone-number">{{ telefono }}</p>
+        <div class="button-wrapper">
+          <a href="tel:+52{{telefono}}" class="btn-call">
+            <ion-icon name="call"></ion-icon>
+          </a>
+        </div>
+        <p class="tap-instruction">Presiona para llamar</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
+
+<ion-action-sheet
+ trigger="open-action-sheet"
+ header="Estás a punto de cerrar sesión"
+ subHeader="¿Deseas continuar?"
+ [buttons]="logoutActionSheetButtons"
+ (didDismiss)="onLogout($event)"
+>
+</ion-action-sheet>
+

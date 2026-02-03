@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Usuarios</ion-title>
+    @if(isLoading) {
+      <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+    }
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list lines="none">
+    @if((teachers$ | async)?.length === 0) {
+      <ion-item>
+        <ion-label>No hay personal registrado.</ion-label>
+      </ion-item>
+    } @else {
+      @for(teacher of teachers$ | async; track teacher.id) {
+        <ion-item class="user-item-card">
+          <ion-avatar slot="start">
+            <img src="../../../assets/img/avatar.svg" alt="User Avatar">
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ teacher.nombre || 'NUEVO USUARIO'}}</h2>
+            <p>{{ teacher.escuela || 'No ha registrado sus datos aún'}}</p>
+            <a href="mailto://{{ teacher.email }}" target="_blank">
+              <ion-chip color="primary" outline>
+                <ion-icon name="mail"></ion-icon>
+                <ion-label>{{ teacher.email }}</ion-label>
+              </ion-chip>
+            </a>
+            @if(teacher.celular) {
+            <a href="https://api.whatsapp.com/send/?phone={{ teacher.celular }}" target="_blank">
+              <ion-chip color="success" outline>
+                <ion-icon name="logo-whatsapp"></ion-icon>
+                <ion-label>{{ teacher.celular }}</ion-label>
+              </ion-chip>
+            </a>
+            }
+          </ion-label>
+        </ion-item>
+      }
+    }
+  </ion-list>
+</ion-content>

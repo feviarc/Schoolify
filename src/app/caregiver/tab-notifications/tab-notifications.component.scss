@@ -1,0 +1,44 @@
+/* Notifications history */
+ion-label strong {
+  display: block;
+  max-width: calc(100% - 60px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.3rem;
+}
+
+ion-label ion-note {
+  font-size: 0.9rem;
+  color: #8a8a8a;
+}
+
+ion-label ion-text {
+  font-size: 0.8rem;
+}
+
+.notification-header {
+  --background: #ffeaa9;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+div.subjects-container {
+  margin-top: 1rem;
+}
+
+.margin-left--none {
+  margin-left: 0;
+}
+
+.metadata-end-wrapper {
+  align-items: center;
+  display: flex;
+  font-size: 0.8rem;
+  inset-inline-end: 10px;
+  position: absolute;
+  top: 15px;
+}
+
+.metadata-end-wrapper ion-note {
+  font-size: 0.7rem;
+}
