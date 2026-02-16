@@ -1,9 +1,9 @@
 {
-  "name": "Schoolify - Notificaciones Escolares",
+  "name": "Schoolify",
   "short_name": "Schoolify",
   "id": "/",
-  "description": "Schoolify es una aplicación de comunicación escolar que permite a padres de familia y tutores recibir notificaciones importantes sobre la asistencia, conducta y seguimiento académico de los alumnos.",
-  "theme_color": "#3880ff",
+  "description": "Schoolify es una aplicación de comunicación escolar que permite a padres de familia y tutores recibir notificaciones importantes sobre la asistencia, conducta y cumplimiento académico de sus hijos.",
+  "theme_color": "#7b83eb",
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "./",

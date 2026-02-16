@@ -3,6 +3,22 @@ p {
   color: var(--ion-color-medium);
 }
 
+ion-card {
+  max-width: 390px;
+}
+
+ion-img::part(image) {
+  border-radius: 12px;
+  margin: 1rem 0;
+  width: 99%;
+}
+
+.card--center::part(scroll) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .form__button {
   margin: 0 auto;
   width: 92%;
@@ -18,10 +34,4 @@ p {
 
 .modal__img {
   padding: 1.5rem;
-}
-
-ion-img::part(image) {
-  border-radius: 12px;
-  margin: 2rem 0;
-  width: 99%;
 }

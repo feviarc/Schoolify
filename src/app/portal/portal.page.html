@@ -1,9 +1,3 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>ESCUELA - v1.03</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 @if(isLoading) {
   <div class="loading-container">
     <ion-spinner color="primary"></ion-spinner>
@@ -12,97 +6,107 @@
 }
 
 @if(isStandalone && !isLoading ) {
-  <ion-content class="ion-padding ion-text-center" color="light">
+  <ion-content class="card--center" color="light">
+    <ion-card class="ion-padding ion-text-center">
 
-    <ion-list [inset]="true">
-      <ion-item>
-        <ion-input
-          label="Clave del Centro de Trabajo (CCT)"
-          labelPlacement="stacked"
-          placeholder="Escribe la clave aquí"
-          maxlength="10"
-          [(ngModel)]="cct"
-        >
-        </ion-input>
-      </ion-item>
-    </ion-list>
+      <ion-list [inset]="true">
+        <ion-item>
+          <ion-input
+            label="Clave del Centro de Trabajo (CCT)"
+            labelPlacement="stacked"
+            placeholder="Escribe la clave aquí"
+            maxlength="10"
+            [(ngModel)]="cct"
+          >
+          </ion-input>
+        </ion-item>
+      </ion-list>
 
-    <ion-list [inset]="true">
-        <ion-input-otp [(ngModel)]="pin">
-          <ion-label>Ingresa los 4 digitos del PIN</ion-label>
-        </ion-input-otp>
-    </ion-list>
+      <ion-list [inset]="true">
+          <ion-input-otp [(ngModel)]="pin">
+            <ion-label>Ingresa los 4 digitos del PIN</ion-label>
+          </ion-input-otp>
+      </ion-list>
 
-    <ion-button
-      expand="block"
-      fill="solid"
-      [disabled]="isInvalidForm()"
-      (click)="onContinue()"
-    >
-      Continuar
-    </ion-button>
+      <ion-button
+        expand="block"
+        fill="solid"
+        [disabled]="isInvalidForm()"
+        (click)="onContinue()"
+      >
+        Continuar
+      </ion-button>
 
-    <ion-toast
-    cssClass="page__toast"
-    [message]="toastMessage"
-    [isOpen]="isToastOpen"
-    [duration]="3000"
-    (didDismiss)="setOpenToast(false)"
-    ></ion-toast>
+      <ion-toast
+       cssClass="page__toast"
+       [message]="toastMessage"
+       [isOpen]="isToastOpen"
+       [duration]="3000"
+       (didDismiss)="setOpenToast(false)"
+      >
+      </ion-toast>
 
+    </ion-card>
   </ion-content>
 }
 
 @if(!isStandalone && !isLoading) {
-  <ion-content class="ion-padding ion-text-center" color="light">
+  <ion-content class="card--center" color="light">
+    <ion-card class="ion-padding ion-text-center">
 
-    <p class="app-description">
-      Plataforma de notificaciones escolares para comunicación efectiva entre la escuela y padres de familia.
-    </p>
+      <ion-img src="../../assets/img/portal-cover.png"></ion-img>
 
-    <ion-img src="../../assets/img/logo-portal.png"></ion-img>
-
-    @if(!isIOS) {
       @if(installAppService.promptStatus) {
+        <p class="app-description">
+          Schoolify es una aplicación de comunicación escolar que permite a padres de familia y
+          tutores recibir notificaciones importantes sobre la asistencia, conducta y cumplimiento
+          académico de sus hijos.
+        </p>
+      }
+
+      @if(!isIOS) {
+        @if(installAppService.promptStatus) {
+          <ion-button
+           expand="block"
+           color="success"
+           (click)="showInstallAppBanner()"
+          >
+            <ion-icon slot="start" [name]="detectedOS"></ion-icon>
+            Instalar
+          </ion-button>
+        }
+        @if(!installAppService.promptStatus) {
+          <p>La App ya está instalada y lista para usarse, búscala en tu pantalla de inicio.</p>
+        }
+      }
+
+      @if(isIOS) {
         <ion-button
-         expand="block"
-         (click)="showInstallAppBanner()"
+          expand="block"
+          color="success"
+          id="open-modal"
         >
           <ion-icon slot="start" [name]="detectedOS"></ion-icon>
           Instalar
         </ion-button>
+
+        <ion-modal trigger="open-modal">
+          <ng-template>
+            <ion-header>
+              <ion-toolbar color="primary">
+                <ion-buttons slot="start">
+                  <ion-button (click)="onCloseModal()">Cerrar</ion-button>
+                </ion-buttons>
+                <ion-title>Instalar</ion-title>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content>
+              <img class="modal__img" src="../../assets/img/ios-install.jpg" alt="">
+            </ion-content>
+          </ng-template>
+        </ion-modal>
       }
-      @if(!installAppService.promptStatus) {
-        <p>ESCUELA está instalada y lista para usarse, búscala en tu pantalla de inicio.</p>
-      }
-    }
 
-    @if(isIOS) {
-      <ion-button
-        expand="block"
-        id="open-modal"
-      >
-        <ion-icon slot="start" [name]="detectedOS"></ion-icon>
-        Instalar
-      </ion-button>
-
-      <ion-modal trigger="open-modal">
-        <ng-template>
-          <ion-header>
-            <ion-toolbar color="primary">
-              <ion-buttons slot="start">
-                <ion-button (click)="onCloseModal()">Cerrar</ion-button>
-              </ion-buttons>
-              <ion-title>Instalar</ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content>
-            <img class="modal__img" src="../../assets/img/ios-install.jpg" alt="">
-          </ion-content>
-        </ng-template>
-      </ion-modal>
-    }
-
+    </ion-card>
   </ion-content>
 }
-

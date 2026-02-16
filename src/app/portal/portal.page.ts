@@ -1,10 +1,19 @@
-import { Component, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+import {
+  Component,
+  HostListener,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import {
   IonButton,
   IonButtons,
+  IonCard,
   IonContent,
   IonHeader,
   IonIcon,
@@ -16,15 +25,17 @@ import {
   IonList,
   IonModal,
   IonSpinner,
+  IonTitle,
   IonToast,
-  IonToolbar, IonTitle } from '@ionic/angular/standalone';
+  IonToolbar,
+} from '@ionic/angular/standalone';
 
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { CctStorageService } from '../services/cct-storage.service';
 import { InstallAppService } from '../services/install-app-service';
-import { UserProfileService } from '../services/user-profile.service';
 import { SchoolValidationService } from '../services/school-validation.service';
+import { UserProfileService } from '../services/user-profile.service';
 
 
 @Component({
@@ -32,11 +43,13 @@ import { SchoolValidationService } from '../services/school-validation.service';
   templateUrl: './portal.page.html',
   styleUrls: ['./portal.page.scss'],
   standalone: true,
-  imports: [IonTitle, IonButtons, IonLabel,
+  imports: [
     CommonModule,
     FormsModule,
     IonButton,
     IonButtons,
+    IonButtons,
+    IonCard,
     IonContent,
     IonHeader,
     IonIcon,
@@ -45,11 +58,13 @@ import { SchoolValidationService } from '../services/school-validation.service';
     IonInputOtp,
     IonItem,
     IonLabel,
+    IonLabel,
     IonList,
     IonModal,
     IonSpinner,
+    IonTitle,
     IonToast,
-    IonToolbar
+    IonToolbar,
   ]
 })
 
@@ -82,7 +97,7 @@ export class PortalPage implements OnInit {
       this.cct = cct;
     }
 
-    await this.checkUserStatus();
+    await this.checkUserProfile();
 
     this.detectedOS = this.getOperatingSystem();
     this.isIOS = this.detectedOS === 'logo-apple' ? true : false;
@@ -92,7 +107,7 @@ export class PortalPage implements OnInit {
     }, 3000);
   }
 
-  private async checkUserStatus() {
+  private async checkUserProfile() {
     try {
       const user = await firstValueFrom(this.authService.getCurrentUser());
 
@@ -140,7 +155,13 @@ export class PortalPage implements OnInit {
   }
 
   isInvalidForm() {
-    return this.cct.length !== 10 || (this.pin === null || ('' + this.pin).length !== 4);
+    if(this.pin === null) {
+      return true;
+    }
+
+    const isCctInvalid = this.cct.length !== 10;
+    const isPinInvalid = String(this.pin).length !== 4;
+    return isCctInvalid || isPinInvalid;
   }
 
   @HostListener('window:beforeinstallprompt', ['$event'])
