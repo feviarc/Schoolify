@@ -14,7 +14,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || 'Escuela';
+  const notificationTitle = payload.notification?.title || 'Schoolify';
 
   const notificationOptions = {
     body: payload.notification?.body || 'Tienes una nueva notificación',

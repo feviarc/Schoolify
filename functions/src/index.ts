@@ -120,8 +120,8 @@ async function handleTutorNotification(
       tokens: tutorTokens,
       webpush: {
         notification: {
-          icon: 'https://escuela-mx.web.app/assets/icons/icon-192x192.png',
-          badge: 'https://escuela-mx.web.app/assets/icons/icon-32x32.png',
+          icon: 'https://schoolify-mx.web.app/assets/icons/icon-192x192.png',
+          badge: 'https://schoolify-mx.web.app/assets/icons/icon-32x32.png',
         },
       },
     };
@@ -264,8 +264,8 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
         tokens: adminTokens,
         webpush: {
           notification: {
-            icon: 'https://escuela-mx.web.app/assets/icons/icon-192x192.png',
-            badge: 'https://escuela-mx.web.app/assets/icons/icon-32x32.png',
+            icon: 'https://schoolify-mx.web.app/assets/icons/icon-192x192.png',
+            badge: 'https://schoolify-mx.web.app/assets/icons/icon-32x32.png',
           },
         },
       };
