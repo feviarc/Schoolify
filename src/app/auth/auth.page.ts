@@ -102,7 +102,7 @@ export class AuthPage implements OnInit {
         this.handleLoginRedirect(user);
       }
     } catch(error) {
-      console.error('❌ Escuela-MX: [auth.page.ts]', error)
+      console.error('❌ Schoolify: [auth.page.ts]', error)
     }
   }
 
@@ -234,7 +234,7 @@ export class AuthPage implements OnInit {
           this.router.navigateByUrl('/auth');
       }
     } catch(error) {
-      console.log('❌ Escuela-MX: [auth.page.ts]', error);
+      console.log('❌ Schoolify: [auth.page.ts]', error);
       await firstValueFrom(this.authService.logout());
       this.router.navigateByUrl('/auth');
     }

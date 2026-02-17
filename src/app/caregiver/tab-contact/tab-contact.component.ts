@@ -94,7 +94,7 @@ export class TabContactComponent  implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-contact.component.ts]', error);
+        console.log('❌ Schoolify: [tab-contact.component.ts]', error);
       }
     });
   }
@@ -111,7 +111,7 @@ export class TabContactComponent  implements OnInit {
         this.router.navigateByUrl('/auth');
       },
       error: error => {
-        console.log('❌ Escuela-MX: [tab-contact.component.ts]',  error);
+        console.log('❌ Schoolify: [tab-contact.component.ts]',  error);
       }
     });
   }

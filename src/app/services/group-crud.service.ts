@@ -68,7 +68,7 @@ export class GroupCRUDService {
   private loadGroups(): void {
     this.getGroups().subscribe({
       next: (groups) => this.groupsSubject.next(groups),
-      error: (error) => console.error('❌ Escuela-MX: [group-crud.service.ts]', error)
+      error: (error) => console.error('❌ Schoolify: [group-crud.service.ts]', error)
     });
   }
 
@@ -90,7 +90,7 @@ export class GroupCRUDService {
         this.loadGroups(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return throwError(() => new Error('Could not add group'));
       })
     );
@@ -112,7 +112,7 @@ export class GroupCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(groups => groups as Group[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return throwError(() => new Error('Could not get groups'));
       })
     );
@@ -141,7 +141,7 @@ export class GroupCRUDService {
         return groups;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return throwError(() => new Error('Could not get groups'));
       })
     );
@@ -159,7 +159,7 @@ export class GroupCRUDService {
     return docData(docRef, { idField: 'id' }).pipe(
       map(data => data ? data as Group : null),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -184,7 +184,7 @@ export class GroupCRUDService {
         return null;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -214,7 +214,7 @@ export class GroupCRUDService {
         return groups;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of([]);
       })
     );
@@ -245,7 +245,7 @@ export class GroupCRUDService {
         } as Group;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -280,7 +280,7 @@ export class GroupCRUDService {
         this.loadGroups(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return throwError(() => new Error('Could not update group'));
       })
     );
@@ -305,7 +305,7 @@ export class GroupCRUDService {
         this.loadGroups(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete group'));
       })
     );
@@ -357,7 +357,7 @@ export class GroupCRUDService {
     return from(getDocs(this.groupsCollection)).pipe(
       map(querySnapshot => querySnapshot.size),
       catchError(error => {
-        console.error('❌ Escuela-MX: [group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of(0);
       })
     );

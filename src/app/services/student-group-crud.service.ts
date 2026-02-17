@@ -102,7 +102,7 @@ export class StudentGroupCRUDService {
   private loadStudentGroups(): void {
     this.getStudentGroups().subscribe({
       next: (groups) => this.studentGroupsSubject.next(groups),
-      error: (error) => console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error)
+      error: (error) => console.error('❌ Schoolify: [student-group-crud.service.ts]', error)
     });
   }
 
@@ -136,7 +136,7 @@ export class StudentGroupCRUDService {
         this.loadStudentGroups();
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error(error.message || 'Could not add student group'));
       })
     );
@@ -173,7 +173,7 @@ export class StudentGroupCRUDService {
         return this.updateStudentGroup(gid, { alumnos: updatedAlumnos });
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error(error.message || 'Could not add student to group'));
       })
     );
@@ -211,7 +211,7 @@ export class StudentGroupCRUDService {
         return this.updateStudentGroup(gid, { alumnos: updatedAlumnos });
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not add students to group'));
       })
     );
@@ -234,7 +234,7 @@ export class StudentGroupCRUDService {
     return collectionData(q, { idField: 'gid' }).pipe(
       map(groups => groups as StudentGroup[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not get student groups'));
       })
     );
@@ -263,7 +263,7 @@ export class StudentGroupCRUDService {
         return groups;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not get student groups'));
       })
     );
@@ -280,7 +280,7 @@ export class StudentGroupCRUDService {
     return docData(docRef, { idField: 'gid' }).pipe(
       map(data => data ? data as StudentGroup : null),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -305,7 +305,7 @@ export class StudentGroupCRUDService {
         return null;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -337,7 +337,7 @@ export class StudentGroupCRUDService {
           observer.next(groups);
         },
         (error) => {
-          console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+          console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
           observer.next([]); // Emitir array vacío en caso de error
         }
       );
@@ -372,7 +372,7 @@ export class StudentGroupCRUDService {
         return groups;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of([]);
       })
     );
@@ -404,7 +404,7 @@ export class StudentGroupCRUDService {
     return from(getDoc(docRef)).pipe(
       map(docSnap => docSnap.exists()),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of(false);
       })
     );
@@ -472,7 +472,7 @@ export class StudentGroupCRUDService {
         this.loadStudentGroups();
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not update student group'));
       })
     );
@@ -510,7 +510,7 @@ export class StudentGroupCRUDService {
         return this.updateStudentGroup(gid, { alumnos: updatedAlumnos });
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not update student in group'));
       })
     );
@@ -537,7 +537,7 @@ export class StudentGroupCRUDService {
         this.loadStudentGroups();
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete student group'));
       })
     );
@@ -565,7 +565,7 @@ export class StudentGroupCRUDService {
         return this.updateStudentGroup(gid, { alumnos: updatedAlumnos });
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not remove student from group'));
       })
     );
@@ -601,7 +601,7 @@ export class StudentGroupCRUDService {
     return from(getDocs(this.studentGroupsCollection)).pipe(
       map(querySnapshot => querySnapshot.size),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of(0);
       })
     );
@@ -631,7 +631,7 @@ export class StudentGroupCRUDService {
         return groups;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-group-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return of([]);
       })
     );

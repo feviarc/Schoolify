@@ -42,7 +42,7 @@ export class SchoolValidationService {
       return isValid;
 
     } catch(error) {
-      console.log('❌ Escuela-MX: [school-validation.service.ts]', error);
+      console.log('❌ Schoolify: [school-validation.service.ts]', error);
       this.cctpinValidSource.next(false);
       return false;
     }

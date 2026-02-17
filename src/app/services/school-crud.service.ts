@@ -66,7 +66,7 @@ export class SchoolCRUDService {
   private loadSchools(): void {
     this.getSchools().subscribe({
       next: (schools) => this.schoolsSubject.next(schools),
-      error: (error) => console.error('❌ Escuela-MX: [school-crud.service.ts]', error)
+      error: (error) => console.error('❌ Schoolify: [school-crud.service.ts]', error)
     });
   }
 
@@ -88,7 +88,7 @@ export class SchoolCRUDService {
         this.loadSchools(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not add school'));
       })
     );
@@ -105,7 +105,7 @@ export class SchoolCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(schools => schools as School[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not get schools'));
       })
     );
@@ -130,7 +130,7 @@ export class SchoolCRUDService {
         return schools;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not get schools'));
       })
     );
@@ -148,7 +148,7 @@ export class SchoolCRUDService {
     return docData(docRef, { idField: 'id' }).pipe(
       map(data => data ? data as School : null),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -173,7 +173,7 @@ export class SchoolCRUDService {
         return null;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -202,7 +202,7 @@ export class SchoolCRUDService {
         } as School;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -231,7 +231,7 @@ export class SchoolCRUDService {
         } as School;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -266,7 +266,7 @@ export class SchoolCRUDService {
         this.loadSchools(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not update school'));
       })
     );
@@ -291,7 +291,7 @@ export class SchoolCRUDService {
         this.loadSchools(); // Update list
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete school'));
       })
     );
@@ -363,7 +363,7 @@ export class SchoolCRUDService {
     return from(getDocs(this.schoolsCollection)).pipe(
       map(querySnapshot => querySnapshot.size),
       catchError(error => {
-        console.error('❌ Escuela-MX: [school-crud.service.ts]', error);
+        console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return of(0);
       })
     );

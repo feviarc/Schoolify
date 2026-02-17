@@ -104,7 +104,7 @@ export class AdminNotificationsCRUDService {
 
     this.getNotifications(this.currentUserId).subscribe({
       next: (notifications) => this.notificationsSubject.next(notifications),
-      error: (error) => console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error)
+      error: (error) => console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error)
     });
   }
 
@@ -131,7 +131,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not add notification'));
       })
     );
@@ -156,7 +156,7 @@ export class AdminNotificationsCRUDService {
         })) as Notification[];
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not get notifications'));
       })
     );
@@ -185,7 +185,7 @@ export class AdminNotificationsCRUDService {
         return notifications;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not get notifications'));
       })
     );
@@ -218,7 +218,7 @@ export class AdminNotificationsCRUDService {
         return notifications;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return of([]);
       })
     );
@@ -251,7 +251,7 @@ export class AdminNotificationsCRUDService {
         return notifications;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return of([]);
       })
     );
@@ -285,7 +285,7 @@ export class AdminNotificationsCRUDService {
         return null;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return of(null);
       })
     );
@@ -325,7 +325,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not update notification'));
       })
     );
@@ -385,7 +385,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not mark all as archived'));
       })
     );
@@ -419,7 +419,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete notification'));
       })
     );
@@ -459,7 +459,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete archived notifications'));
       })
     );
@@ -508,7 +508,7 @@ export class AdminNotificationsCRUDService {
         }
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return throwError(() => new Error('Could not clear all notifications'));
       })
     );
@@ -523,7 +523,7 @@ export class AdminNotificationsCRUDService {
     return this.getUnreadNotifications(userId).pipe(
       map(notifications => notifications.length),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return of(0);
       })
     );
@@ -540,7 +540,7 @@ export class AdminNotificationsCRUDService {
     return from(getDocs(notificationsCol)).pipe(
       map(querySnapshot => querySnapshot.size),
       catchError(error => {
-        console.error('❌ Escuela-MX: [admin-notifications-crud.service.ts]', error);
+        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
         return of(0);
       })
     );

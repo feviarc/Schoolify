@@ -88,7 +88,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         this.isLoadingData = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
   }
@@ -115,7 +115,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         this.router.navigateByUrl('/auth');
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]',  error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]',  error);
       }
     });
   }

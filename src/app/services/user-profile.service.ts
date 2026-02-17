@@ -52,7 +52,7 @@ export class UserProfileService {
     try {
      await updateDoc(userDocRef, data);
     } catch(error) {
-      console.log('❌ Escuela-MX: [user-profile.service.ts]', error)
+      console.log('❌ Schoolify: [user-profile.service.ts]', error)
     }
   }
 

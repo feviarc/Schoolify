@@ -44,7 +44,7 @@ export class AppUpdateService {
       console.log('🔄 Recargando aplicación...');
       window.location.reload();
     } catch (error) {
-      console.error('❌ Escuela-MX: [app.update.service.ts]:', error);
+      console.error('❌ Schoolify: [app.update.service.ts]:', error);
     }
   }
 }

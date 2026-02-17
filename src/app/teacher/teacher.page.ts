@@ -132,7 +132,7 @@ export class TeacherPage implements OnInit {
       this.user = await firstValueFrom(this.authService.getCurrentUser());
       this.uid = this.user?.uid;
     } catch(error) {
-      console.log('❌ Escuela-MX: [teacher.page.ts]', error);
+      console.log('❌ Schoolify: [teacher.page.ts]', error);
     }
   }
 
@@ -144,7 +144,7 @@ export class TeacherPage implements OnInit {
       this.profile = await firstValueFrom(this.userProfileService.getUserProfile(this.uid!));
       this.isUserActive = this.profile?.activo ?? false;
     } catch(error) {
-      console.log('❌ Escuela-MX: [teacher.page.ts]', error);
+      console.log('❌ Schoolify: [teacher.page.ts]', error);
     }
   }
 
@@ -169,7 +169,7 @@ export class TeacherPage implements OnInit {
         this.router.navigateByUrl('/auth');
       },
       error: error => {
-        console.log('❌ Escuela-MX: [teacher.page.ts]', error);
+        console.log('❌ Schoolify: [teacher.page.ts]', error);
       }
     });
   }

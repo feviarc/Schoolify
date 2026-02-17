@@ -227,7 +227,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
         this.groupsInfo = groups;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
 
@@ -248,7 +248,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
           this.filteredStudentsWithoutGroup = [...students];
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
 
@@ -270,7 +270,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
         );
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
 
@@ -289,7 +289,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
 
@@ -351,7 +351,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
         this.isSpinnerActive = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
 
@@ -405,7 +405,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
         this.router.navigateByUrl('/auth');
       },
       error: error => {
-        console.log('❌ Escuela-MX: [tab-groups.component.ts]', error);
+        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
       }
     });
   }

@@ -85,7 +85,7 @@ export class NotificationService {
       return null;
 
     } catch (error) {
-      console.error('❌ Escuela-MX: [notification.service.ts]', error);
+      console.error('❌ Schoolify: [notification.service.ts]', error);
       return null;
     }
   }
@@ -98,7 +98,7 @@ export class NotificationService {
       try {
         const registration = await navigator.serviceWorker.ready;
       } catch (error) {
-        console.error('❌ Escuela-MX: [notification.service.ts]', error);
+        console.error('❌ Schoolify: [notification.service.ts]', error);
       }
     }
   }
@@ -128,7 +128,7 @@ export class NotificationService {
         }
       );
     } catch (error) {
-      console.error('❌ Escuela-MX: [notification.service.ts]', error);
+      console.error('❌ Schoolify: [notification.service.ts]', error);
     }
   }
 
@@ -199,7 +199,7 @@ export class NotificationService {
         this.currentToken = null;
       }
     } catch (error) {
-      console.error('❌ Escuela-MX: [notification.service.ts]', error);
+      console.error('❌ Schoolify: [notification.service.ts]', error);
     }
   }
 

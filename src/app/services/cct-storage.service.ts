@@ -23,7 +23,7 @@ export class CctStorageService {
       localStorage.setItem(this.CCT_KEY, cct.trim());
       return true;
     } catch (error) {
-      console.error('❌ Escuela-MX: [cct-storage.service.ts]', error);
+      console.error('❌ Schoolify: [cct-storage.service.ts]', error);
       return false;
     }
   }
@@ -40,7 +40,7 @@ export class CctStorageService {
       }
       return null;
     } catch (error) {
-      console.error('❌ Escuela-MX: [cct-storage.service.ts]', error);
+      console.error('❌ Schoolify: [cct-storage.service.ts]', error);
       return null;
     }
   }
@@ -54,7 +54,7 @@ export class CctStorageService {
       localStorage.removeItem(this.CCT_KEY);
       return true;
     } catch (error) {
-      console.error('❌ Escuela-MX: [cct-storage.service.ts]', error);
+      console.error('❌ Schoolify: [cct-storage.service.ts]', error);
       return false;
     }
   }

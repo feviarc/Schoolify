@@ -229,7 +229,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-students.components.ts]', error);
+        console.log('❌ Schoolify: [tab-students.components.ts]', error);
       }
     });
 
@@ -250,7 +250,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       this.closeModal('add-student-btn');
       const studentId = await this.studentCRUDService.addStudent(studentData);
     } catch (error) {
-      console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
     }
 
     this.isSpinnerActive = false;
@@ -306,7 +306,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       this.closeModal('update-' + student.id);
       await this.studentCRUDService.updateStudent(student.id, modifiedStudentName);
     } catch(error) {
-      console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
     }
 
     this.isSpinnerActive = false;

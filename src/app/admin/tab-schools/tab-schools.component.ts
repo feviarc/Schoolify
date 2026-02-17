@@ -154,7 +154,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
 
@@ -163,7 +163,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         this.groups = groups;
       },
       error: (e) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', e);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', e);
       }
     });
 
@@ -176,7 +176,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         this.subjects = subjects;
       },
       error: (e) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', e);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', e);
       }
     });
 
@@ -205,7 +205,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         return exists ? { cctExists: true } : null;
       }),
       catchError(error => {
-        console.error('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.error('❌ Schoolify: [tab-schools.component.ts]', error);
         return of(null);
       })
     );
@@ -303,7 +303,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.groupCRUDService.addGroup(group).subscribe({
       next: () => {},
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
   }
@@ -317,7 +317,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.subjectCRUDService.addSubject(subject).subscribe({
       next: () => {},
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
 
@@ -338,7 +338,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         this.isSaveButtonDisabled = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
   }
@@ -347,7 +347,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.groupCRUDService.deleteGroup(group.id!).subscribe({
       next: () => {},
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
   }
@@ -374,7 +374,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         this.isSpinnerActive = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       },
     });
   }
@@ -383,7 +383,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.subjectCRUDService.deleteSubject(subject.id!).subscribe({
       next: () => {},
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
   }
@@ -406,7 +406,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         this.isSaveButtonDisabled = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-schools.component.ts]', error);
+        console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
 

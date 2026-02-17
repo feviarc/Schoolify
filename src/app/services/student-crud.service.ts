@@ -83,7 +83,7 @@ export class StudentCRUDService {
   private loadStudents(): void {
     this.getStudents().subscribe({
       next: (students) => this.studentsSubject.next(students),
-      error: (error) => console.error('❌ Escuela-MX: [student-crud.service.ts]', error)
+      error: (error) => console.error('❌ Schoolify: [student-crud.service.ts]', error)
     });
   }
 
@@ -108,7 +108,7 @@ export class StudentCRUDService {
       return docRef.id;
 
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not add student');
     }
   }
@@ -127,7 +127,7 @@ export class StudentCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(students => students as Student[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-crud.service.ts]', error);
         throw error;
       })
     );
@@ -152,7 +152,7 @@ export class StudentCRUDService {
 
       return students;
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not get students');
     }
   }
@@ -169,7 +169,7 @@ export class StudentCRUDService {
     return docData(docRef, { idField: 'id' }).pipe(
       map(data => data ? data as Student : null),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-crud.service.ts]', error);
         throw error;
       })
     );
@@ -193,7 +193,7 @@ export class StudentCRUDService {
       }
       return null;
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw error;
     }
   }
@@ -214,7 +214,7 @@ export class StudentCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(students => students as Student[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-crud.service.ts]', error);
         throw error;
       })
     );
@@ -236,7 +236,7 @@ export class StudentCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(students => students as Student[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-crud.service.ts]', error);
         throw error;
       })
     );
@@ -258,7 +258,7 @@ export class StudentCRUDService {
     return collectionData(q, { idField: 'id' }).pipe(
       map(students => students as Student[]),
       catchError(error => {
-        console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+        console.error('❌ Schoolify: [student-crud.service.ts]', error);
         throw error;
       })
     );
@@ -330,7 +330,7 @@ export class StudentCRUDService {
 
       return students;
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not get students without tutor');
     }
   }
@@ -368,7 +368,7 @@ export class StudentCRUDService {
       const docSnap = await getDoc(docRef);
       return docSnap.exists();
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       return false;
     }
   }
@@ -398,7 +398,7 @@ export class StudentCRUDService {
       await updateDoc(docRef, updateData);
       this.loadStudents(); // Refresh list
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not update student');
     }
   }
@@ -472,7 +472,7 @@ export class StudentCRUDService {
       await deleteDoc(docRef);
       this.loadStudents(); // Refresh list
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not delete student');
     }
   }
@@ -489,7 +489,7 @@ export class StudentCRUDService {
       const querySnapshot = await getDocs(this.studentsCollection);
       return querySnapshot.size;
     } catch (error) {
-      console.error('❌ Escuela-MX: [student-crud.service.ts]', error);
+      console.error('❌ Schoolify: [student-crud.service.ts]', error);
       return 0;
     }
   }

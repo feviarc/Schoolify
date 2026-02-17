@@ -190,7 +190,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     try {
       modal.dismiss();
     } catch(error) {
-      console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+      console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
     }
   }
 
@@ -220,7 +220,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         this.studentGroups = groups;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
 
@@ -240,7 +240,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         );
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
   }
@@ -255,7 +255,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         this.studentNotifications = notifications;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
   }
@@ -276,7 +276,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
 

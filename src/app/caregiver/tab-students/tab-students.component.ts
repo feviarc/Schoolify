@@ -106,7 +106,7 @@ export class TabStudentsComponent  implements OnInit {
         this.loadStudentsByTutor(this.tid);
       }
     } catch(error) {
-      console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
     }
   }
 
@@ -117,7 +117,7 @@ export class TabStudentsComponent  implements OnInit {
     try {
       this.profile = await firstValueFrom(this.userProfileService.getUserProfile(this.tid!));
     } catch(error) {
-      console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
     }
   }
 
@@ -144,7 +144,7 @@ export class TabStudentsComponent  implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+        console.log('❌ Schoolify: [tab-students.component.ts]', error);
       }
     });
 
@@ -165,7 +165,7 @@ export class TabStudentsComponent  implements OnInit {
         this.filteredStudentsWithoutTutor = [...students];
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-students.component.ts]', error);
+        console.log('❌ Schoolify: [tab-students.component.ts]', error);
       }
     });
 

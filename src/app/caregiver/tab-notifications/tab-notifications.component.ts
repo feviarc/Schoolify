@@ -74,7 +74,7 @@ export class TabNotificationsComponent  implements OnInit {
       this.user = await firstValueFrom(this.authService.getCurrentUser());
       this.tid = this.user?.uid;
     } catch(error) {
-      console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+      console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
     }
   }
 
@@ -89,7 +89,7 @@ export class TabNotificationsComponent  implements OnInit {
         this.notifications = notificatios;
       },
       error: (error) => {
-        console.log('❌ Escuela-MX: [tab-notifications.component.ts]', error);
+        console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
 

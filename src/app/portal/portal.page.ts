@@ -131,7 +131,7 @@ export class PortalPage implements OnInit {
         }
       }
     } catch(error) {
-      console.log('❌ Escuela-MX: [portal.page.ts]', error);
+      console.log('❌ Schoolify: [portal.page.ts]', error);
     }
   }
 
