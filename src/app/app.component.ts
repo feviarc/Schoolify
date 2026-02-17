@@ -89,7 +89,8 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit() {
-    console.log('🔍 Verificando actualizaciones...');
+    console.log('Versión Actual: [v0.1.0]');
+    console.log('🔍 Buscando actualizaciones...');
   }
 
   updateApp() {
