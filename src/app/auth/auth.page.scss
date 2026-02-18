@@ -1,4 +1,11 @@
+.card--center::part(scroll) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .form__button--submit {
   margin: 16px auto;
   width: 92%;
 }
+

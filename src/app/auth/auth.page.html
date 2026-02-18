@@ -12,86 +12,93 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content color="light">
+<ion-content class="card--center"  color="light">
+  <ion-card class="ion-paddgin ion-text-center">
 
-  @if(emailVerificationMessage) {
-      <ion-item lines="none" class="ion-text-center ion-padding-vertical" color="light">
-        <ion-text color="dark">
-          <p>{{emailVerificationMessage}}</p>
-          <ion-button expand="block" fill="clear" (click)="onResendVerificationEmail()">
-            Reenviar correo de verificación
-          </ion-button>
-        </ion-text>
-      </ion-item>
-  }
+    <ion-card-header>
+      <h2>Ingresa tus credenciales</h2>
+    </ion-card-header>
 
-  <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
-    <ion-list [inset]="true">
-      <ion-item>
-        <ion-input
-         formControlName="email"
-         label="Usuario (email)"
-         labelPlacement="stacked"
-         type="email"
-        >
-        </ion-input>
-      </ion-item>
+    <ion-card-content>
+      @if(emailVerificationMessage) {
+        <ion-item lines="none" class="ion-text-center ion-padding-vertical" color="light">
+          <ion-text color="dark">
+            <p>{{emailVerificationMessage}}</p>
+            <ion-button expand="block" fill="clear" (click)="onResendVerificationEmail()">
+              Reenviar correo de verificación
+            </ion-button>
+          </ion-text>
+        </ion-item>
+      }
 
-      @if(!isResetPasswordMode) {
-        <ion-item>
-          <ion-input
-           formControlName="password"
-           label="Contraseña"
-           labelPlacement="stacked"
-           type="password"
+      <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
+        <ion-list [inset]="true">
+          <ion-item>
+            <ion-input
+             formControlName="email"
+             label="Usuario (email)"
+             labelPlacement="stacked"
+             type="email"
+            ></ion-input>
+          </ion-item>
+
+          @if(!isResetPasswordMode) {
+            <ion-item>
+              <ion-input
+               formControlName="password"
+               label="Contraseña"
+               labelPlacement="stacked"
+               type="password"
+              >
+                <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+              </ion-input>
+            </ion-item>
+          }
+
+          @if(!isLoginMode && !isResetPasswordMode) {
+            <ion-item>
+              <ion-toggle formControlName="isTutor">
+                <ion-label>Registrarme como tutor</ion-label>
+                <ion-note>(Mamá o Papá)</ion-note>
+              </ion-toggle>
+            </ion-item>
+          }
+
+          <ion-button
+           class="form__button--submit"
+           expand="block"
+           type="submit"
+           [disabled]="!this.authForm.valid"
           >
-            <ion-input-password-toggle slot="end"></ion-input-password-toggle>
-          </ion-input>
-        </ion-item>
+            @if(isLoginMode) {
+              Iniciar Sesión
+            } @else if(isResetPasswordMode) {
+              Restablecer
+            } @else {
+              Registrarse
+            }
+          </ion-button>
+        </ion-list>
+      </form>
+
+      @if(isLoginMode) {
+        <ion-button expand="block" fill="clear" (click)="onSwitchToResetPassword()">
+          ¿Olvidaste tu contraseña?
+        </ion-button>
       }
 
-      @if(!isLoginMode && !isResetPasswordMode) {
-        <ion-item>
-          <ion-toggle formControlName="isTutor">
-            <ion-label>Registrarme como tutor</ion-label>
-            <ion-note>(Mamá o Papá)</ion-note>
-          </ion-toggle>
-        </ion-item>
-      }
-
-      <ion-button
-       class="form__button--submit"
-       expand="block"
-       type="submit"
-       [disabled]="!this.authForm.valid"
-      >
-        @if(isLoginMode) {
-          Iniciar Sesión
-        } @else if(isResetPasswordMode) {
-          Restablecer
-        } @else {
-          Registrarse
-        }
+      <ion-button expand="block" fill="clear" (click)="onSwitchMode()">
+        {{ isLoginMode ? 'Registrate aquí' : 'Inicia sesión aquí' }}
       </ion-button>
-    </ion-list>
-  </form>
+    </ion-card-content>
 
-  @if(isLoginMode) {
-    <ion-button expand="block" fill="clear" (click)="onSwitchToResetPassword()">
-      ¿Olvidaste tu contraseña?
-    </ion-button>
-  }
-
-  <ion-button expand="block" fill="clear" (click)="onSwitchMode()">
-    {{ isLoginMode ? 'Registrate aquí' : 'Inicia sesión aquí' }}
-  </ion-button>
-
-  <ion-toast
-   cssClass="page__toast"
-   [message]="toastMessage"
-   [isOpen]="isToastOpen"
-   duration="5000"
-   (didDismiss)="setOpenToast(false)"
-  ></ion-toast>
-
+  </ion-card>
 </ion-content>
+
+<ion-toast
+  cssClass="page__toast"
+  [message]="toastMessage"
+  [isOpen]="isToastOpen"
+  duration="5000"
+  (didDismiss)="setOpenToast(false)"
+></ion-toast>

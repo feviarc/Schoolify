@@ -22,8 +22,7 @@ import {
   IonTitle,
   IonToast,
   IonToggle,
-  IonToolbar,
-} from '@ionic/angular/standalone';
+  IonToolbar, IonCard, IonCardHeader, IonCardContent } from '@ionic/angular/standalone';
 import { User } from 'firebase/auth';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
@@ -37,7 +36,7 @@ import { UserProfileService } from '../services/user-profile.service';
   templateUrl: './auth.page.html',
   styleUrls: ['./auth.page.scss'],
   standalone: true,
-  imports: [
+  imports: [IonCardContent, IonCardHeader, IonCard,
     CommonModule,
     ReactiveFormsModule,
     IonButton,
