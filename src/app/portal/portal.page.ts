@@ -14,6 +14,8 @@ import {
   IonButton,
   IonButtons,
   IonCard,
+  IonCardContent,
+  IonCardHeader,
   IonContent,
   IonHeader,
   IonIcon,
@@ -50,6 +52,8 @@ import { UserProfileService } from '../services/user-profile.service';
     IonButtons,
     IonButtons,
     IonCard,
+    IonCardContent,
+    IonCardHeader,
     IonContent,
     IonHeader,
     IonIcon,
@@ -74,12 +78,13 @@ export class PortalPage implements OnInit {
 
   cct = '';
   pin = '';
+
   detectedOS = '';
+  toastMessage = '🛑 La clave o el PIN son incorrectos.';
+
   isIOS = false;
   isLoading = true;
   isToastOpen = false;
-  toastMessage = '🛑 La clave o el PIN son incorrectos.';
-
 
   constructor(
     private authService: AuthService,
@@ -105,6 +110,54 @@ export class PortalPage implements OnInit {
     setTimeout(() => {
       this.isLoading = false;
     }, 3000);
+  }
+
+  get isStandalone() {
+    const androidMatchMedia = window.matchMedia('(display-mode: standalone)').matches;
+    const iOSMatchMedia = (window.navigator as any).standalone;
+    return ( androidMatchMedia || iOSMatchMedia  === true);
+  }
+
+  @HostListener('window:beforeinstallprompt', ['$event'])
+  onBeforeInstallPrompt(event: Event) {
+    event.preventDefault();
+    this.installAppService.promptStatus = event;
+  }
+
+  onCloseModal() {
+    this.modal.dismiss(null, 'cancel');
+  }
+
+  async onContinue() {
+    const areValidCredentials = await this.schoolValidationService.validateCredentials(this.cct.toUpperCase(), this.pin);
+    const isCctSaved = this.cctStorageService.saveCCT(this.cct.toLocaleUpperCase());
+
+    if(areValidCredentials && isCctSaved) {
+      this.router.navigateByUrl('/auth');
+    } else {
+      this.setOpenToast(true);
+    }
+
+    this.cct = '';
+    this.pin = '';
+  }
+
+  isInvalidForm() {
+    if(this.pin === null) {
+      return true;
+    }
+
+    const isCctInvalid = this.cct.length !== 10;
+    const isPinInvalid = String(this.pin).length !== 4;
+    return isCctInvalid || isPinInvalid;
+  }
+
+  setOpenToast(openStatus: boolean) {
+    this.isToastOpen = openStatus;
+  }
+
+  showInstallAppBanner() {
+    this.installAppService.showInstallAppBanner();
   }
 
   private async checkUserProfile() {
@@ -135,60 +188,12 @@ export class PortalPage implements OnInit {
     }
   }
 
-  get isStandalone() {
-    const androidMatchMedia = window.matchMedia('(display-mode: standalone)').matches;
-    const iOSMatchMedia = (window.navigator as any).standalone;
-    return ( androidMatchMedia || iOSMatchMedia  === true);
-  }
-
-  onCloseModal() {
-    this.modal.dismiss(null, 'cancel');
-  }
-
-  getOperatingSystem() {
+  private getOperatingSystem() {
     const userAgent = navigator.userAgent;
 
-    if (/iPhone|iPad|iPod/i.test(userAgent)) return 'logo-apple';
+    if (/iPhone|iPad/i.test(userAgent)) return 'logo-apple';
     if (/Android/i.test(userAgent)) return 'logo-android';
 
     return 'laptop-outline';
-  }
-
-  isInvalidForm() {
-    if(this.pin === null) {
-      return true;
-    }
-
-    const isCctInvalid = this.cct.length !== 10;
-    const isPinInvalid = String(this.pin).length !== 4;
-    return isCctInvalid || isPinInvalid;
-  }
-
-  @HostListener('window:beforeinstallprompt', ['$event'])
-  onBeforeInstallPrompt(event: Event) {
-    event.preventDefault();
-    this.installAppService.promptStatus = event;
-  }
-
-  async onContinue() {
-    const areValidCredentials = await this.schoolValidationService.validateCredentials(this.cct.toUpperCase(), this.pin);
-    const isCctSaved = this.cctStorageService.saveCCT(this.cct.toLocaleUpperCase());
-
-    if(areValidCredentials && isCctSaved) {
-      this.router.navigateByUrl('/auth');
-    } else {
-      this.setOpenToast(true);
-    }
-
-    this.cct = '';
-    this.pin = '';
-  }
-
-  setOpenToast(openStatus: boolean) {
-    this.isToastOpen = openStatus;
-  }
-
-  showInstallAppBanner() {
-    this.installAppService.showInstallAppBanner();
   }
 }

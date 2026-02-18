@@ -9,42 +9,50 @@
   <ion-content class="card--center" color="light">
     <ion-card class="ion-padding ion-text-center">
 
-      <ion-list [inset]="true">
-        <ion-item>
-          <ion-input
-            label="Clave del Centro de Trabajo (CCT)"
-            labelPlacement="stacked"
-            placeholder="Escribe la clave aquí"
-            maxlength="10"
-            [(ngModel)]="cct"
-          >
-          </ion-input>
-        </ion-item>
-      </ion-list>
+      <ion-card-header>
+        <h2>Valida tu escuela</h2>
+      </ion-card-header>
 
-      <ion-list [inset]="true">
-          <ion-input-otp [(ngModel)]="pin">
-            <ion-label>Ingresa los 4 digitos del PIN</ion-label>
-          </ion-input-otp>
-      </ion-list>
+      <ion-card-content>
+        <ion-list [inset]="true">
+          <ion-item>
+            <ion-input
+              label="Clave del Centro de Trabajo (CCT)"
+              labelPlacement="stacked"
+              placeholder="Escribe la clave aquí"
+              maxlength="10"
+              [(ngModel)]="cct"
+            >
+            </ion-input>
+          </ion-item>
+        </ion-list>
 
-      <ion-button
-        expand="block"
-        fill="solid"
-        [disabled]="isInvalidForm()"
-        (click)="onContinue()"
-      >
-        Continuar
-      </ion-button>
+        <ion-list [inset]="true">
+            <ion-input-otp [(ngModel)]="pin">
+              <ion-label>Ingresa los 4 digitos del PIN</ion-label>
+            </ion-input-otp>
+        </ion-list>
 
-      <ion-toast
-       cssClass="page__toast"
-       [message]="toastMessage"
-       [isOpen]="isToastOpen"
-       [duration]="3000"
-       (didDismiss)="setOpenToast(false)"
-      >
-      </ion-toast>
+        <ion-button
+          expand="block"
+          fill="solid"
+          [disabled]="isInvalidForm()"
+          (click)="onContinue()"
+        >
+          Continuar
+        </ion-button>
+
+        <ion-toast
+        cssClass="page__toast"
+        [message]="toastMessage"
+        [isOpen]="isToastOpen"
+        [duration]="3000"
+        (didDismiss)="setOpenToast(false)"
+        >
+        </ion-toast>
+      </ion-card-content>
+
+      <p>Schoolify v0.1.0</p>
 
     </ion-card>
   </ion-content>

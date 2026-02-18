@@ -32,10 +32,10 @@ export class AppUpdateService {
       this.updateAvailableSubject.next(true);
     });
 
-    // Verificar si hay actualizaciones cada 24 horas
+    // Verificar si hay actualizaciones cada 6 horas
     setInterval(() => {
       this.swUpdate.checkForUpdate();
-    }, 12 * 60 * 60 * 1000);
+    }, 6 * 60 * 60 * 1000);
   }
 
   async applyUpdate(): Promise<void> {
