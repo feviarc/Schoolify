@@ -38,7 +38,9 @@ import {
   IonItemSliding,
   IonLabel,
   IonList,
+  IonListHeader,
   IonModal,
+  IonNote,
   IonProgressBar,
   IonRadio,
   IonRadioGroup,
@@ -84,7 +86,9 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     IonItemSliding,
     IonLabel,
     IonList,
+    IonListHeader,
     IonModal,
+    IonNote,
     IonProgressBar,
     IonRadio,
     IonRadioGroup,
@@ -102,7 +106,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
-  breakpoints = [0, 0.20, 0.40, 0.60, 0.80, 1];
+  breakpoints = [0, 1];
   classGrade = '';
   classLetter = '';
   groups: Group[] = [];

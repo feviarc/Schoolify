@@ -5,15 +5,15 @@
       <ion-progress-bar color="warning" type="indeterminate"></ion-progress-bar>
     }
   </ion-toolbar>
-  <ion-toolbar color="light">
+  <ion-toolbar color="secondary">
     <ion-buttons slot="primary">
-      <ion-button fill="outline" color="primary" id="classes-btn">
+      <ion-button fill="outline" color="light" id="classes-btn">
         <ion-icon name="people" slot="start"></ion-icon>
         Grupos
       </ion-button>
     </ion-buttons>
     <ion-buttons slot="primary">
-      <ion-button fill="outline" color="primary" id="courses-btn">
+      <ion-button fill="outline" color="light" id="courses-btn">
         <ion-icon name="school" slot="start"></ion-icon>
         Materias
       </ion-button>
@@ -39,14 +39,15 @@
             </ion-item-option>
             <ion-action-sheet
              trigger="delete-{{ school.id }}"
-             header="Estás a punto de eliminar"
+             header="Presiona el botón eliminar para borrar"
              subHeader="{{ school.nombre }}"
              [buttons]="actionSheetButtons"
              (didDismiss)="onDeleteSchool($event, schoolSlidingItem, school)"
+             (willDismiss)="schoolSlidingItem.close()"
             >
             </ion-action-sheet>
           </ion-item-options>
-          <ion-item class="custom-item">
+          <ion-item class="item-background__color--surface-light">
             <ion-label>
               <h2>{{ school.nombre }}</h2>
               <p>{{ school.cct }}</p>
@@ -63,17 +64,17 @@
         <!-- Modal (Actualizar escuela) -->
         <ion-modal
          trigger="edit-{{school.id}}"
-         [initialBreakpoint]="0.60"
+         [initialBreakpoint]="initialBreakpoint"
          [breakpoints]="breakpoints"
          (didDismiss)="onModalDismiss(schoolSlidingItem)"
+         (willDismiss)="schoolSlidingItem.close()"
         >
           <ng-template>
             <ion-header>
-              <ion-toolbar color="primary">
+              <ion-toolbar color="secondary">
                 <ion-buttons slot="start">
                   <ion-button (click)="closeModal('edit-'+school.id)">Cancelar</ion-button>
                 </ion-buttons>
-                <ion-title>Editar Escuela</ion-title>
                 <ion-buttons slot="end">
                   <ion-button
                    [strong]="true"
@@ -86,8 +87,10 @@
               </ion-toolbar>
             </ion-header>
             <ion-content color="light">
-                <form>
-                  <ion-list [inset]="true">
+              <form>
+                <ion-list-header>Editar Escuela</ion-list-header>
+                <ion-note>Actualiza o corrige los datos de la escuela</ion-note>
+                <ion-list [inset]="true">
                     <ion-item>
                       <ion-input
                        label="CCT (Clave del Centro de Trabajo)"
@@ -137,16 +140,15 @@
 <ion-modal
  trigger="new-school-btn"
  (willDismiss)="closeModal('new-school-btn')"
- [initialBreakpoint]="0.60"
+ [initialBreakpoint]="initialBreakpoint"
  [breakpoints]="breakpoints"
 >
   <ng-template>
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="secondary">
         <ion-buttons slot="start">
           <ion-button (click)="closeModal('new-school-btn')">Cancelar</ion-button>
         </ion-buttons>
-        <ion-title>Nueva Escuela</ion-title>
         <ion-buttons slot="end">
           <ion-button
            (click)="onAddSchool()"
@@ -161,6 +163,8 @@
     </ion-header>
     <ion-content class="ion-padding" color="light">
       <form [formGroup]="schoolForm">
+        <ion-list-header>Agregar Escuela</ion-list-header>
+        <ion-note>Registra aquí los datos de la escuela</ion-note>
         <ion-list [inset]="true">
           <ion-item>
             <ion-input
@@ -210,15 +214,17 @@
 >
   <ng-template>
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="secondary">
         <ion-buttons slot="start">
           <ion-button (click)="closeModal('classes-btn');">
             Cerrar
           </ion-button>
         </ion-buttons>
-        <ion-title>Grupos</ion-title>
       </ion-toolbar>
       <ion-grid>
+        <ion-row>
+          <ion-list-header>Agregar Grupos</ion-list-header>
+        </ion-row>
         <ion-row>
           <ion-col></ion-col>
           <ion-col>
@@ -285,15 +291,17 @@
 >
   <ng-template>
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="secondary">
         <ion-buttons slot="start">
           <ion-button (click)="closeModal('courses-btn');">
             Cerrar
           </ion-button>
         </ion-buttons>
-        <ion-title>Materias</ion-title>
       </ion-toolbar>
       <ion-grid class="background--light">
+        <ion-row>
+          <ion-list-header>Agregar Materias</ion-list-header>
+        </ion-row>
         <ion-row class="ion-align-items-center">
           <!-- Input ocupa todo el espacio disponible -->
           <ion-col size="10">
