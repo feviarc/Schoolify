@@ -1,56 +1,105 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable } from 'rxjs';
-import { UserProfile } from '../../models/user-profile.model';
-import { TeacherDataService } from 'src/app/services/teacher-data.service';
+
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 
 import {
   IonAvatar,
+  IonChip,
   IonContent,
   IonHeader,
+  IonIcon,
   IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonLabel,
   IonList,
   IonProgressBar,
-  IonToolbar,
-  IonTitle, IonChip, IonIcon } from "@ionic/angular/standalone";
+  IonTitle,
+  IonToolbar, IonActionSheet } from "@ionic/angular/standalone";
+
+import type { OverlayEventDetail } from '@ionic/core/components';
+import { Observable, Subscription } from 'rxjs';
+import { UserProfile } from 'src/app/models/user-profile.model';
+import { TeacherDataService } from 'src/app/services/teacher-data.service';
+
 
 @Component({
   selector: 'app-tab-users',
   templateUrl: './tab-users.component.html',
   styleUrls: ['./tab-users.component.scss'],
   standalone: true,
-  imports: [IonIcon, IonChip,
+  imports: [IonActionSheet,
     CommonModule,
     IonAvatar,
+    IonChip,
     IonContent,
     IonHeader,
+    IonIcon,
     IonItem,
+    IonItemOption,
+    IonItemOptions,
+    IonItemSliding,
     IonLabel,
     IonList,
     IonProgressBar,
-    IonToolbar,
     IonTitle,
+    IonToolbar,
   ]
 })
 
-export class TabUsersComponent  implements OnInit {
+export class TabUsersComponent  implements OnInit, OnDestroy {
 
-  isLoading: boolean;
   teachers$!: Observable<UserProfile[]>;
+  isLoading = true;
 
-  constructor(
-    private teacherDataService: TeacherDataService
-  ) {
-    this.isLoading = true;
-  }
+  actionSheetButtons = [
+    {
+      text: 'Eliminar',
+      role: 'destructive',
+      data: {
+        action: 'delete',
+      }
+    },
+    {
+      text: 'Cancelar',
+      role: 'cancel',
+      data: {
+        action: 'cancel',
+      },
+    },
+  ];
+
+  private sub!: Subscription;
+
+  constructor(private teacherDataService: TeacherDataService) {}
 
   ngOnInit() {
     this.teachers$ = this.teacherDataService.getTeachers();
-    this.teachers$.subscribe({
+    this.sub = this.teachers$.subscribe({
       next: () => {
         this.isLoading = false;
       }
     });
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
+  }
+
+  onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, teacher: UserProfile) {
+
+    if(!teacher.id || !event.detail.data) {
+      return;
+    }
+
+
+
+
+
   }
 }

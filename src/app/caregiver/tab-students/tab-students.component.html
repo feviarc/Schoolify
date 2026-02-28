@@ -11,7 +11,7 @@
   <ion-list>
     @for(student of studentsByTutor; track student.id) {
       <ion-item-sliding class="sliding-item-card" #studentSlidingItem>
-        <ion-item class="custom-item">
+        <ion-item class="item-background__color--surface-light">
           <ion-label>
             <h2>
               @if(student.validado) {

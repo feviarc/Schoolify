@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Usuarios</ion-title>
+    <ion-title>Docentes</ion-title>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }
@@ -15,29 +15,47 @@
       </ion-item>
     } @else {
       @for(teacher of teachers$ | async; track teacher.id) {
-        <ion-item class="user-item-card">
-          <ion-avatar slot="start">
-            <img src="../../../assets/img/avatar.svg" alt="User Avatar">
-          </ion-avatar>
-          <ion-label>
-            <h2>{{ teacher.nombre || 'NUEVO USUARIO'}}</h2>
-            <p>{{ teacher.escuela || 'No ha registrado sus datos aún'}}</p>
-            <a href="mailto://{{ teacher.email }}" target="_blank">
-              <ion-chip color="primary" outline>
-                <ion-icon name="mail"></ion-icon>
-                <ion-label>{{ teacher.email }}</ion-label>
-              </ion-chip>
-            </a>
-            @if(teacher.celular) {
-            <a href="https://api.whatsapp.com/send/?phone={{ teacher.celular }}" target="_blank">
-              <ion-chip color="success" outline>
-                <ion-icon name="logo-whatsapp"></ion-icon>
-                <ion-label>{{ teacher.celular }}</ion-label>
-              </ion-chip>
-            </a>
-            }
-          </ion-label>
-        </ion-item>
+        <ion-item-sliding class="sliding-item-card card__user" #teacherSlidingItem>
+          <ion-item-options side="start">
+            <ion-item-option id="delete-{{ teacher.id }}" color="danger">
+              <ion-icon slot="icon-only" name="trash"></ion-icon>
+            </ion-item-option>
+            <ion-action-sheet
+             trigger="delete-{{ teacher.id }}"
+             header="Presiona eliminar para borrar a"
+             subHeader="{{ teacher.nombre }}"
+             [buttons]="actionSheetButtons"
+             (willDismiss) = "teacherSlidingItem.close()";
+             (didDismiss)="onDeleteTeacher($event, teacher)"
+            >
+            </ion-action-sheet>
+          </ion-item-options>
+
+          <ion-item class="item-background__color--surface-light">
+            <ion-avatar slot="start">
+              <img src="../../../assets/img/avatar.svg" alt="User Avatar">
+            </ion-avatar>
+            <ion-label>
+              <h2>{{ teacher.nombre || 'NUEVO USUARIO'}}</h2>
+              <p>{{ teacher.escuela || 'No ha registrado sus datos aún'}}</p>
+              <a href="mailto://{{ teacher.email }}" target="_blank">
+                <ion-chip color="secondary" outline>
+                  <ion-icon name="mail"></ion-icon>
+                  <ion-label>{{ teacher.email }}</ion-label>
+                </ion-chip>
+              </a>
+              @if(teacher.celular) {
+              <a href="https://api.whatsapp.com/send/?phone={{ teacher.celular }}" target="_blank">
+                <ion-chip color="success" outline>
+                  <ion-icon name="logo-whatsapp"></ion-icon>
+                  <ion-label>{{ teacher.celular }}</ion-label>
+                </ion-chip>
+              </a>
+              }
+            </ion-label>
+          </ion-item>
+
+        </ion-item-sliding>
       }
     }
   </ion-list>
