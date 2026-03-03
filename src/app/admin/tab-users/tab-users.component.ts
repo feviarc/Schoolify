@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 
 import {
+  IonActionSheet,
   IonAvatar,
   IonChip,
   IonContent,
@@ -20,10 +21,11 @@ import {
   IonList,
   IonProgressBar,
   IonTitle,
-  IonToolbar, IonActionSheet } from "@ionic/angular/standalone";
+  IonToolbar,
+} from "@ionic/angular/standalone";
 
 import type { OverlayEventDetail } from '@ionic/core/components';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { UserProfile } from 'src/app/models/user-profile.model';
 import { TeacherDataService } from 'src/app/services/teacher-data.service';
 
@@ -33,8 +35,9 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
   templateUrl: './tab-users.component.html',
   styleUrls: ['./tab-users.component.scss'],
   standalone: true,
-  imports: [IonActionSheet,
+  imports: [
     CommonModule,
+    IonActionSheet,
     IonAvatar,
     IonChip,
     IonContent,
@@ -54,7 +57,7 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
 
 export class TabUsersComponent  implements OnInit, OnDestroy {
 
-  teachers$!: Observable<UserProfile[]>;
+  teachers: UserProfile[] = [];
   isLoading = true;
 
   actionSheetButtons = [
@@ -79,10 +82,14 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   constructor(private teacherDataService: TeacherDataService) {}
 
   ngOnInit() {
-    this.teachers$ = this.teacherDataService.getTeachers();
-    this.sub = this.teachers$.subscribe({
-      next: () => {
-        this.isLoading = false;
+
+    this.sub = this.teacherDataService.getTeachers().subscribe({
+      next: teachers => {
+        this.teachers = teachers;
+        this.isLoading = teachers.length === 0;
+      },
+      error: error => {
+        this.isLoading = true;
       }
     });
   }
@@ -94,6 +101,12 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, teacher: UserProfile) {
 
     if(!teacher.id || !event.detail.data) {
+      return;
+    }
+
+    const action = event.detail.data.action;
+
+    if(action === 'cancel') {
       return;
     }
 

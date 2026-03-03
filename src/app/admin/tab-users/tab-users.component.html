@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Docentes</ion-title>
+    <ion-title>Docentes ({{ teachers.length }})</ion-title>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }
@@ -9,24 +9,26 @@
 
 <ion-content>
   <ion-list lines="none">
-    @if((teachers$ | async)?.length === 0) {
+    @if(teachers.length === 0) {
       <ion-item>
-        <ion-label>No hay personal registrado.</ion-label>
+        <ion-label>No hay personal registrado aún.</ion-label>
       </ion-item>
     } @else {
-      @for(teacher of teachers$ | async; track teacher.id) {
+      @for(teacher of teachers; track teacher.id) {
         <ion-item-sliding class="sliding-item-card card__user" #teacherSlidingItem>
+
           <ion-item-options side="start">
+            <!-- <ion-item-option id="delete-{{ teacher.id }}" color="danger"> -->
             <ion-item-option id="delete-{{ teacher.id }}" color="danger">
               <ion-icon slot="icon-only" name="trash"></ion-icon>
             </ion-item-option>
             <ion-action-sheet
              trigger="delete-{{ teacher.id }}"
              header="Presiona el botón eliminar para borrar a"
-             subHeader="{{ teacher.nombre }}"
+             subHeader="{{ teacher.nombre || teacher.email}}"
              [buttons]="actionSheetButtons"
-             (willDismiss) = "teacherSlidingItem.close()";
              (didDismiss)="onDeleteTeacher($event, teacher)"
+             (willDismiss)="teacherSlidingItem.close()"
             >
             </ion-action-sheet>
           </ion-item-options>
@@ -54,7 +56,6 @@
               }
             </ion-label>
           </ion-item>
-
         </ion-item-sliding>
       }
     }
