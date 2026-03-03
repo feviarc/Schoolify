@@ -7,6 +7,7 @@ import { AppComponent } from './app/app.component';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFirestore, provideFirestore, enableIndexedDbPersistence } from '@angular/fire/firestore';
+import { getFunctions, provideFunctions } from '@angular/fire/functions';
 import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 
 import { environment } from './environments/environment';
@@ -31,6 +32,7 @@ bootstrapApplication(AppComponent, {
       });
       return firestore;
     }),
+    provideFunctions(() => getFunctions()),
     provideMessaging(() => getMessaging()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

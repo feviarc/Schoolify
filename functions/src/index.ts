@@ -10,6 +10,8 @@ import {getMessaging} from 'firebase-admin/messaging';
 import {initializeApp} from 'firebase-admin/app';
 import {onDocumentCreated} from 'firebase-functions/v2/firestore';
 
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {getAuth} from 'firebase-admin/auth';
 
 initializeApp();
 
@@ -319,6 +321,32 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
     } catch (error) {
       console.error('❌ Error enviando notificación:', error);
       throw error;
+    }
+  }
+);
+
+export const deleteTeacher = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    const uid = request.data.uid;
+
+    if (!uid) {
+      throw new HttpsError('invalid-argument', 'El UID del maestro es requerido.');
+    }
+
+    const db = getFirestore();
+
+    try {
+      await getAuth().deleteUser(uid);
+      await db.collection('usuarios').doc(uid).delete();
+      console.log(`🗑️ Maestro eliminado correctamente: ${uid}`);
+      return {success: true};
+    } catch (error) {
+      console.error('❌ Schoolify: [deleteTeacher]', error);
+      throw new HttpsError('internal', 'Error al eliminar el maestro.');
     }
   }
 );
