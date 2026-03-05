@@ -1,18 +1,31 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { RouteReuseStrategy, provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
-import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
-
-import { routes } from './app/app.routes';
-import { AppComponent } from './app/app.component';
+import { isDevMode } from '@angular/core';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
-import { getFirestore, provideFirestore, enableIndexedDbPersistence } from '@angular/fire/firestore';
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
 import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 
-import { environment } from './environments/environment';
-import { isDevMode } from '@angular/core';
+import {
+  initializeFirestore,
+  provideFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from '@angular/fire/firestore';
+
+import { bootstrapApplication } from '@angular/platform-browser';
+
+import {
+  PreloadAllModules,
+  provideRouter,
+  RouteReuseStrategy,
+  withPreloading,
+} from '@angular/router';
+
 import { provideServiceWorker } from '@angular/service-worker';
+import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
+import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
+import { environment } from './environments/environment';
+
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -22,15 +35,11 @@ bootstrapApplication(AppComponent, {
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAuth(() => getAuth()),
     provideFirestore(() => {
-      const firestore = getFirestore();
-      enableIndexedDbPersistence(firestore).catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.warn('⚠️ Persistencia: Múltiples pestañas abiertas. Solo funciona en una pestaña.');
-        } else if (err.code === 'unimplemented') {
-          console.warn('⚠️ Persistencia: Navegador no soportado.');
-        }
+      return initializeFirestore(initializeApp(environment.firebaseConfig), {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
       });
-      return firestore;
     }),
     provideFunctions(() => getFunctions()),
     provideMessaging(() => getMessaging()),
