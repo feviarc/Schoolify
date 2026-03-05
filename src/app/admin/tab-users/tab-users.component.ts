@@ -6,6 +6,8 @@ import {
   OnInit,
 } from '@angular/core';
 
+import { Functions, httpsCallable } from '@angular/fire/functions';
+
 import {
   IonActionSheet,
   IonAvatar,
@@ -20,7 +22,9 @@ import {
   IonLabel,
   IonList,
   IonProgressBar,
+  IonSpinner,
   IonTitle,
+  IonToast,
   IonToolbar,
 } from "@ionic/angular/standalone";
 
@@ -50,7 +54,9 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
     IonLabel,
     IonList,
     IonProgressBar,
+    IonSpinner,
     IonTitle,
+    IonToast,
     IonToolbar,
   ]
 })
@@ -59,6 +65,9 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   teachers: UserProfile[] = [];
   isLoading = true;
+  isSpinnerActive = false;
+  isToastOpen = false;
+  toastMessage = '';
 
   actionSheetButtons = [
     {
@@ -79,7 +88,10 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   private sub!: Subscription;
 
-  constructor(private teacherDataService: TeacherDataService) {}
+  constructor(
+    private functions: Functions,
+    private teacherDataService: TeacherDataService,
+  ) {}
 
   ngOnInit() {
 
@@ -98,7 +110,7 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
-  onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, teacher: UserProfile) {
+  async onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, teacher: UserProfile) {
 
     if(!teacher.id || !event.detail.data) {
       return;
@@ -110,9 +122,28 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
       return;
     }
 
+    this.isSpinnerActive = true;
 
+    try {
+      const deleteFn = httpsCallable(this.functions, 'deleteTeacher');
+      await deleteFn({ uid: teacher.uid });
 
+    } catch (error) {
+      console.error('❌ Schoolify: [tab-users.component.ts]', error);
+      this.showToast('❌ Ocurrió un error al eliminar al docente.');
 
+    } finally {
+      this.isSpinnerActive = false;
+      this.showToast(`🗑️ Se eliminó a ${teacher.nombre || teacher.email}`);
+    }
+  }
 
+  setOpenToast(isOpen: boolean) {
+    this.isToastOpen = isOpen;
+  }
+
+  private showToast(message: string) {
+    this.toastMessage = message;
+    this.isToastOpen = true;
   }
 }
