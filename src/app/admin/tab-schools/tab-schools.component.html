@@ -1,9 +1,6 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-title>Escuelas</ion-title>
-    @if(isLoadingData) {
-      <ion-progress-bar color="warning" type="indeterminate"></ion-progress-bar>
-    }
   </ion-toolbar>
   <ion-toolbar color="secondary">
     <ion-buttons slot="primary">
@@ -18,6 +15,9 @@
         Materias
       </ion-button>
     </ion-buttons>
+    @if(isLoadingData) {
+      <ion-progress-bar color="warning" type="indeterminate"></ion-progress-bar>
+    }
   </ion-toolbar>
 </ion-header>
 
@@ -37,15 +37,6 @@
             <ion-item-option id="delete-{{ school.id }}" color="danger">
               <ion-icon slot="icon-only" name="trash"></ion-icon>
             </ion-item-option>
-            <ion-action-sheet
-             trigger="delete-{{ school.id }}"
-             header="Presiona el botón eliminar para borrar"
-             subHeader="{{ school.nombre }}"
-             [buttons]="actionSheetButtons"
-             (didDismiss)="onDeleteSchool($event, schoolSlidingItem, school)"
-             (willDismiss)="schoolSlidingItem.close()"
-            >
-            </ion-action-sheet>
           </ion-item-options>
           <ion-item class="item-background__color--surface-light">
             <ion-label>
@@ -66,7 +57,6 @@
          trigger="edit-{{school.id}}"
          [initialBreakpoint]="initialBreakpoint"
          [breakpoints]="breakpoints"
-         (didDismiss)="onModalDismiss(schoolSlidingItem)"
          (willDismiss)="schoolSlidingItem.close()"
         >
           <ng-template>
@@ -123,16 +113,18 @@
             </ion-content>
           </ng-template>
         </ion-modal>
+
+        <ion-action-sheet
+          trigger="delete-{{ school.id }}"
+          header="Presiona el botón eliminar para borrar"
+          subHeader="{{ school.nombre }}"
+          [buttons]="actionSheetButtons"
+          (didDismiss)="onDeleteSchool($event, school)"
+          (willDismiss)="schoolSlidingItem.close()"
+        >
+        </ion-action-sheet>
       }
     </ion-list>
-    <ion-toast
-     cssClass="page__toast"
-     [message]="toastMessage"
-     [isOpen]="isToastOpen"
-     [duration]="3000"
-     (didDismiss)="this.setOpenToast(false)"
-    >
-    </ion-toast>
   </ion-content>
 }
 
@@ -140,8 +132,8 @@
 <ion-modal
  trigger="new-school-btn"
  (willDismiss)="closeModal('new-school-btn')"
- [initialBreakpoint]="initialBreakpoint"
  [breakpoints]="breakpoints"
+ [initialBreakpoint]="initialBreakpoint"
 >
   <ng-template>
     <ion-header>
@@ -152,9 +144,8 @@
         <ion-buttons slot="end">
           <ion-button
            (click)="onAddSchool()"
-           [strong]="true"
            [disabled]="!schoolForm.valid || isSaveButtonDisabled"
-           type="submit"
+           [strong]="true"
           >
             Guardar
           </ion-button>
@@ -286,8 +277,8 @@
 <ion-modal
  trigger="courses-btn"
  (willDismiss)="closeModal('courses-btn')"
- [initialBreakpoint]="initialBreakpoint"
  [breakpoints]="breakpoints"
+ [initialBreakpoint]="initialBreakpoint"
 >
   <ng-template>
     <ion-header>
@@ -303,7 +294,6 @@
           <ion-list-header>Agregar Materias</ion-list-header>
         </ion-row>
         <ion-row class="ion-align-items-center">
-          <!-- Input ocupa todo el espacio disponible -->
           <ion-col size="10">
             <ion-list class="margin-bottom--none" [inset]="true">
               <ion-item>
@@ -318,7 +308,6 @@
               </ion-item>
             </ion-list>
           </ion-col>
-          <!-- Botón con tamaño automático -->
           <ion-col size="2">
             <ion-button
              shape="round"
@@ -334,17 +323,16 @@
         <ion-row class="ion-align-items-center">
           <ion-col size="10">
             <ion-list class="margin-top--none margin-bottom--none" [inset]="true">
-              <ion-radio-group value="1" [compareWith]="compareWith" (ionChange)="gradeHandleChange($event)">
                 <ion-item>
-                  <ion-radio value="1" justify="space-between">Primero</ion-radio>
+                  <ion-select label="GRADO" label-placement="floating" value="1" (ionChange)="gradeHandleChange($event)">
+                    <ion-select-option value="1">Primero</ion-select-option>
+                    <ion-select-option value="2">Segundo</ion-select-option>
+                    <ion-select-option value="3">Tercero</ion-select-option>
+                    <ion-select-option value="4">Cuarto</ion-select-option>
+                    <ion-select-option value="5">Quinto</ion-select-option>
+                    <ion-select-option value="6">Sexto</ion-select-option>
+                  </ion-select>
                 </ion-item>
-                <ion-item>
-                  <ion-radio value="2" justify="space-between">Segundo</ion-radio>
-                </ion-item>
-                <ion-item>
-                  <ion-radio value="3" justify="space-between">Tercero</ion-radio>
-                </ion-item>
-              </ion-radio-group>
             </ion-list>
           </ion-col>
           <ion-col>
@@ -371,6 +359,15 @@
     </ion-content>
   </ng-template>
 </ion-modal>
+
+<ion-toast
+ cssClass="page__toast"
+ [message]="toastMessage"
+ [isOpen]="isToastOpen"
+ [duration]="3000"
+ (didDismiss)="this.setOpenToast(false)"
+>
+</ion-toast>
 
 <ion-fab slot="fixed" vertical="bottom" horizontal="end">
   <ion-fab-button size="small" id="new-school-btn">

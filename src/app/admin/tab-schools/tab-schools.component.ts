@@ -42,9 +42,9 @@ import {
   IonModal,
   IonNote,
   IonProgressBar,
-  IonRadio,
-  IonRadioGroup,
   IonRow,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonText,
   IonTitle,
@@ -58,6 +58,7 @@ import { catchError , map } from 'rxjs/operators';
 import { Group, GroupCRUDService } from 'src/app/services/group-crud.service';
 import { School, SchoolCRUDService } from 'src/app/services/school-crud.service';
 import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.service';
+
 
 @Component({
   selector: 'app-tab-schools',
@@ -90,39 +91,43 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     IonModal,
     IonNote,
     IonProgressBar,
-    IonRadio,
-    IonRadioGroup,
     IonRow,
+    IonSelect,
+    IonSelectOption,
     IonSpinner,
     IonText,
     IonTitle,
     IonToast,
     IonToolbar,
     ReactiveFormsModule,
-  ]
+]
 })
 
 export class TabSchoolsComponent implements OnInit, OnDestroy {
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
-  breakpoints = [0, 1];
   classGrade = '';
   classLetter = '';
-  groups: Group[] = [];
+  spinnerText = '';
+  subjectName = '';
+  toastMessage = '';
+
+  selectedGrade = '1';
   initialBreakpoint = 1;
+  pin = 1111;
+
   isLoadingData = true;
   isSaveButtonDisabled = false;
   isSpinnerActive = false;
   isToastOpen = false;
-  pin = 1111;
-  schoolForm!: FormGroup;
+
+  breakpoints = [0, 1];
+  groups: Group[] = [];
   schools: School[] = [];
-  selectedGrade = '1';
-  spinnerText = '';
-  subjectName = '';
   subjects: Subject[] = [];
-  toastMessage = '';
+  schoolForm!: FormGroup;
+
   private subscriptions: Subscription[] = [];
 
   public actionSheetButtons = [
@@ -141,6 +146,10 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
       },
     },
   ];
+
+  get cct() {
+    return this.schoolForm.get('cct')!;
+  }
 
   constructor(
     private formBuilder: FormBuilder,
@@ -195,26 +204,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  get cct() {
-    return this.schoolForm.get('cct')!;
-  }
-
-  private cctExistsValidator(control: AbstractControl): Observable<ValidationErrors | null> {
-    if (!control.value || control.value.length !== 10) {
-      return of(null);
-    }
-
-    return this.schoolCRUDService.cctExists(control.value).pipe(
-      map(exists => {
-        return exists ? { cctExists: true } : null;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [tab-schools.component.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
   closeModal(triggerId: string | undefined) {
     if(!triggerId) {
       return;
@@ -227,14 +216,19 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     }
 
     modal.dismiss();
+    this.selectedGrade = '1';
     this.pin = this.generatePin();
     this.schoolForm.reset({cct: '', nombre: '', pin: this.pin});
   }
 
-  private generatePin() {
-    const min = 1111;
-    const max = 9999;
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  compareWith(g1: number, g2: number) {
+    return g1 === g2;
+  }
+
+  gradeHandleChange(event: CustomEvent) {
+    const target = event.target as HTMLInputElement;
+    this.selectedGrade = target.value;
+    console.log('selectedGrade:', this.selectedGrade);
   }
 
   initForm() {
@@ -356,9 +350,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     });
   }
 
-  onDeleteSchool(event: CustomEvent<OverlayEventDetail>, slidingItem: IonItemSliding, school: School) {
-    slidingItem.close();
-
+  onDeleteSchool(event: CustomEvent<OverlayEventDetail>, school: School) {
     if(!school.id || !event.detail.data) {
       return;
     }
@@ -392,11 +384,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     });
   }
 
-  async onModalDismiss(slidingItem: IonItemSliding) {
-    await slidingItem.close();
-  }
-
-
   onUpdateSchool(school: any, nameInput: any, pinInput: any) {
     const updatedData = {
       nombre: nameInput.value.toUpperCase(),
@@ -421,17 +408,34 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.isToastOpen = isOpen;
   }
 
+  // async onModalDismiss(slidingItem: IonItemSliding) {
+  //   await slidingItem.close();
+  // }
+
+  private cctExistsValidator(control: AbstractControl): Observable<ValidationErrors | null> {
+    if (!control.value || control.value.length !== 10) {
+      return of(null);
+    }
+
+    return this.schoolCRUDService.cctExists(control.value).pipe(
+      map(exists => {
+        return exists ? { cctExists: true } : null;
+      }),
+      catchError(error => {
+        console.error('❌ Schoolify: [tab-schools.component.ts]', error);
+        return of(null);
+      })
+    );
+  }
+
+  private generatePin() {
+    const min = 1111;
+    const max = 9999;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
   private showToast(message: string) {
     this.toastMessage = message;
     this.isToastOpen = true;
-  }
-
-  compareWith(g1: number, g2: number) {
-    return g1 === g2;
-  }
-
-  gradeHandleChange(event: CustomEvent) {
-    const target = event.target as HTMLInputElement;
-    this.selectedGrade = target.value;
   }
 }
