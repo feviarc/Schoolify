@@ -218,6 +218,8 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     }
 
     modal.dismiss();
+    this.classLetter = '';
+    this.subjectName = '';
     this.selectedGrade = '1';
     this.pin = this.generatePin();
     this.schoolForm.reset({cct: '', nombre: '', pin: this.pin});
@@ -230,7 +232,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   gradeHandleChange(event: CustomEvent) {
     const target = event.target as HTMLInputElement;
     this.selectedGrade = target.value;
-    console.log('selectedGrade:', this.selectedGrade);
   }
 
   initForm() {
@@ -282,8 +283,8 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     return (isSameSchoolName && isSameSchoolPin);
   }
 
-  isValidClass() {
-    return (this.classGrade && this.classLetter ? true : false);
+  isValidClassLetter() {
+    return (this.classLetter !== '' ? true : false);
   }
 
   isValidSubject() {
@@ -292,12 +293,11 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
 
   onAddClass() {
     const group = {
-      grado: this.classGrade,
+      grado: this.selectedGrade,
       letra: this.classLetter.toLocaleUpperCase(),
-      nombre: `Grupo ${this.classGrade}° "${this.classLetter.toUpperCase()}"`
+      nombre: `Grupo ${this.selectedGrade}° "${this.classLetter.toUpperCase()}"`
     };
 
-    this.classGrade = '';
     this.classLetter = '';
 
     this.groupCRUDService.addGroup(group).subscribe({
