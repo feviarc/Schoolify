@@ -11,6 +11,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import {
   IonActionSheet,
   IonAvatar,
+  IonBadge,
   IonChip,
   IonContent,
   IonHeader,
@@ -43,6 +44,7 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
     CommonModule,
     IonActionSheet,
     IonAvatar,
+    IonBadge,
     IonChip,
     IonContent,
     IonHeader,

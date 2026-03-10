@@ -1,6 +1,13 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Docentes ({{ teachers.length }})</ion-title>
+    <ion-title>Docentes</ion-title>
+    <ion-badge
+     color="secondary"
+     slot="end"
+     class="nav_badge--margin-right"
+    >
+      {{ teachers.length }}
+    </ion-badge>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }

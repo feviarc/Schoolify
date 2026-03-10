@@ -44,8 +44,12 @@
  * Global customized rules
  */
 
+ion-badge.nav_badge--margin-right {
+  margin-right: 0.5rem;
+}
+
 ion-chip {
-  --background: #f6e338;
+  --background: #ffc409;
   --color: #222d3a;
 }
 

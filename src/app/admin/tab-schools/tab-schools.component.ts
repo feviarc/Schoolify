@@ -20,6 +20,7 @@ import {
 
 import {
   IonActionSheet,
+  IonBadge,
   IonButton,
   IonButtons,
   IonChip,
@@ -69,6 +70,7 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     CommonModule,
     FormsModule,
     IonActionSheet,
+    IonBadge,
     IonButton,
     IonButtons,
     IonChip,
@@ -100,7 +102,7 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     IonToast,
     IonToolbar,
     ReactiveFormsModule,
-]
+  ]
 })
 
 export class TabSchoolsComponent implements OnInit, OnDestroy {
@@ -128,8 +130,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   subjects: Subject[] = [];
   schoolForm!: FormGroup;
 
-  private subscriptions: Subscription[] = [];
-
   public actionSheetButtons = [
     {
       text: 'Eliminar',
@@ -150,6 +150,8 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   get cct() {
     return this.schoolForm.get('cct')!;
   }
+
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
