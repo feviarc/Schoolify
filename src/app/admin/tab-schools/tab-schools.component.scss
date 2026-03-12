@@ -4,6 +4,16 @@ h2 {
   font-weight: 500;
 }
 
+ion-label {
+  font-size: 0.8rem;
+  margin-left: 1rem;
+  margin-top: 1rem;
+}
+
+ion-note {
+  margin-left: 1rem;
+}
+
 ion-chip strong {
     font-size: 1.2rem;
 }
@@ -30,10 +40,6 @@ ion-modal.modal-classes__item ion-label > p {
   text-align: center;
 }
 
-ion-note {
-  margin-left: 1rem;
-}
-
 .add-subject-btn {
   --border-radius: 50%;
   width: 40px;
@@ -44,3 +50,7 @@ ion-note {
     font-size: 24px;
   }
 }
+
+// ion-input#sid-input {
+//   display: none;
+// }

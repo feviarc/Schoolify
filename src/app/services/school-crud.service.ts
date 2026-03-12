@@ -36,6 +36,7 @@ import {
 
 export interface School {
   id?: string;
+  sid: string;
   nombre: string;
   cct: string;
   pin: number;

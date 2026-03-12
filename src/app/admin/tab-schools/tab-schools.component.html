@@ -176,7 +176,7 @@
           @if(cct.invalid && cct.touched) {
             <ion-text color="danger" class="ion-padding">
               @if(cct.errors?.['cctExists']) {
-                <small>Esta clave ya fue registrada previamente.</small>
+                <small>La clave ya fue registrada en el turno {{ turnoCCT.value === 'TM' ? 'matutino' : 'vespertino'}}</small>
               }
             </ion-text>
           }
@@ -191,6 +191,23 @@
             >
             </ion-input>
           </ion-item>
+        </ion-list>
+        <ion-list [inset]="true">
+          <ion-label>Turno:</ion-label>
+          <ion-radio-group
+           formControlName="turno"
+           value="TM"
+           [compareWith]="compareWith"
+           (ionChange)="shiftHandleChange($event)"
+           #turnoCCT
+          >
+            <ion-item>
+              <ion-radio value="TM" justify="space-between">Matutino</ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-radio value="TV" justify="space-between">Vespertino</ion-radio>
+            </ion-item>
+          </ion-radio-group>
         </ion-list>
         <ion-list [inset]="true">
           <ion-input-otp [value]="pin" disabled>

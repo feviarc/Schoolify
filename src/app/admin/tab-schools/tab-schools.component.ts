@@ -43,6 +43,8 @@ import {
   IonModal,
   IonNote,
   IonProgressBar,
+  IonRadio,
+  IonRadioGroup,
   IonRow,
   IonSelect,
   IonSelectOption,
@@ -55,7 +57,6 @@ import {
 
 import type { OverlayEventDetail } from '@ionic/core/components';
 import { Observable, of ,Subscription } from 'rxjs';
-import { catchError , map } from 'rxjs/operators';
 import { Group, GroupCRUDService } from 'src/app/services/group-crud.service';
 import { School, SchoolCRUDService } from 'src/app/services/school-crud.service';
 import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.service';
@@ -93,6 +94,8 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     IonModal,
     IonNote,
     IonProgressBar,
+    IonRadio,
+    IonRadioGroup,
     IonRow,
     IonSelect,
     IonSelectOption,
@@ -116,6 +119,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   toastMessage = '';
 
   selectedGrade = '1';
+  selectedShift = 'TM'
   initialBreakpoint = 1;
   pin = 1111;
 
@@ -147,11 +151,11 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     },
   ];
 
+  private subscriptions: Subscription[] = [];
+
   get cct() {
     return this.schoolForm.get('cct')!;
   }
-
-  private subscriptions: Subscription[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -222,7 +226,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.subjectName = '';
     this.selectedGrade = '1';
     this.pin = this.generatePin();
-    this.schoolForm.reset({cct: '', nombre: '', pin: this.pin});
+    this.schoolForm.reset({cct: '', nombre: '', turno: 'TM', pin: this.pin});
   }
 
   compareWith(g1: number, g2: number) {
@@ -234,15 +238,16 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.selectedGrade = target.value;
   }
 
+  shiftHandleChange(event: CustomEvent) {
+    const target = event.target as HTMLInputElement;
+    this.selectedShift = target.value;
+    this.schoolForm.get('cct')?.updateValueAndValidity();
+  }
+
   initForm() {
     this.pin = this.generatePin();
 
     this.schoolForm = this.formBuilder.group({
-      nombre: ['', [
-        Validators.required,
-        Validators.minLength(15),
-        Validators.maxLength(100)
-      ]],
       cct: ['', [
           Validators.required,
           Validators.minLength(10),
@@ -250,6 +255,12 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         ],
         [this.cctExistsValidator.bind(this)]
       ],
+      nombre: ['', [
+        Validators.required,
+        Validators.minLength(15),
+        Validators.maxLength(100)
+      ]],
+      turno: ['TM'],
       pin: [this.pin]
     });
 
@@ -325,12 +336,16 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   }
 
   onAddSchool() {
-    if(!this.schoolForm) {
-      return;
-    }
+    // if(!this.schoolForm) {
+    //   return;
+    // }
 
     this.isSaveButtonDisabled = true;
     const school = this.schoolForm.value;
+    school.sid = `${school.cct}-${school.turno}`;
+
+    const existeEscuela = this.schools.map((school) => school.sid).includes(school.sid);
+    console.log(existeEscuela);
 
     this.schoolCRUDService.addSchool(school).subscribe({
       next: () => {
@@ -410,24 +425,15 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.isToastOpen = isOpen;
   }
 
-  // async onModalDismiss(slidingItem: IonItemSliding) {
-  //   await slidingItem.close();
-  // }
-
   private cctExistsValidator(control: AbstractControl): Observable<ValidationErrors | null> {
     if (!control.value || control.value.length !== 10) {
       return of(null);
     }
 
-    return this.schoolCRUDService.cctExists(control.value).pipe(
-      map(exists => {
-        return exists ? { cctExists: true } : null;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [tab-schools.component.ts]', error);
-        return of(null);
-      })
-    );
+    const sid = `${control.value}-${this.selectedShift}`;
+    const exists = this.schools.map(school => school.sid).includes(sid);
+
+    return of(exists ? { cctExists: true } : null);
   }
 
   private generatePin() {
