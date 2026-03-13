@@ -37,9 +37,10 @@ import {
 export interface School {
   id?: string;
   sid: string;
-  nombre: string;
   cct: string;
+  nombre: string;
   pin: number;
+  turno: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -48,7 +48,7 @@
           <ion-item class="item-background__color--surface-light">
             <ion-label>
               <h2>{{ school.nombre }}</h2>
-              <p>{{ school.cct }}</p>
+              <p>{{ school.sid }}</p>
             </ion-label>
             <ion-chip>PIN: <strong>{{ school.pin }}</strong></ion-chip>
           </ion-item>
@@ -110,6 +110,17 @@
                       >
                       </ion-input>
                     </ion-item>
+                  </ion-list>
+                  <ion-list [inset]="true">
+                    <ion-label>Turno:</ion-label>
+                    <ion-radio-group value="{{ school.turno }}">
+                      <ion-item>
+                        <ion-radio value="TM" justify="space-between" disabled>Matutino</ion-radio>
+                      </ion-item>
+                      <ion-item>
+                        <ion-radio value="TV" justify="space-between" disabled>Vespertino</ion-radio>
+                      </ion-item>
+                    </ion-radio-group>
                   </ion-list>
                   <ion-list [inset]="true">
                     <ion-input-otp value="{{  school.pin }}" #pinEditInput>

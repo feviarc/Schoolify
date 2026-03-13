@@ -225,6 +225,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.classLetter = '';
     this.subjectName = '';
     this.selectedGrade = '1';
+    this.selectedShift = 'TM';
     this.pin = this.generatePin();
     this.schoolForm.reset({cct: '', nombre: '', turno: 'TM', pin: this.pin});
   }
