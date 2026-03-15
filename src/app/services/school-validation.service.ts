@@ -28,10 +28,10 @@ export class SchoolValidationService {
     return this.cctpinValidSource.getValue();
   }
 
-  async validateCredentials(cct: string, pin: string): Promise<boolean> {
+  async validateCredentials(sid: string, pin: string): Promise<boolean> {
     const q = query(
       this.collectionRef,
-      where('cct', '==', cct),
+      where('sid', '==', sid),
       where('pin', '==', pin)
     );
 

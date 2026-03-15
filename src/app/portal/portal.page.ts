@@ -26,6 +26,8 @@ import {
   IonLabel,
   IonList,
   IonModal,
+  IonRadio,
+  IonRadioGroup,
   IonSpinner,
   IonTitle,
   IonToast,
@@ -34,7 +36,7 @@ import {
 
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
-import { CctStorageService } from '../services/cct-storage.service';
+import { LocalStorageService } from '../services/local-storage.service';
 import { InstallAppService } from '../services/install-app-service';
 import { SchoolValidationService } from '../services/school-validation.service';
 import { UserProfileService } from '../services/user-profile.service';
@@ -65,6 +67,8 @@ import { UserProfileService } from '../services/user-profile.service';
     IonLabel,
     IonList,
     IonModal,
+    IonRadio,
+    IonRadioGroup,
     IonSpinner,
     IonTitle,
     IonToast,
@@ -77,18 +81,28 @@ export class PortalPage implements OnInit {
   @ViewChild(IonModal) modal!: IonModal;
 
   cct = '';
+  detectedOS = '';
   pin = '';
 
-  detectedOS = '';
-  toastMessage = '🛑 La clave o el PIN son incorrectos.';
+  selectedShift = 'TM';
+  toastMessage = '🛑 Datos de validación son incorrectos.';
 
   isIOS = false;
   isLoading = true;
   isToastOpen = false;
 
+  private readonly CCT_KEY = 'schoolify_clave_centro_trabajo';
+  private readonly SHIFT_KEY = 'schoolify_turno';
+
+  get isStandalone() {
+    const androidMatchMedia = window.matchMedia('(display-mode: standalone)').matches;
+    const iOSMatchMedia = (window.navigator as any).standalone;
+    return ( androidMatchMedia || iOSMatchMedia  === true);
+  }
+
   constructor(
     private authService: AuthService,
-    private cctStorageService: CctStorageService,
+    private localStorageService: LocalStorageService,
     private router: Router,
     private schoolValidationService: SchoolValidationService,
     private userProfileService: UserProfileService,
@@ -96,10 +110,15 @@ export class PortalPage implements OnInit {
   ) {}
 
   async ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
+    const storedCCT = this.localStorageService.getKey(this.CCT_KEY);
+    const storedShift = this.localStorageService.getKey(this.SHIFT_KEY);
 
-    if(cct) {
-      this.cct = cct;
+    if(storedCCT) {
+      this.cct = storedCCT;
+    }
+
+    if(storedShift) {
+      this.selectedShift = storedShift;
     }
 
     await this.checkUserProfile();
@@ -112,34 +131,14 @@ export class PortalPage implements OnInit {
     }, 3000);
   }
 
-  get isStandalone() {
-    const androidMatchMedia = window.matchMedia('(display-mode: standalone)').matches;
-    const iOSMatchMedia = (window.navigator as any).standalone;
-    return ( androidMatchMedia || iOSMatchMedia  === true);
-  }
-
   @HostListener('window:beforeinstallprompt', ['$event'])
   onBeforeInstallPrompt(event: Event) {
     event.preventDefault();
     this.installAppService.promptStatus = event;
   }
 
-  onCloseModal() {
-    this.modal.dismiss(null, 'cancel');
-  }
-
-  async onContinue() {
-    const areValidCredentials = await this.schoolValidationService.validateCredentials(this.cct.toUpperCase(), this.pin);
-    const isCctSaved = this.cctStorageService.saveCCT(this.cct.toLocaleUpperCase());
-
-    if(areValidCredentials && isCctSaved) {
-      this.router.navigateByUrl('/auth');
-    } else {
-      this.setOpenToast(true);
-    }
-
-    this.cct = '';
-    this.pin = '';
+  compareWith(g1: number, g2: number) {
+    return g1 === g2;
   }
 
   isInvalidForm() {
@@ -152,12 +151,47 @@ export class PortalPage implements OnInit {
     return isCctInvalid || isPinInvalid;
   }
 
+  onCloseModal() {
+    this.modal.dismiss(null, 'cancel');
+  }
+
   setOpenToast(openStatus: boolean) {
     this.isToastOpen = openStatus;
   }
 
+  shiftHandleChange(event: CustomEvent) {
+    const target = event.target as HTMLInputElement;
+    this.selectedShift = target.value;
+  }
+
   showInstallAppBanner() {
     this.installAppService.showInstallAppBanner();
+  }
+
+  async onContinue() {
+    const sid = `${this.cct.toUpperCase()}-${this.selectedShift}`;
+    const areValidCredentials = await this.schoolValidationService.validateCredentials(sid, this.pin);
+    const isCctSaved = this.localStorageService.saveKey(this.CCT_KEY, this.cct.toLocaleUpperCase());
+    const isShiftSaved = this.localStorageService.saveKey(this.SHIFT_KEY, this.selectedShift);
+
+    if(areValidCredentials && isCctSaved && isShiftSaved) {
+      this.router.navigateByUrl('/auth');
+    } else {
+      this.setOpenToast(true);
+    }
+
+    this.cct = '';
+    this.pin = '';
+    this.selectedShift = 'TM';
+  }
+
+  private getOperatingSystem() {
+    const userAgent = navigator.userAgent;
+
+    if (/iPhone|iPad/i.test(userAgent)) return 'logo-apple';
+    if (/Android/i.test(userAgent)) return 'logo-android';
+
+    return 'laptop-outline';
   }
 
   private async checkUserProfile() {
@@ -186,14 +220,5 @@ export class PortalPage implements OnInit {
     } catch(error) {
       console.log('❌ Schoolify: [portal.page.ts]', error);
     }
-  }
-
-  private getOperatingSystem() {
-    const userAgent = navigator.userAgent;
-
-    if (/iPhone|iPad/i.test(userAgent)) return 'logo-apple';
-    if (/Android/i.test(userAgent)) return 'logo-android';
-
-    return 'laptop-outline';
   }
 }
