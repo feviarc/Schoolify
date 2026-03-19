@@ -337,16 +337,10 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   }
 
   onAddSchool() {
-    // if(!this.schoolForm) {
-    //   return;
-    // }
-
     this.isSaveButtonDisabled = true;
-    const school = this.schoolForm.value;
-    school.sid = `${school.cct}-${school.turno}`;
 
-    const existeEscuela = this.schools.map((school) => school.sid).includes(school.sid);
-    console.log(existeEscuela);
+    const {nombre, turno, pin, cct} = this.schoolForm.value;
+    const school = {nombre, turno, pin, cct: `${cct}${turno}`};
 
     this.schoolCRUDService.addSchool(school).subscribe({
       next: () => {
@@ -431,8 +425,8 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
       return of(null);
     }
 
-    const sid = `${control.value}-${this.selectedShift}`;
-    const exists = this.schools.map(school => school.sid).includes(sid);
+    const cctShift = `${control.value}${this.selectedShift}`;
+    const exists = this.schools.map(school => school.cct).includes(cctShift);
 
     return of(exists ? { cctExists: true } : null);
   }

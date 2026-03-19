@@ -85,7 +85,7 @@ export class PortalPage implements OnInit {
   pin = '';
 
   selectedShift = 'TM';
-  toastMessage = '🛑 Datos de validación son incorrectos.';
+  toastMessage = '🛑 Los datos de validación son incorrectos.';
 
   isIOS = false;
   isLoading = true;
@@ -151,10 +151,6 @@ export class PortalPage implements OnInit {
     return isCctInvalid || isPinInvalid;
   }
 
-  onCloseModal() {
-    this.modal.dismiss(null, 'cancel');
-  }
-
   setOpenToast(openStatus: boolean) {
     this.isToastOpen = openStatus;
   }
@@ -169,9 +165,10 @@ export class PortalPage implements OnInit {
   }
 
   async onContinue() {
-    const sid = `${this.cct.toUpperCase()}-${this.selectedShift}`;
-    const areValidCredentials = await this.schoolValidationService.validateCredentials(sid, this.pin);
-    const isCctSaved = this.localStorageService.saveKey(this.CCT_KEY, this.cct.toLocaleUpperCase());
+    const cct = this.cct.toUpperCase();
+    const cctShift = `${cct}${this.selectedShift}`;
+    const areValidCredentials = await this.schoolValidationService.validateCredentials(cctShift, this.pin);
+    const isCctSaved = this.localStorageService.saveKey(this.CCT_KEY, cct);
     const isShiftSaved = this.localStorageService.saveKey(this.SHIFT_KEY, this.selectedShift);
 
     if(areValidCredentials && isCctSaved && isShiftSaved) {

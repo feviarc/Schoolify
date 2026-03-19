@@ -59,11 +59,11 @@
         </ion-button>
 
         <ion-toast
-        cssClass="page__toast"
-        [message]="toastMessage"
-        [isOpen]="isToastOpen"
-        [duration]="3000"
-        (didDismiss)="setOpenToast(false)"
+         cssClass="page__toast"
+         [message]="toastMessage"
+         [isOpen]="isToastOpen"
+         [duration]="3000"
+         (didDismiss)="setOpenToast(false)"
         >
         </ion-toast>
       </ion-card-content>
@@ -108,18 +108,18 @@
         <ion-button
           expand="block"
           color="success"
-          id="open-modal"
+          id="install-ios-modal"
         >
           <ion-icon slot="start" [name]="detectedOS"></ion-icon>
           Instalar
         </ion-button>
 
-        <ion-modal trigger="open-modal">
+        <ion-modal trigger="install-ios-modal" #installIOSModal>
           <ng-template>
             <ion-header>
               <ion-toolbar color="primary">
                 <ion-buttons slot="start">
-                  <ion-button (click)="onCloseModal()">Cerrar</ion-button>
+                  <ion-button (click)="installIOSModal.dismiss()">Cerrar</ion-button>
                 </ion-buttons>
                 <ion-title>Instalar</ion-title>
               </ion-toolbar>
