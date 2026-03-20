@@ -36,15 +36,14 @@ import {
   IonSpinner,
   IonTitle,
   IonToast,
-  IonToolbar,
-} from "@ionic/angular/standalone";
+  IonToolbar, IonListHeader } from "@ionic/angular/standalone";
 
   import { OverlayEventDetail } from '@ionic/core/components';
   import { Subscription } from 'rxjs';
-  import { School } from 'src/app/services/school-crud.service';
   import { AuthService } from 'src/app/services/auth.service';
-  import { CctStorageService } from 'src/app/services/cct-storage.service';
   import { GroupCRUDService, Group } from 'src/app/services/group-crud.service';
+  import { LocalStorageService } from 'src/app/services/local-storage.service';
+  import { School } from 'src/app/services/school-crud.service';
   import { SchoolStateService } from 'src/app/services/school-state-service';
   import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
   import { StudentGroupCRUDService, StudentGroup } from 'src/app/services/student-group-crud.service';
@@ -55,7 +54,7 @@ import {
   templateUrl: './tab-groups.component.html',
   styleUrls: ['./tab-groups.component.scss'],
   standalone: true,
-  imports: [
+  imports: [IonListHeader,
     IonActionSheet,
     IonButton,
     IonButtons,
@@ -91,28 +90,35 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
-  breakpoints = [0, 0.40];
-  cct!: string;
-  filteredStudentsWithGroup: Student[] = [];
-  filteredStudentsWithoutGroup: Student[] = [];
-  groupsInfo: Group[] = [];
-  initialBreakpoint = 0.40;
+  pickerValue!: string;
+  selectedStudent!: any;
+  studentsCounterByGroup: any;
+
+  schoolInfo: School | null = null;
+  breakpoints = [0, 1];
+  initialBreakpoint = 1;
+
   isFirstEmission = true;
   isLoading = true;
   isSpinnerActive = false;
   isToastOpen = false;
-  pickerValue!: string;
-  schoolInfo: School | null = null;
-  selectedStudent!: any;
+
   spinnerText = '';
+  tabMessage = '';
+  toastMessage = '🛑';
+
+  filteredStudentsWithGroup: Student[] = [];
+  filteredStudentsWithoutGroup: Student[] = [];
+  groupsInfo: Group[] = [];
   studentGroups: StudentGroup[] = [];
-  studentsCounterByGroup: any;
   studentsListByGroup: Student[] = [];
   studentsWithGroup: Student[] = [];
   studentsWithoutGroup: Student[] = [];
-  tabMessage = 'No hay alumnos disponibles para asignarlos al grupo.';
-  toastMessage = '🛑';
+
   private subscriptions: Subscription[] = [];
+
+  private readonly CCT_KEY = this.localStorageService.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
   public actionSheetButtons = [
     {
@@ -151,21 +157,22 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private cctStorageService: CctStorageService,
     private groupCRUDService: GroupCRUDService,
+    private localStorageService: LocalStorageService,
     private schoolStateService: SchoolStateService,
     private studentCRUDService: StudentCRUDService,
     private studentGroupCRUDService: StudentGroupCRUDService,
   ) { }
 
   ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
+    const cct = this.localStorageService.getKey(this.CCT_KEY);
+    const shift = this.localStorageService.getKey(this.SHIFT_KEY);
+    const cctShift = `${cct}${shift}`;
 
     this.loadSchoolInfo();
     this.loadGroupsInfo();
-    this.loadStudentsGroups(this.cct);
-    this.loadStudents(this.cct);
+    this.loadStudentsGroups(cctShift);
+    this.loadStudents(cctShift);
   }
 
   ngOnDestroy() {
@@ -312,19 +319,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     this.subscriptions.push(sub);
   }
 
-  async onAddStudent(group: StudentGroup, searchbar: IonSearchbar) {
-    searchbar.value = '';
-    await this.studentCRUDService.assignGroup(this.selectedStudent.id, group.gid);
-    this.selectedStudent = null;
-  }
-
-  async onDeleteStudent(group: StudentGroup, searchbar: IonSearchbar) {
-    searchbar.value = '';
-    await this.studentCRUDService.removeGroup(this.selectedStudent.id);
-    this.loadStudentsListByGroup(group);
-    this.selectedStudent = null;
-  }
-
   onDeleteGroup(
    event: CustomEvent<OverlayEventDetail>,
    slidingItem: IonItemSliding,
@@ -417,6 +411,19 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   selectStudentHandleChange(event: Event) {
     const target = event.target as HTMLInputElement;
     this.selectedStudent = target.value;
+  }
+
+  async onAddStudent(group: StudentGroup, searchbar: IonSearchbar) {
+    searchbar.value = '';
+    await this.studentCRUDService.assignGroup(this.selectedStudent.id, group.gid);
+    this.selectedStudent = null;
+  }
+
+  async onDeleteStudent(group: StudentGroup, searchbar: IonSearchbar) {
+    searchbar.value = '';
+    await this.studentCRUDService.removeGroup(this.selectedStudent.id);
+    this.loadStudentsListByGroup(group);
+    this.selectedStudent = null;
   }
 
   private showToast(message: string) {

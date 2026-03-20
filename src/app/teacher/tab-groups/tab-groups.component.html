@@ -62,8 +62,8 @@
         <!-- Action Sheet (Eliminar Grupo) -->
         <ion-action-sheet
          trigger="delete-{{ group.gid }}"
-         header="Estás a punto de eliminar"
-         subHeader='Grupo {{ group.grado }}° "{{ group.letra }}"'
+         header="Presiona el botón Eliminar para borrar"
+         subHeader='{{ group.grado }}° "{{ group.letra }}"'
          [buttons]="actionSheetButtons"
          (didDismiss)="onDeleteGroup($event, groupSlidingItem, group)"
         >
@@ -72,8 +72,8 @@
         <!-- Modal (Agregar estudiante) -->
         <ion-modal
           trigger="add-student-{{ group.gid }}"
-          [initialBreakpoint]="1.0"
-          [breakpoints]="[0, 1.0]"
+          [initialBreakpoint]="initialBreakpoint"
+          [breakpoints]="breakpoints"
           (willDismiss)="groupSlidingItem.close()"
           (didDismiss)="onDidDismissAddStudentModal()"
           #addStudentsModal
@@ -88,7 +88,6 @@
                     Cerrar
                   </ion-button>
                 </ion-buttons>
-                <ion-title>Agregar a {{ group.grado }}° "{{ group.letra }}"</ion-title>
               </ion-toolbar>
               <ion-toolbar color="primary">
                 <ion-searchbar
@@ -101,6 +100,7 @@
               </ion-toolbar>
             </ion-header>
             <ion-content>
+              <ion-list-header>Agregar alumno a {{ group.grado }}° "{{ group.letra }}"</ion-list-header>
               @if(filteredStudentsWithoutGroup.length === 0) {
                 <div class="center-box">
                   <p>{{ tabMessage }}</p>
@@ -134,8 +134,8 @@
         <!-- Modal (Eliminar estudiante) -->
         <ion-modal
           trigger="delete-student-{{ group.gid }}"
-          [initialBreakpoint]="1.0"
-          [breakpoints]="[0, 1.0]"
+          [initialBreakpoint]="initialBreakpoint"
+          [breakpoints]="breakpoints"
           (willDismiss)="groupSlidingItem.close()"
           (willPresent)="loadStudentsListByGroup(group)"
           #deleteStudentsModal
@@ -150,7 +150,6 @@
                     Cerrar
                   </ion-button>
                 </ion-buttons>
-                <ion-title>Eliminar de {{ group.grado }}° "{{ group.letra }}"</ion-title>
               </ion-toolbar>
               <ion-toolbar color="primary">
                 <ion-searchbar
@@ -163,6 +162,7 @@
               </ion-toolbar>
             </ion-header>
             <ion-content>
+              <ion-list-header>Quitar alumno de {{ group.grado }}° "{{ group.letra }}"</ion-list-header>
               <ion-list>
                 <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
                   @for (student of studentsListByGroup; track student.id) {
@@ -202,8 +202,8 @@
 <!-- Modal (Agregar grupo) -->
 <ion-modal
  trigger="add-group-btn"
- [initialBreakpoint]="initialBreakpoint"
- [breakpoints]="breakpoints"
+ [initialBreakpoint]="0.4"
+ [breakpoints]="[0, 0.4]"
  (didDismiss)="onDidDismiss($event)"
  #addGroupModal
 >
@@ -217,7 +217,6 @@
             Cancelar
           </ion-button>
         </ion-buttons>
-        <ion-title>Grupo</ion-title>
         <ion-buttons slot="end">
           <ion-button
            [strong]="true"

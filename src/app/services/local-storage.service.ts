@@ -6,8 +6,8 @@ import { Injectable } from '@angular/core';
 
 export class LocalStorageService {
 
-  private readonly CCT_KEY = 'schoolify_clave_centro_trabajo';
-  private readonly SHIFT_KEY = 'schoolify_turno';
+  readonly CCT_KEY = 'schoolify_clave_centro_trabajo';
+  readonly SHIFT_KEY = 'schoolify_turno';
 
   constructor() { }
 

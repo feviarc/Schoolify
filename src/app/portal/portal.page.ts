@@ -91,8 +91,8 @@ export class PortalPage implements OnInit {
   isLoading = true;
   isToastOpen = false;
 
-  private readonly CCT_KEY = 'schoolify_clave_centro_trabajo';
-  private readonly SHIFT_KEY = 'schoolify_turno';
+  private readonly CCT_KEY = this.localStorageService.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
   get isStandalone() {
     const androidMatchMedia = window.matchMedia('(display-mode: standalone)').matches;
