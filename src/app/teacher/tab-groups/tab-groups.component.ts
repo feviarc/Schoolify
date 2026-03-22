@@ -25,6 +25,7 @@ import {
   IonItemSliding,
   IonLabel,
   IonList,
+  IonListHeader,
   IonModal,
   IonPicker,
   IonPickerColumn,
@@ -36,7 +37,8 @@ import {
   IonSpinner,
   IonTitle,
   IonToast,
-  IonToolbar, IonListHeader } from "@ionic/angular/standalone";
+  IonToolbar,
+} from "@ionic/angular/standalone";
 
   import { OverlayEventDetail } from '@ionic/core/components';
   import { Subscription } from 'rxjs';
@@ -379,8 +381,12 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   }
 
   onDidDismissAddStudentModal() {
-    this.selectedStudent='';
+    this.selectedStudent = '';
     this.filteredStudentsWithoutGroup = [...this.studentsWithoutGroup];
+  }
+
+  onDidDismissRemoveStudentModal() {
+    this.selectedStudent = '';
   }
 
   onIonChange(event: CustomEvent) {

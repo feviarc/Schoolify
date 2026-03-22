@@ -74,8 +74,8 @@
           trigger="add-student-{{ group.gid }}"
           [initialBreakpoint]="initialBreakpoint"
           [breakpoints]="breakpoints"
-          (willDismiss)="groupSlidingItem.close()"
           (didDismiss)="onDidDismissAddStudentModal()"
+          (willDismiss)="groupSlidingItem.close()"
           #addStudentsModal
         >
           <ng-template>
@@ -136,6 +136,7 @@
           trigger="delete-student-{{ group.gid }}"
           [initialBreakpoint]="initialBreakpoint"
           [breakpoints]="breakpoints"
+          (didDismiss)="onDidDismissRemoveStudentModal()"
           (willDismiss)="groupSlidingItem.close()"
           (willPresent)="loadStudentsListByGroup(group)"
           #deleteStudentsModal
