@@ -65,7 +65,8 @@
          header="Presiona el botón Eliminar para borrar"
          subHeader='{{ group.grado }}° "{{ group.letra }}"'
          [buttons]="actionSheetButtons"
-         (didDismiss)="onDeleteGroup($event, groupSlidingItem, group)"
+         (didDismiss)="onDeleteGroup($event, group)"
+         (willDismiss)="groupSlidingItem.close()"
         >
         </ion-action-sheet>
 
@@ -103,8 +104,11 @@
               <ion-list-header>Agregar alumno a {{ group.grado }}° "{{ group.letra }}"</ion-list-header>
               @if(filteredStudentsWithoutGroup.length === 0) {
                 <div class="center-box">
-                  <p>{{ tabMessage }}</p>
+                  <p>No hay alumnos disponibles para registrar.</p>
                 </div>
+              }
+              @else {
+                <ion-note>Haz clic sobre el nombre para seleccionarlo.</ion-note>
               }
               <ion-list>
                 <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
@@ -164,6 +168,17 @@
             </ion-header>
             <ion-content>
               <ion-list-header>Quitar alumno de {{ group.grado }}° "{{ group.letra }}"</ion-list-header>
+               @if(studentsListByGroup.length === 0) {
+                <div class="center-box">
+                  <p>No hay alumnos en este grupo.</p>
+                </div>
+              }
+              @else {
+                <ion-note>Haz clic sobre el nombre para seleccionarlo.</ion-note>
+              }
+
+
+
               <ion-list>
                 <ion-radio-group [compareWith]="selectStudentCompareWith" (ionChange)="selectStudentHandleChange($event)">
                   @for (student of studentsListByGroup; track student.id) {

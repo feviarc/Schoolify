@@ -27,6 +27,7 @@ import {
   IonList,
   IonListHeader,
   IonModal,
+  IonNote,
   IonPicker,
   IonPickerColumn,
   IonPickerColumnOption,
@@ -56,7 +57,7 @@ import {
   templateUrl: './tab-groups.component.html',
   styleUrls: ['./tab-groups.component.scss'],
   standalone: true,
-  imports: [IonListHeader,
+  imports: [
     IonActionSheet,
     IonButton,
     IonButtons,
@@ -73,7 +74,9 @@ import {
     IonItemSliding,
     IonLabel,
     IonList,
+    IonListHeader,
     IonModal,
+    IonNote,
     IonPicker,
     IonPickerColumn,
     IonPickerColumnOption,
@@ -106,7 +109,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   isToastOpen = false;
 
   spinnerText = '';
-  tabMessage = '';
+  tabMessage = 'No hay alumnos por registrar';
   toastMessage = '🛑';
 
   filteredStudentsWithGroup: Student[] = [];
@@ -196,7 +199,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   }
 
   generateGroupId(group: Group | undefined) {
-    return `${this.schoolInfo?.cct}-${group?.grado}${group?.letra}`;
+    return `${this.schoolInfo?.cct}_${group?.grado}-${group?.letra}`;
   }
 
   handleInputAddModalSearchbar(event: CustomEvent) {
@@ -321,12 +324,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     this.subscriptions.push(sub);
   }
 
-  onDeleteGroup(
-   event: CustomEvent<OverlayEventDetail>,
-   slidingItem: IonItemSliding,
-   group: StudentGroup
-  ) {
-    slidingItem.close();
+  onDeleteGroup(event: CustomEvent<OverlayEventDetail>, group: StudentGroup) {
 
     if(!event.detail.data) {
       return;

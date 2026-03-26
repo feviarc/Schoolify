@@ -39,13 +39,12 @@ import {
   IonSpinner,
   IonTitle,
   IonToast,
-  IonToolbar,
-} from "@ionic/angular/standalone";
+  IonToolbar, IonBadge } from "@ionic/angular/standalone";
 
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
+import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
-import { CctStorageService } from 'src/app/services/cct-storage.service';
 
 
 @Component({
@@ -53,7 +52,7 @@ import { CctStorageService } from 'src/app/services/cct-storage.service';
   templateUrl: './tab-students.component.html',
   styleUrls: ['./tab-students.component.scss'],
   standalone: true,
-  imports: [
+  imports: [IonBadge,
     FormsModule,
     IonActionSheet,
     IonButton,
@@ -89,11 +88,11 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
-  breakpoints = [0, 0.20, 0.40, 0.50, 0.80, 1];
+  breakpoints = [0, 1];
   cct!: string;
   filteredStudents: Student[] = [];
   formSnapshot: any;
-  initialBreakpoint = 0.50;
+  initialBreakpoint = 1;
   isFirstEmission = true;
   isLoading = true;
   isSaving = false;
@@ -104,7 +103,10 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   students: Student[] = [];
   tabMessage = 'No hay alumnos registrados todavía.';
   toastMessage = '';
+
   private subscriptions: Subscription[] = [];
+  private readonly CCT_KEY = this.localStorageService.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
   public actionSheetButtons = [
     {
@@ -138,14 +140,15 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   });
 
   constructor(
-    private cctStorageService: CctStorageService,
+    private localStorageService: LocalStorageService,
     private formBuilder: FormBuilder,
     private studentCRUDService: StudentCRUDService,
   ) {}
 
   ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
+    const cct = this.localStorageService.getKey(this.CCT_KEY);
+    const shift = this.localStorageService.getKey(this.SHIFT_KEY);
+    this.cct = `${cct}${shift}`;
     this.loadStudents();
   }
 
@@ -181,6 +184,11 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     }
 
     return {nombre, apellidoPaterno, apellidoMaterno, nombreCompleto};
+  }
+
+  getGroupFromSID(sid: string) {
+    const index = sid.indexOf('_') + 1;
+    return sid.substring(index);
   }
 
   isSameStudentData() {

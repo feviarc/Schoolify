@@ -1,6 +1,13 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-title>Administrar alumnos</ion-title>
+    <ion-badge
+     color="secondary"
+     slot="end"
+     class="nav_badge--margin-right"
+    >
+      {{ filteredStudents.length }}
+    </ion-badge>
   </ion-toolbar>
   <ion-toolbar color="primary">
     <ion-searchbar
@@ -45,7 +52,7 @@
             <h2>{{ filteredStudent.nombreCompleto }}</h2>
           </ion-label>
           @if(filteredStudent.gid) {
-            <ion-chip>{{ filteredStudent.gid.slice(-2)}}</ion-chip>
+            <ion-chip>{{ getGroupFromSID(filteredStudent.gid) }}</ion-chip>
           }
         </ion-item>
         <ion-item-options side="end">
@@ -56,8 +63,8 @@
           </ion-item-option>
           <ion-action-sheet
             trigger="delete-{{ filteredStudent.id }}"
-            header="Estás a punto de eliminar"
-            subHeader='a {{ filteredStudent.nombreCompleto }}. Con esta acción se perderán todos los datos del alumno.'
+            header="Presiona el botón Eliminar para borrar a"
+            subHeader="{{ filteredStudent.nombreCompleto }}."
             [buttons]="actionSheetButtons"
             (didDismiss)="onDeleteStudent($event, studentSlidingItem, filteredStudent)"
           >
@@ -67,7 +74,7 @@
       <!-- Modal (Actualizar Estudiante) -->
       <ion-modal
        trigger="update-{{ filteredStudent.id }}"
-       [initialBreakpoint]="0.80"
+       [initialBreakpoint]="initialBreakpoint"
        [breakpoints]="breakpoints"
        (willDismiss)="onModalDismiss(studentSlidingItem)"
        (willPresent)="loadStudentData(filteredStudent)"
@@ -83,7 +90,6 @@
                   Cancelar
                 </ion-button>
               </ion-buttons>
-              <ion-title>Actualizar</ion-title>
               <ion-buttons slot="end">
                 <ion-button
                 [disabled]="isSameStudentData() || !form.valid || isSaving"
@@ -98,10 +104,10 @@
           <ion-content class="ion-padding" color="light">
             <form [formGroup]="form">
               <ion-list-header>
-                Nombre
+                Editar
               </ion-list-header>
               <ion-note>
-                Corrige el nombre o apellidos del estudiante.
+                Modifica los datos del estudiante.
               </ion-note>
               <ion-list [inset]="true">
                 <ion-item>
@@ -189,7 +195,6 @@
             Cancelar
           </ion-button>
         </ion-buttons>
-        <ion-title>Nuevo</ion-title>
         <ion-buttons slot="end">
           <ion-button
            [disabled]="!form.valid || isSaving"
@@ -204,10 +209,10 @@
     <ion-content class="ion-padding" color="light">
       <form [formGroup]="form">
         <ion-list-header>
-          Nombre
+          Nuevo
         </ion-list-header>
         <ion-note>
-          Escribe el nombre completo del estudiante.
+          Ingresa los datos del estudiante.
         </ion-note>
         <ion-list [inset]="true">
           <ion-item>
