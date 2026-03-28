@@ -265,9 +265,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     this.isSaving = false;
   }
 
-  async onDeleteStudent(event: CustomEvent<OverlayEventDetail>, slidingItem: IonItemSliding, student: Student) {
-    slidingItem.close();
-
+  async onDeleteStudent(event: CustomEvent<OverlayEventDetail>, student: Student) {
     if(!event.detail.data || !student.id) {
       return;
     }

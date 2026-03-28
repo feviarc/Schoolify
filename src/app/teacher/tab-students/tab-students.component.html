@@ -62,11 +62,12 @@
             <ion-icon slot="icon-only" name="create"></ion-icon>
           </ion-item-option>
           <ion-action-sheet
-            trigger="delete-{{ filteredStudent.id }}"
-            header="Presiona el botón Eliminar para borrar a"
-            subHeader="{{ filteredStudent.nombreCompleto }}."
-            [buttons]="actionSheetButtons"
-            (didDismiss)="onDeleteStudent($event, studentSlidingItem, filteredStudent)"
+           trigger="delete-{{ filteredStudent.id }}"
+           header="Presiona el botón Eliminar para borrar a"
+           subHeader="{{ filteredStudent.nombreCompleto }}."
+           [buttons]="actionSheetButtons"
+           (didDismiss)="onDeleteStudent($event, filteredStudent)"
+           (willDismiss)="studentSlidingItem.close()"
           >
           </ion-action-sheet>
         </ion-item-options>
