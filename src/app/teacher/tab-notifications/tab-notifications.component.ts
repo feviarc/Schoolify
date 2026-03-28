@@ -47,7 +47,7 @@ import {
   NotificationInput,
 } from 'src/app/services/caregiver-notifications-crud.service';
 
-import { CctStorageService } from 'src/app/services/cct-storage.service';
+import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 import { StudentGroupCRUDService, StudentGroup } from 'src/app/services/student-group-crud.service';
 import { SubjectCRUDService, Subject } from 'src/app/services/subject-crud.service';
@@ -111,7 +111,11 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   subjects: Subject[] = [];
   teacherComments = '';
   toastMessage = '';
+  cctShift!: string;
   private subscriptions: Subscription[] = [];
+
+  private readonly CCT_KEY = this.localStorageService.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
   dateFormatOptions = {
     date: {
@@ -154,18 +158,17 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
 
   constructor(
     private caregiverNotifCRUDService: CaregiverNotificationsCRUDService,
-    private cctStorageService: CctStorageService,
+    private localStorageService: LocalStorageService,
     private studentCRUDService: StudentCRUDService,
     private studentGroupCRUDService: StudentGroupCRUDService,
     private subjectCRUDService: SubjectCRUDService,
   ) { }
 
   ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
-
+    const cct = this.localStorageService.getKey(this.CCT_KEY);
+    const shift = this.localStorageService.getKey(this.SHIFT_KEY);
+    this.cctShift = `${cct}${shift}`;
     this.isLoading = true;
-
     this.resetDate();
     this.loadSchoolGroups();
     this.loadSubjects();
@@ -215,7 +218,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   }
 
   loadSchoolGroups() {
-    const sub = this.studentGroupCRUDService.getStudentGroupsByCCT(this.cct).subscribe({
+    const sub = this.studentGroupCRUDService.getStudentGroupsByCCT(this.cctShift).subscribe({
       next: groups => {
         this.studentGroups = groups;
       },
@@ -261,7 +264,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   }
 
   loadStudents() {
-    const sub = this.studentCRUDService.getStudentsWithGroupByCCT(this.cct).subscribe({
+    const sub = this.studentCRUDService.getStudentsWithGroupByCCT(this.cctShift).subscribe({
       next: (students) => {
         students.sort(
           (a, b) => {
