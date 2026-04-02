@@ -48,7 +48,7 @@
           <ion-item class="item-background__color--surface-light">
             <ion-label>
               <h2>{{ school.nombre }}</h2>
-              <p>{{ school.cct }}</p>
+              <p>{{ school.cct.slice(0, 10) }} ({{ school.turno }})</p>
             </ion-label>
             <ion-chip>PIN: <strong>{{ school.pin }}</strong></ion-chip>
           </ion-item>
@@ -65,6 +65,7 @@
          [initialBreakpoint]="initialBreakpoint"
          [breakpoints]="breakpoints"
          (willDismiss)="schoolSlidingItem.close()"
+         (willPresent)="onUpdateSchoolModalWillOpen()"
         >
           <ng-template>
             <ion-header>
@@ -75,7 +76,7 @@
                 <ion-buttons slot="end">
                   <ion-button
                    [strong]="true"
-                   [disabled]="isNotDataChanged(school, nameEditInput, pinEditInput)"
+                   [disabled]="isSaveButtonDisabled"
                    (click)="onUpdateSchool(school, nameEditInput, pinEditInput)"
                   >
                     Guardar
@@ -92,7 +93,7 @@
                       <ion-input
                        label="CCT (Clave del Centro de Trabajo)"
                        labelPlacement="stacked"
-                       value="{{ school.cct }}"
+                       value="{{ school.cct.slice(0, 10) }}"
                        disabled
                       >
                       </ion-input>
@@ -106,6 +107,7 @@
                        labelPlacement="stacked"
                        maxlength="100"
                        value = "{{ school.nombre }}"
+                       (ionInput)="onEditInputChange(school, nameEditInput, pinEditInput)"
                        #nameEditInput
                       >
                       </ion-input>
@@ -123,7 +125,11 @@
                     </ion-radio-group>
                   </ion-list>
                   <ion-list [inset]="true">
-                    <ion-input-otp value="{{  school.pin }}" #pinEditInput>
+                    <ion-input-otp
+                     value="{{  school.pin }}"
+                     (ionInput)="onEditInputChange(school, nameEditInput, pinEditInput)"
+                     #pinEditInput
+                    >
                       <ion-label>PIN</ion-label>
                     </ion-input-otp>
                   </ion-list>
@@ -150,6 +156,7 @@
 <ion-modal
  trigger="new-school-btn"
  (willDismiss)="closeModal('new-school-btn')"
+ (willPresent)="onAddSchoolModalWillOpen()"
  [breakpoints]="breakpoints"
  [initialBreakpoint]="initialBreakpoint"
 >

@@ -124,7 +124,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   pin = 1111;
 
   isLoadingData = true;
-  isSaveButtonDisabled = false;
+  isSaveButtonDisabled = true;
   isSpinnerActive = false;
   isToastOpen = false;
 
@@ -285,13 +285,15 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   }
 
   isNotDataChanged(school: any, updateNameInput: any, updatePinInput: any) {
-
-    if(+updatePinInput.value < 1111) {
+    if(+updatePinInput.value < 1111 || updateNameInput.value.length < 15 ) {
       return true;
     }
 
-    const isSameSchoolName = school.nombre === updateNameInput.value ? true : false;
-    const isSameSchoolPin = school.pin === +updatePinInput.value ? true : false;
+    const schoolName: string = updateNameInput.value;
+    const schoolPin = +updatePinInput.value;
+    const isSameSchoolName = school.nombre === schoolName.toUpperCase() ? true : false;
+    const isSameSchoolPin = school.pin ===  schoolPin ? true : false;
+
     return (isSameSchoolName && isSameSchoolPin);
   }
 
@@ -345,7 +347,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     this.schoolCRUDService.addSchool(school).subscribe({
       next: () => {
         this.closeModal('new-school-btn');
-        this.isSaveButtonDisabled = false;
       },
       error: (error) => {
         console.log('❌ Schoolify: [tab-schools.component.ts]', error);
@@ -396,24 +397,34 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     });
   }
 
+  onEditInputChange(school: any, nameInput: any, pinInput: any) {
+    this.isSaveButtonDisabled = this.isNotDataChanged(school, nameInput, pinInput);
+  }
+
   onUpdateSchool(school: any, nameInput: any, pinInput: any) {
+    this.isSaveButtonDisabled = true;
+
     const updatedData = {
       nombre: nameInput.value.toUpperCase(),
       pin: +pinInput.value
     };
 
-    this.isSaveButtonDisabled = true;
-
     this.schoolCRUDService.updateSchool(school.id, updatedData).subscribe({
-      next: () => {
-        this.isSaveButtonDisabled = false;
-      },
+      next: () => {},
       error: (error) => {
         console.log('❌ Schoolify: [tab-schools.component.ts]', error);
       }
     });
 
     this.closeModal('edit-' + school.id);
+  }
+
+  onAddSchoolModalWillOpen() {
+    this.isSaveButtonDisabled = false;
+  }
+
+  onUpdateSchoolModalWillOpen() {
+    this.isSaveButtonDisabled = true;
   }
 
   setOpenToast(isOpen: boolean) {
