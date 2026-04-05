@@ -11,6 +11,7 @@
   </ion-toolbar>
   <ion-toolbar color="primary">
     <ion-searchbar
+     color="light"
      placeholder="Buscar..."
      [debounce]="500"
      (ionInput)="handleInput($event)"
@@ -83,7 +84,7 @@
       >
         <ng-template>
           <ion-header>
-            <ion-toolbar color="primary">
+            <ion-toolbar color="secondary">
               <ion-buttons slot="start">
                 <ion-button
                 (click)="closeModal('update-'+filteredStudent.id)"
@@ -188,7 +189,7 @@
 >
   <ng-template>
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="secondary">
         <ion-buttons slot="start">
           <ion-button
            (click)="closeModal('add-student-btn')"

@@ -81,7 +81,7 @@
         >
           <ng-template>
             <ion-header>
-              <ion-toolbar color="primary">
+              <ion-toolbar color="secondary">
                 <ion-buttons slot="start">
                   <ion-button
                   (click)="addStudentsModal.dismiss(null, 'cancel')"
@@ -90,8 +90,9 @@
                   </ion-button>
                 </ion-buttons>
               </ion-toolbar>
-              <ion-toolbar color="primary">
+              <ion-toolbar color="secondary">
                 <ion-searchbar
+                 color="light"
                  placeholder="Buscar..."
                  [debounce]="500"
                  (ionInput)="handleInputAddModalSearchbar($event)"
@@ -147,7 +148,7 @@
         >
           <ng-template>
             <ion-header>
-              <ion-toolbar color="primary">
+              <ion-toolbar color="secondary">
                 <ion-buttons slot="start">
                   <ion-button
                   (click)="deleteStudentsModal.dismiss(null, 'cancel')"
@@ -156,8 +157,9 @@
                   </ion-button>
                 </ion-buttons>
               </ion-toolbar>
-              <ion-toolbar color="primary">
+              <ion-toolbar color="secondary">
                 <ion-searchbar
+                 color="light"
                  placeholder="Buscar..."
                  [debounce]="500"
                  (ionInput)="handleInputDeleteModalSearchbar($event, group)"
@@ -225,7 +227,7 @@
 >
   <ng-template>
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar color="secondary">
         <ion-buttons slot="start">
           <ion-button
            (click)="addGroupModal.dismiss(null, 'cancel')"
