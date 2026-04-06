@@ -4,6 +4,7 @@
   "overrides": [
     {
       "files": ["*.ts"],
+      "plugins": ["@typescript-eslint"],
       "parserOptions": {
         "project": ["tsconfig.json"],
         "createDefaultProgram": true
@@ -33,6 +34,22 @@
             "type": "attribute",
             "prefix": "app",
             "style": "camelCase"
+          }
+        ],
+        "@typescript-eslint/member-ordering": [
+          "warn",
+          {
+            "default": [
+              "public-field",
+              "private-field",
+              "public-get",
+              "public-set",
+              "private-get",
+              "private-set",
+              "constructor",
+              "public-method",
+              "private-method"
+            ]
           }
         ]
       }
