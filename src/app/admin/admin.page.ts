@@ -23,9 +23,8 @@ import {
   ]
 })
 
-export class AdminPage implements OnInit {
+export class AdminPage {
 
   constructor() {}
 
-  ngOnInit() {}
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @angular-eslint/prefer-inject */
+
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 
@@ -23,16 +25,16 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
+  IonText,
   IonTitle,
   IonToolbar,
-  IonText
 } from '@ionic/angular/standalone';
 
 import { User } from 'firebase/auth';
 import { firstValueFrom } from 'rxjs';
 import { UserProfile } from '../models/user-profile.model'
 import { AuthService } from './../services/auth.service';
-import { CctStorageService } from '../services/cct-storage.service';
+import { LocalStorageService } from '../services/local-storage.service';
 import { SchoolCRUDService } from '../services/school-crud.service';
 import { SchoolStateService } from '../services/school-state-service';
 import { UserProfileService } from '../services/user-profile.service';
@@ -67,13 +69,15 @@ import { UserProfileService } from '../services/user-profile.service';
 
 export class CaregiverPage implements OnInit {
 
+  uid?: string;
+
   cct = '';
+  profile: UserProfile | null = null;
+  user: User | null = null;
+
   isLoading = true;
   isSavingData = false;
   isUserActive = false;
-  profile: UserProfile | null = null;
-  uid?: string;
-  user: User | null = null;
 
   form = this.formBuilder.group({
     celular: ['',[
@@ -87,11 +91,26 @@ export class CaregiverPage implements OnInit {
     escuela: ['']
   });
 
+  private readonly CCT_KEY = this.localStorage.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
+
+  get celular() {
+    return this.form.get('celular')!;
+  }
+
+  get escuela() {
+    return this.form.get('escuela');
+  }
+
+  get nombre() {
+    return this.form.get('nombre');
+  }
+
   constructor(
     private formBuilder: FormBuilder,
     private router: Router,
     private authService: AuthService,
-    private cctStorageService: CctStorageService,
+    private localStorage: LocalStorageService,
     private schoolCRUDService: SchoolCRUDService,
     private schoolStateService: SchoolStateService,
     private userProfileService: UserProfileService,
@@ -107,16 +126,32 @@ export class CaregiverPage implements OnInit {
     }, 300);
   }
 
-  get celular() {
-    return this.form.get('celular')!;
+  getSchoolName() {
+    const cct = this.localStorage.getKey(this.CCT_KEY);
+    const shift = this.localStorage.getKey(this.SHIFT_KEY);
+    const cctShift = `${cct}${shift}`;
+
+    this.schoolCRUDService.getSchoolByCCT(cctShift).subscribe({
+      next: school => {
+        if(!school) {
+          return;
+        }
+
+        this.schoolStateService.setSchool(school);
+        this.form.get('escuela')?.setValue(school?.nombre);
+      }
+    });
   }
 
-  get escuela() {
-    return this.form.get('escuela');
-  }
-
-  get nombre() {
-    return this.form.get('nombre')!;
+  onLogout() {
+    this.authService.logout().subscribe({
+      next: ()=>{
+        this.router.navigateByUrl('/auth');
+      },
+      error: error => {
+        console.log('❌ Schoolify: [caregiver.page.ts]', error);
+      }
+    });
   }
 
   async getCurrentUser() {
@@ -138,33 +173,6 @@ export class CaregiverPage implements OnInit {
     } catch(error) {
       console.log('❌ Schoolify: [caregiver.page.ts]', error);
     }
-  }
-
-  getSchoolName() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
-
-    this.schoolCRUDService.getSchoolByCCT(this.cct).subscribe({
-      next: school => {
-        if(!school) {
-          return;
-        }
-
-        this.schoolStateService.setSchool(school);
-        this.form.get('escuela')?.setValue(school?.nombre);
-      }
-    });
-  }
-
-  onLogout() {
-    this.authService.logout().subscribe({
-      next: ()=>{
-        this.router.navigateByUrl('/auth');
-      },
-      error: error => {
-        console.log('❌ Schoolify: [caregiver.page.ts]', error);
-      }
-    });
   }
 
   async onUpdateUserProfile() {
