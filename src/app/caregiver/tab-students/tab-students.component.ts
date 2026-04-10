@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+/* eslint-disable @angular-eslint/prefer-inject */
+
+import {
+  Component,
+  OnInit,
+  ViewChild, OnDestroy,
+} from '@angular/core';
 
 import {
   IonButton,
@@ -25,10 +31,9 @@ import {
 
 import { User } from 'firebase/auth'
 import { firstValueFrom, Subscription } from 'rxjs';
-
 import { UserProfile } from 'src/app/models/user-profile.model';
 import { AuthService } from 'src/app/services/auth.service';
-import { CctStorageService } from 'src/app/services/cct-storage.service';
+import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 import { UserProfileService } from 'src/app/services/user-profile.service';
 
@@ -62,33 +67,39 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
   ]
 })
 
-export class TabStudentsComponent  implements OnInit {
+export class TabStudentsComponent  implements OnInit, OnDestroy {
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
 
-  cct!: string;
-  filteredStudentsWithoutTutor: Student[] = [];
-  isLoading = true;
-  profile: UserProfile | null = null;
+  cctShift!: string;
   selectedStudent: any;
+  tid?: string;
+  uid?: string;
+  tabMessage = '';
+
+  isLoading = true;
+
+  filteredStudentsWithoutTutor: Student[] = [];
+  profile: UserProfile | null = null;
   studentsByTutor: Student[] = [];
   studentsWithoutTutor: Student[] = [];
   subscriptions: Subscription[] = [];
-  tabMessage = '';
-  tid?: string;
-  uid?: string;
   user: User | null = null;
+
+  private readonly CCT_KEY = this.localStorage.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
 
   constructor(
     private authService: AuthService,
-    private cctStorageService: CctStorageService,
+    private localStorage: LocalStorageService,
     private studentCRUDService: StudentCRUDService,
     private userProfileService: UserProfileService,
   ) { }
 
   async ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
+    const cct = this.localStorage.getKey(this.CCT_KEY);
+    const shift = this.localStorage.getKey(this.SHIFT_KEY);
+    this.cctShift = `${cct}${shift}`;
     await this.getCurrentUser();
     await this.getUserProfile();
   }

@@ -70,8 +70,8 @@ import { UserProfileService } from '../services/user-profile.service';
 export class CaregiverPage implements OnInit {
 
   uid?: string;
+  cctShift?: string;
 
-  cct = '';
   profile: UserProfile | null = null;
   user: User | null = null;
 
@@ -129,9 +129,9 @@ export class CaregiverPage implements OnInit {
   getSchoolName() {
     const cct = this.localStorage.getKey(this.CCT_KEY);
     const shift = this.localStorage.getKey(this.SHIFT_KEY);
-    const cctShift = `${cct}${shift}`;
+    this.cctShift = `${cct}${shift}`;
 
-    this.schoolCRUDService.getSchoolByCCT(cctShift).subscribe({
+    this.schoolCRUDService.getSchoolByCCT(this.cctShift).subscribe({
       next: school => {
         if(!school) {
           return;
@@ -185,7 +185,7 @@ export class CaregiverPage implements OnInit {
     const fields: Partial<UserProfile> = {};
     fields.celular = this.celular?.value ?? '';
     fields.nombre = this.nombre?.value?.trim().toUpperCase() ?? '';
-    fields.cct = this.cct;
+    fields.cct = this.cctShift;
     fields.activo = true;
 
     await this.userProfileService.updateUserProfile(this.uid, fields);

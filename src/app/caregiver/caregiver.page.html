@@ -52,7 +52,7 @@
           >
           </ion-input>
         </ion-item>
-        @if (nombre.touched && nombre.invalid) {
+        @if (nombre && nombre.touched && nombre.invalid) {
           <ion-text color="danger">
             @if (nombre.errors?.['required']) {
               <small class="ion-padding">El nombre es obligatorio.</small>
