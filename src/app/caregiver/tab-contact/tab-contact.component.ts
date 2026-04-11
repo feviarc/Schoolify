@@ -1,3 +1,5 @@
+/* eslint-disable @angular-eslint/prefer-inject */
+
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -21,7 +23,7 @@ import {
 import { OverlayEventDetail } from '@ionic/core/components';
 import { take } from 'rxjs';
 import { AuthService } from 'src/app/services/auth.service';
-import { CctStorageService } from 'src/app/services/cct-storage.service';
+import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { UserProfile } from 'src/app/models/user-profile.model';
 import { UserProfileService } from 'src/app/services/user-profile.service';
 
@@ -49,15 +51,17 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
   ]
 })
 
-export class TabContactComponent  implements OnInit {
+export class TabContactComponent implements OnInit {
 
-  cct = '';
+  cctShift = '';
   escuela = '';
-  isLoading = true;
-  teachers: UserProfile[] = [];
   telefono = '';
 
-  public logoutActionSheetButtons = [
+  isLoading = true;
+
+  teachers: UserProfile[] = [];
+
+  logoutActionSheetButtons = [
     {
       text: 'Aceptar',
       role: 'accept',
@@ -74,18 +78,22 @@ export class TabContactComponent  implements OnInit {
     },
   ];
 
+  private readonly CCT_KEY = this.localStorage.CCT_KEY;
+  private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
+
   constructor(
     private router: Router,
     private authService: AuthService,
-    private cctStorageService: CctStorageService,
+    private localStorage: LocalStorageService,
     private userProfileService: UserProfileService,
   ) {}
 
   ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
+    const cct = this.localStorage.getKey(this.CCT_KEY);
+    const shift = this.localStorage.getKey(this.SHIFT_KEY);
+    this.cctShift = `${cct}${shift}`;
 
-    this.userProfileService.getUsersByRoleAndCCT('maestro', this.cct)
+    this.userProfileService.getUsersByRoleAndCCT('maestro', this.cctShift)
     .pipe(take(1))
     .subscribe({
       next: (users) => {
