@@ -1,6 +1,13 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Notificaciones ({{ notifications.length }})</ion-title>
+    <ion-title>Notificaciones</ion-title>
+    <ion-badge
+     color="secondary"
+     slot="end"
+     class="nav_badge--margin-right"
+    >
+      {{ notifications.length }}
+    </ion-badge>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }

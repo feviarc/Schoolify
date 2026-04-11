@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+/* eslint-disable @angular-eslint/prefer-inject */
+
+import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import {
+  IonBadge,
   IonChip,
   IonContent,
   IonHeader,
@@ -11,7 +14,7 @@ import {
   IonProgressBar,
   IonText,
   IonTitle,
-  IonToolbar
+  IonToolbar,
 } from "@ionic/angular/standalone";
 
 import { User } from 'firebase/auth';
@@ -19,7 +22,6 @@ import { firstValueFrom, Subscription } from 'rxjs';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 import { AuthService } from 'src/app/services/auth.service';
 import { CaregiverNotificationsCRUDService, CaregiverNotification } from 'src/app/services/caregiver-notifications-crud.service';
-import { CctStorageService } from 'src/app/services/cct-storage.service';
 
 
 @Component({
@@ -27,7 +29,7 @@ import { CctStorageService } from 'src/app/services/cct-storage.service';
   templateUrl: './tab-notifications.component.html',
   styleUrls: ['./tab-notifications.component.scss'],
   standalone: true,
-  imports: [
+  imports: [IonBadge,
     DateFormatPipe,
     IonChip,
     IonContent,
@@ -43,24 +45,23 @@ import { CctStorageService } from 'src/app/services/cct-storage.service';
   ]
 })
 
-export class TabNotificationsComponent  implements OnInit {
+export class TabNotificationsComponent  implements OnInit, OnDestroy {
+
+  cct!: string;
+  tid?: string;
 
   isLoading = true;
-  cct!: string;
+
   user: User | null = null;
-  subscriptions: Subscription[] = [];
-  tid?: string;
   notifications: CaregiverNotification[] = [];
+  subscriptions: Subscription[] = [];
 
   constructor(
     private authService: AuthService,
     private caregiverNotifCRUDService: CaregiverNotificationsCRUDService,
-    private cctStorageService: CctStorageService,
   ) { }
 
   async ngOnInit() {
-    const cct = this.cctStorageService.getCCT();
-    this.cct = (cct !== null ? cct : '');
     await this.getCurrentUser();
     this.loadNotifications();
   }
