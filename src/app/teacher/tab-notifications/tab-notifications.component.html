@@ -104,7 +104,7 @@
                 >
                   <ng-template>
                     <ion-header>
-                      <ion-toolbar color="primary">
+                      <ion-toolbar color="secondary">
                         <ion-buttons slot="start">
                           <ion-button
                           (click)="closeModal('absence-'+student.id)"
@@ -112,7 +112,6 @@
                             Cancelar
                           </ion-button>
                         </ion-buttons>
-                        <ion-title>Inasistencia</ion-title>
                         <ion-buttons slot="end">
                           <ion-button
                           [disabled]="isAbsenceButtonDisabled"
@@ -125,6 +124,7 @@
                       </ion-toolbar>
                     </ion-header>
                     <ion-content class="ion-padding" color="light">
+                      <ion-note>Notificación de inasistencia para:</ion-note>
                       <ion-list-header>
                         {{ student.nombreCompleto }}
                       </ion-list-header>
@@ -212,7 +212,7 @@
                 >
                   <ng-template>
                     <ion-header>
-                      <ion-toolbar color="primary">
+                      <ion-toolbar color="secondary">
                         <ion-buttons slot="start">
                           <ion-button
                           (click)="closeModal('noncompliance-'+student.id)"
@@ -220,7 +220,6 @@
                             Cancelar
                           </ion-button>
                         </ion-buttons>
-                        <ion-title>Incumplimiento</ion-title>
                         <ion-buttons slot="end">
                           <ion-button
                           [disabled]="selectedSubjects.length === 0 || teacherComments === ''"
@@ -233,6 +232,7 @@
                       </ion-toolbar>
                     </ion-header>
                     <ion-content class="ion-padding" color="light">
+                      <ion-note>Notificación de incumplimiento para:</ion-note>
                       <ion-list-header>
                         {{ student.nombreCompleto }}
                       </ion-list-header>
@@ -288,7 +288,7 @@
                 >
                   <ng-template>
                     <ion-header>
-                      <ion-toolbar color="primary">
+                      <ion-toolbar color="secondary">
                         <ion-buttons slot="start">
                           <ion-button
                           (click)="closeModal('misconduct-'+student.id)"
@@ -296,7 +296,6 @@
                             Cancelar
                           </ion-button>
                         </ion-buttons>
-                        <ion-title>Indisciplina</ion-title>
                         <ion-buttons slot="end">
                           <ion-button
                           [disabled]="teacherComments === ''"
@@ -309,6 +308,7 @@
                       </ion-toolbar>
                     </ion-header>
                     <ion-content class="ion-padding" color="light">
+                      <ion-note>Notificación de indisciplina para:</ion-note>
                       <ion-list-header>
                         {{ student.nombreCompleto }}
                       </ion-list-header>
@@ -367,21 +367,21 @@
                 >
                 <ng-template>
                   <ion-header color="light">
-                    <ion-toolbar color="primary">
+                    <ion-toolbar color="secondary">
                       <ion-buttons slot="start">
                         <ion-button (click)="closeModal('history-'+student.id)">
                           Cerrar
                         </ion-button>
                       </ion-buttons>
-                      <ion-title>Historial</ion-title>
                     </ion-toolbar>
+                    <br>
+                    <ion-note>Historial de:</ion-note>
                     <ion-list-header>
-                      <br>
                       {{ student.nombreCompleto }}
                     </ion-list-header>
                     <br>
                     @if(studentNotifications.length !== 0) {
-                      <ion-note>Historial de notificaciones enviadas al tutor.</ion-note>
+                      <ion-note>Notificaciones enviadas al tutor.</ion-note>
                     }
                     @else {
                       <ion-note>No se han generado notificaciones aún.</ion-note>
