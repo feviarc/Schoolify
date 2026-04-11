@@ -189,6 +189,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     const tutorName = this.profile?.nombre ?? '';
 
     this.searchbar.value = '';
+    this.selectedStudent = null;
     await this.studentCRUDService.assignTutor(studenId, tutorId, tutorName);
   }
 
