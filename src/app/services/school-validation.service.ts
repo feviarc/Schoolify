@@ -28,7 +28,14 @@ export class SchoolValidationService {
     return this.cctpinValidSource.getValue();
   }
 
-  async validateCredentials(cct: string, pin: string): Promise<boolean> {
+  /**
+   * El PIN se guarda como number en `escuelas` (ver `School.pin`) y la igualdad de
+   * Firestore distingue tipos, asi que la consulta TIENE que ser numerica.
+   * El portal entrega un number porque `ion-input-otp` usa `type="number"` por
+   * defecto y su value accessor aplica parseFloat (null cuando el campo esta vacio).
+   * Pasar un string aqui rompe la validacion de todas las escuelas en silencio.
+   */
+  async validateCredentials(cct: string, pin: number): Promise<boolean> {
     const q = query(
       this.collectionRef,
       where('cct', '==', cct),

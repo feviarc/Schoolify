@@ -82,7 +82,12 @@ export class PortalPage implements OnInit {
 
   cct = '';
   detectedOS = '';
-  pin = '';
+  /**
+   * `ion-input-otp` usa `type="number"` por defecto y su value accessor aplica
+   * parseFloat, asi que el ngModel recibe un number (o null si esta vacio).
+   * No es un string: `validateCredentials(cct, pin: number)` depende de eso.
+   */
+  pin: number | null = null;
 
   selectedShift = 'TM';
   toastMessage = '🛑 Los datos de validación son incorrectos.';
@@ -167,7 +172,10 @@ export class PortalPage implements OnInit {
   async onContinue() {
     const cct = this.cct.toUpperCase();
     const cctShift = `${cct}${this.selectedShift}`;
-    const areValidCredentials = await this.schoolValidationService.validateCredentials(cctShift, this.pin);
+    const pin = this.pin;
+    const areValidCredentials = pin === null
+      ? false
+      : await this.schoolValidationService.validateCredentials(cctShift, pin);
     const isCctSaved = this.localStorageService.saveKey(this.CCT_KEY, cct);
     const isShiftSaved = this.localStorageService.saveKey(this.SHIFT_KEY, this.selectedShift);
 
@@ -178,7 +186,7 @@ export class PortalPage implements OnInit {
     }
 
     this.cct = '';
-    this.pin = '';
+    this.pin = null;
     this.selectedShift = 'TM';
   }
 
