@@ -1,5 +1,5 @@
 import { isDevMode } from '@angular/core';
-import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
 import { getMessaging, provideMessaging } from '@angular/fire/messaging';
@@ -35,7 +35,7 @@ bootstrapApplication(AppComponent, {
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideAuth(() => getAuth()),
     provideFirestore(() => {
-      return initializeFirestore(initializeApp(environment.firebaseConfig), {
+      return initializeFirestore(getApp(), {
         localCache: persistentLocalCache({
           tabManager: persistentMultipleTabManager()
         })
