@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
+  arrayRemove,
   arrayUnion,
   doc,
   Firestore,
@@ -12,10 +13,18 @@ import { Platform } from '@ionic/angular/standalone';
 import { environment } from '../../environments/environment';
 
 
+/**
+ * Plazo maximo para dar de baja el token. El cierre de sesion es una operacion
+ * critica: nunca puede quedarse esperando a FCM, al service worker ni a Firestore.
+ */
+const TOKEN_REMOVAL_DEADLINE_MS = 1_000;
+
+
 @Injectable({providedIn: 'root'})
 export class NotificationService {
 
-  private currentToken: string | null = null;
+  /** Token de ESTE dispositivo para esta sesion. Tras recargar la app queda en null. */
+  protected currentToken: string | null = null;
 
   constructor(
     private messaging: Messaging,
@@ -177,30 +186,44 @@ export class NotificationService {
   }
 
   /**
-   * Elimina el token cuando el usuario cierra sesión
+   * Da de baja de las notificaciones el token de ESTE dispositivo.
+   * Se invoca al cerrar sesión: sin esto el equipo sigue recibiendo los avisos
+   * de la cuenta que acaba de salir.
+   *
+   * Toda la operacion va acotada por un plazo, para que el logout no pueda
+   * quedarse bloqueado por un tercero que no responde.
    */
   async deleteToken(): Promise<void> {
     try {
-      if (this.currentToken && this.auth.currentUser) {
-        const userId = this.auth.currentUser.uid;
-        const userRef = doc(this.firestore, `usuarios/${userId}`);
-
-        // Remover el token del array
-        await setDoc(userRef,
-          {
-            tokens: [],
-            lastTokenUpdate: serverTimestamp()
-          },
-          {
-            merge: true
-          }
-        );
-
-        this.currentToken = null;
-      }
+      await this.withDeadline(this.removeDeviceToken(), TOKEN_REMOVAL_DEADLINE_MS);
     } catch (error) {
       console.error('❌ Schoolify: [notification.service.ts]', error);
     }
+  }
+
+  private async removeDeviceToken(): Promise<void> {
+    const user = this.auth.currentUser;
+
+    if(!user || !this.isNotificationSupported()) {
+      return;
+    }
+
+    const token = await this.resolveTokenForRemoval();
+
+    if(!token) {
+      return;
+    }
+
+    await this.persistTokenRemoval(user.uid, token);
+    this.currentToken = null;
+  }
+
+  /** Resuelve cuando `work` termina o cuando vence el plazo, lo que ocurra primero. */
+  private withDeadline(work: Promise<void>, ms: number): Promise<void> {
+    return Promise.race([
+      work,
+      new Promise<void>(resolve => setTimeout(resolve, ms)),
+    ]);
   }
 
   /**
@@ -223,5 +246,66 @@ export class NotificationService {
    */
   hasPermission(): boolean {
     return this.getPermissionStatus() === 'granted';
+  }
+
+  /**
+   * Payload que quita SOLO el token indicado. No usar `tokens: []`: reemplazaria
+   * el array completo y dejaria sin avisos a los demas equipos del mismo usuario.
+   */
+  protected buildTokenRemovalPayload(token: string) {
+    return {
+      tokens: arrayRemove(token),
+      lastTokenUpdate: serverTimestamp()
+    };
+  }
+
+  protected async persistTokenRemoval(uid: string, token: string): Promise<void> {
+    const userRef = doc(this.firestore, `usuarios/${uid}`);
+
+    await setDoc(userRef, this.buildTokenRemovalPayload(token), {
+      merge: true
+    });
+  }
+
+  /**
+   * Token de este dispositivo: el de la sesion en curso o, si la app se recargo,
+   * el ya registrado en el navegador.
+   */
+  protected resolveTokenForRemoval(): Promise<string | null> {
+    if(this.currentToken) {
+      return Promise.resolve(this.currentToken);
+    }
+
+    return this.readRegisteredToken();
+  }
+
+  /**
+   * Recupera el token ya registrado sin volver a pedir permiso.
+   *
+   * OJO: no usar `navigator.serviceWorker.ready`. Esa promesa NUNCA se resuelve si
+   * no hay un service worker activo (por ejemplo en desarrollo, donde el SW esta
+   * deshabilitado), y colgaria el cierre de sesion. `getRegistration()` resuelve
+   * siempre; si no hay registro, es que no hay token que dar de baja.
+   */
+  protected async readRegisteredToken(): Promise<string | null> {
+    if(!this.isNotificationSupported() || Notification.permission !== 'granted') {
+      return null;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+
+      if(!registration) {
+        return null;
+      }
+
+      return await getToken(this.messaging, {
+        vapidKey: environment.vapidKey,
+        serviceWorkerRegistration: registration
+      });
+    } catch (error) {
+      console.error('❌ Schoolify: [notification.service.ts]', error);
+      return null;
+    }
   }
 }

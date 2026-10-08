@@ -18,13 +18,19 @@ import {
   setDoc,
 } from '@angular/fire/firestore';
 
+import { NotificationService } from './notification.service';
+
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
   private user: Observable<User | null>;
 
-  constructor(private auth: Auth, private firestore: Firestore) {
+  constructor(
+    private auth: Auth,
+    private firestore: Firestore,
+    private notificationService: NotificationService
+  ) {
     this.user = new Observable(observer => {
       onAuthStateChanged(this.auth, user => {
         observer.next(user);
@@ -78,7 +84,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return from(signOut(this.auth));
+    return from(this.unregisterNotificationsAndSignOut());
   }
 
   getCurrentUser(): Observable<User | null> {
@@ -87,6 +93,16 @@ export class AuthService {
 
   resetPassword(email: string): Observable<void> {
     return from(sendPasswordResetEmail(this.auth, email));
+  }
+
+  /**
+   * La baja de las notificaciones va ANTES del signOut: la escritura en Firestore
+   * debe ocurrir con el usuario todavia autenticado. `deleteToken()` no lanza
+   * nunca, asi que el logout no puede fallar por culpa de las notificaciones.
+   */
+  private async unregisterNotificationsAndSignOut(): Promise<void> {
+    await this.notificationService.deleteToken();
+    await signOut(this.auth);
   }
 
 }
