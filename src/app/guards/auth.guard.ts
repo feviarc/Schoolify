@@ -3,8 +3,6 @@ import {
   ActivatedRouteSnapshot,
   CanActivate,
   CanActivateChild,
-  GuardResult,
-  MaybeAsync,
   Router,
   RouterStateSnapshot,
   UrlTree
@@ -18,8 +16,6 @@ import { UserProfileService } from '../services/user-profile.service';
 
 export class AuthGuard implements CanActivate, CanActivateChild {
 
-  private isCanActivate: boolean = false;
-
   constructor(
     private authService: AuthService,
     private userProfileService: UserProfileService,
@@ -27,6 +23,33 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   ) { }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
+    return this.checkAccess(route);
+  }
+
+  canActivateChild(childRoute: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
+    return this.checkAccess(this.findRoleOwner(childRoute));
+  }
+
+  /**
+   * El `data.expectedRole` vive en la ruta que declara el guard, no en el hijo:
+   * con la estrategia de herencia por defecto ('emptyOnly') los hijos no heredan
+   * `data` cuando el padre tiene componente propio.
+   * El router entrega el snapshot hoja, así que se sube por los ancestros.
+   */
+  private findRoleOwner(childRoute: ActivatedRouteSnapshot): ActivatedRouteSnapshot {
+    let route: ActivatedRouteSnapshot | null = childRoute.parent;
+
+    while (route) {
+      if (route.data['expectedRole']) {
+        return route;
+      }
+      route = route.parent;
+    }
+
+    return childRoute;
+  }
+
+  private checkAccess(route: ActivatedRouteSnapshot): Observable<boolean | UrlTree> {
 
     const expectedRole = route.data['expectedRole'];
 
@@ -44,8 +67,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
         return this.userProfileService.getUserProfile(user.uid).pipe(
           map(profile => {
             if(profile && profile.rol === expectedRole) {
-              this.isCanActivate = true;
-              return this.isCanActivate;
+              return true;
             } else {
               return this.router.createUrlTree(['/portal']);
             }
@@ -53,10 +75,6 @@ export class AuthGuard implements CanActivate, CanActivateChild {
         );
       })
     );
-  }
-
-  canActivateChild(childRoute: ActivatedRouteSnapshot, state: RouterStateSnapshot): MaybeAsync<GuardResult> {
-    return this.isCanActivate;
   }
 
 }
