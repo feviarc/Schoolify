@@ -16,6 +16,24 @@ import {getAuth} from 'firebase-admin/auth';
 initializeApp();
 
 
+/**
+ * ngsw (el service worker que recibe el push) decide a donde navegar al hacer clic
+ * leyendo `notification.data.onActionClick[accion]`. Sin esto el clic cierra la
+ * notificacion y no abre nada. `navigateLastFocusedOrOpen` reutiliza la ventana
+ * abierta en lugar de abrir una nueva.
+ */
+function buildClickAction(route: string): {[key: string]: unknown} {
+  return {
+    onActionClick: {
+      default: {
+        operation: 'navigateLastFocusedOrOpen',
+        url: route,
+      },
+    },
+  };
+}
+
+
 export const onNewUserNotification = onDocumentCreated('usuarios/{userId}/notificaciones/{notificationId}',
   async (event) => {
     const snapshot = event.data;
@@ -98,10 +116,12 @@ async function handleTutorNotification(
     const notificationTitle = `Aviso de ${tipo}`;
     const notificationBody = `Tienes un aviso de ${tipo} para ${nombreCompleto}`;
 
+    const notificationRoute = '/caregiver-dashboard/tab-notifications';
+
     const notificationDataPayload: {[key: string]: string} = {
       nombreCompleto: nombreCompleto || '',
       notificationId: notificationId,
-      route: '/caregiver-dashboard/tab-notifications',
+      route: notificationRoute,
       sid: sid || '',
       tipo: tipo || '',
       type: 'caregiver_notification',
@@ -124,6 +144,7 @@ async function handleTutorNotification(
         notification: {
           icon: 'https://schoolify-mx.web.app/assets/icons/icon-192x192.png',
           badge: 'https://schoolify-mx.web.app/assets/icons/icon-32x32.png',
+          data: buildClickAction(notificationRoute),
         },
       },
     };
@@ -251,6 +272,8 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
 
       console.log(`📱 Enviando notificación a ${adminTokens.length} dispositivos`);
 
+      const notificationRoute = '/admin-dashboard/tab-notifications';
+
       const message = {
         notification: {
           title: 'Nuevo Usuario:',
@@ -261,13 +284,14 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
           userId: userId,
           userEmail: newUser.email || '',
           userRole: newUser.rol || '',
-          route: '/admin-dashboard/tab-notifications',
+          route: notificationRoute,
         },
         tokens: adminTokens,
         webpush: {
           notification: {
             icon: 'https://schoolify-mx.web.app/assets/icons/icon-192x192.png',
             badge: 'https://schoolify-mx.web.app/assets/icons/icon-32x32.png',
+            data: buildClickAction(notificationRoute),
           },
         },
       };
