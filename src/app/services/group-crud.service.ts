@@ -7,14 +7,11 @@ import {
   CollectionReference,
   deleteDoc,
   doc,
-  docData,
-  DocumentReference,
   Firestore,
   getDoc,
   getDocs,
   orderBy,
   query,
-  updateDoc,
   where,
 } from '@angular/fire/firestore';
 
@@ -121,108 +118,6 @@ export class GroupCRUDService {
   }
 
   /**
-   * Get all groups (one-time snapshot, not real-time)
-   * @returns Observable with array of groups
-   */
-  getGroupsSnapshot(): Observable<Group[]> {
-    const q = query(
-      this.groupsCollection,
-      orderBy('grado', 'asc'),
-      orderBy('letra', 'asc')
-    );
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const groups: Group[] = [];
-        querySnapshot.forEach(doc => {
-          groups.push({
-            id: doc.id,
-            ...doc.data()
-          } as Group);
-        });
-        return groups;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return throwError(() => new Error('Could not get groups'));
-      })
-    );
-  }
-
-  /**
-   * Get a group by ID as Observable
-   * Subscribes to real-time changes
-   * @param groupId - Document ID
-   * @returns Observable with group data
-   */
-  getGroupById(groupId: string): Observable<Group | null> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, groupId) as DocumentReference;
-
-    return docData(docRef, { idField: 'id' }).pipe(
-      map(data => data ? data as Group : null),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Get a group by ID (one-time snapshot)
-   * @param groupId - Document ID
-   * @returns Observable with group data or null
-   */
-  getGroupByIdSnapshot(groupId: string): Observable<Group | null> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, groupId);
-
-    return from(getDoc(docRef)).pipe(
-      map(docSnap => {
-        if (docSnap.exists()) {
-          return {
-            id: docSnap.id,
-            ...docSnap.data()
-          } as Group;
-        }
-        return null;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Search groups by grade (grado)
-   * @param grado - Grade (e.g., "1", "2", "3")
-   * @returns Observable with array of groups
-   */
-  getGroupsByGrade(grado: string): Observable<Group[]> {
-    const q = query(
-      this.groupsCollection,
-      where('grado', '==', grado),
-      orderBy('letra', 'asc')
-    );
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const groups: Group[] = [];
-        querySnapshot.forEach(doc => {
-          groups.push({
-            id: doc.id,
-            ...doc.data()
-          } as Group);
-        });
-        return groups;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return of([]);
-      })
-    );
-  }
-
-  /**
    * Search group by grade and letter
    * @param grado - Grade (e.g., "1", "2", "3")
    * @param letra - Letter (e.g., "A", "B", "C")
@@ -249,41 +144,6 @@ export class GroupCRUDService {
       catchError(error => {
         console.error('❌ Schoolify: [group-crud.service.ts]', error);
         return of(null);
-      })
-    );
-  }
-
-  /**
-   * Edit/update an existing group
-   * @param groupId - Document ID
-   * @param updatedData - Data to update (partial)
-   * @returns Observable<void>
-   */
-  updateGroup(
-    groupId: string,
-    updatedData: Partial<Omit<Group, 'id' | 'createdAt'>>
-  ): Observable<void> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, groupId);
-
-    return from(getDoc(docRef)).pipe(
-      switchMap(docSnap => {
-        if (!docSnap.exists()) {
-          return throwError(() => new Error('Group does not exist'));
-        }
-
-        const dataWithTimestamp = {
-          ...updatedData,
-          updatedAt: new Date()
-        };
-
-        return from(updateDoc(docRef, dataWithTimestamp));
-      }),
-      tap(() => {
-        this.loadGroups(); // Update list
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return throwError(() => new Error('Could not update group'));
       })
     );
   }
@@ -333,51 +193,5 @@ export class GroupCRUDService {
         return true;
       })
     );
-  }
-
-  /**
-   * Search groups by name (partial search)
-   * @param searchTerm - Search term
-   * @returns Observable with array of matching groups
-   */
-  searchGroupsByName(searchTerm: string): Observable<Group[]> {
-    return this.getGroupsSnapshot().pipe(
-      map(groups => {
-        const termLowerCase = searchTerm.toLowerCase();
-        return groups.filter(group =>
-          group.nombre.toLowerCase().includes(termLowerCase)
-        );
-      })
-    );
-  }
-
-  /**
-   * Count total registered groups
-   * @returns Observable<number>
-   */
-  countGroups(): Observable<number> {
-    return from(getDocs(this.groupsCollection)).pipe(
-      map(querySnapshot => querySnapshot.size),
-      catchError(error => {
-        console.error('❌ Schoolify: [group-crud.service.ts]', error);
-        return of(0);
-      })
-    );
-  }
-
-  /**
-   * Manually refresh groups list
-   * Useful to force an update
-   */
-  refreshGroups(): void {
-    this.loadGroups();
-  }
-
-  /**
-   * Get current groups value without subscription
-   * @returns Current array of groups
-   */
-  getCurrentGroups(): Group[] {
-    return this.groupsSubject.value;
   }
 }

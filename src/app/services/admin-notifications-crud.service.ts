@@ -9,12 +9,9 @@ import {
   doc,
   Firestore,
   getDoc,
-  getDocs,
   orderBy,
   query,
   updateDoc,
-  where,
-  writeBatch,
 } from '@angular/fire/firestore';
 
 import {
@@ -61,24 +58,6 @@ export class AdminNotificationsCRUDService {
 
   // Current user ID (debe ser establecido al iniciar sesión)
   private currentUserId: string | null = null;
-
-  /**
-   * Set the current user ID
-   * DEBE llamarse al iniciar sesión o al inicializar el servicio
-   * @param userId - User ID
-   */
-  setCurrentUser(userId: string): void {
-    this.currentUserId = userId;
-    this.loadNotifications();
-  }
-
-  /**
-   * Get current user ID
-   * @returns Current user ID or null
-   */
-  getCurrentUserId(): string | null {
-    return this.currentUserId;
-  }
 
   /**
    * Get notifications collection reference for a user
@@ -163,101 +142,6 @@ export class AdminNotificationsCRUDService {
   }
 
   /**
-   * Get all notifications (snapshot)
-   * @param userId - User ID
-   * @returns Observable with array of notifications
-   */
-  getNotificationsSnapshot(userId: string): Observable<Notification[]> {
-    const notificationsCol = this.getNotificationsCollection(userId);
-    const q = query(notificationsCol, orderBy('createdAt', 'desc'));
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const notifications: Notification[] = [];
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          notifications.push({
-            id: doc.id,
-            ...data,
-            createdAt: data['createdAt']?.toDate?.() || data['createdAt']
-          } as Notification);
-        });
-        return notifications;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return throwError(() => new Error('Could not get notifications'));
-      })
-    );
-  }
-
-  /**
-   * Get unread notifications only (status: 'unread')
-   * @param userId - User ID
-   * @returns Observable with array of unread notifications
-   */
-  getUnreadNotifications(userId: string): Observable<Notification[]> {
-    const notificationsCol = this.getNotificationsCollection(userId);
-    const q = query(
-      notificationsCol,
-      where('status', '==', 'unread'),
-      orderBy('createdAt', 'desc')
-    );
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const notifications: Notification[] = [];
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          notifications.push({
-            id: doc.id,
-            ...data,
-            createdAt: data['createdAt']?.toDate?.() || data['createdAt']
-          } as Notification);
-        });
-        return notifications;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return of([]);
-      })
-    );
-  }
-
-  /**
-   * Get archived notifications only (status: 'archived')
-   * @param userId - User ID
-   * @returns Observable with array of archived notifications
-   */
-  getArchivedNotifications(userId: string): Observable<Notification[]> {
-    const notificationsCol = this.getNotificationsCollection(userId);
-    const q = query(
-      notificationsCol,
-      where('status', '==', 'archived'),
-      orderBy('createdAt', 'desc')
-    );
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const notifications: Notification[] = [];
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          notifications.push({
-            id: doc.id,
-            ...data,
-            createdAt: data['createdAt']?.toDate?.() || data['createdAt']
-          } as Notification);
-        });
-        return notifications;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return of([]);
-      })
-    );
-  }
-
-  /**
    * Get a notification by ID
    * @param userId - User ID
    * @param notificationId - Notification ID
@@ -332,66 +216,6 @@ export class AdminNotificationsCRUDService {
   }
 
   /**
-   * Mark a notification as archived
-   * @param userId - User ID
-   * @param notificationId - Notification ID
-   * @returns Observable<void>
-   */
-  markAsArchived(userId: string, notificationId: string): Observable<void> {
-    return this.updateNotification(userId, notificationId, { status: 'archived' });
-  }
-
-  /**
-   * Mark a notification as unarchived (unread)
-   * @param userId - User ID
-   * @param notificationId - Notification ID
-   * @returns Observable<void>
-   */
-  markAsUnarchived(userId: string, notificationId: string): Observable<void> {
-    return this.updateNotification(userId, notificationId, { status: 'unread' });
-  }
-
-  /**
-   * Mark all notifications as archived
-   * Uses batch write for efficiency
-   * @param userId - User ID
-   * @returns Observable<void>
-   */
-  markAllAsArchived(userId: string): Observable<void> {
-    return this.getUnreadNotifications(userId).pipe(
-      switchMap(notifications => {
-        if (notifications.length === 0) {
-          return of(void 0);
-        }
-
-        const batch = writeBatch(this.firestore);
-
-        notifications.forEach(notification => {
-          const docRef = doc(
-            this.firestore,
-            this.USERS_COLLECTION,
-            userId,
-            this.NOTIFICATIONS_SUBCOLLECTION,
-            notification.id!
-          );
-          batch.update(docRef, { status: 'archived' });
-        });
-
-        return from(batch.commit());
-      }),
-      tap(() => {
-        if (userId === this.currentUserId) {
-          this.loadNotifications();
-        }
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return throwError(() => new Error('Could not mark all as archived'));
-      })
-    );
-  }
-
-  /**
    * Delete a single notification
    * @param userId - User ID
    * @param notificationId - Notification ID
@@ -423,141 +247,5 @@ export class AdminNotificationsCRUDService {
         return throwError(() => new Error('Could not delete notification'));
       })
     );
-  }
-
-  /**
-   * Delete all archived notifications
-   * Uses batch delete for efficiency
-   * @param userId - User ID
-   * @returns Observable<void>
-   */
-  deleteArchivedNotifications(userId: string): Observable<void> {
-    return this.getArchivedNotifications(userId).pipe(
-      switchMap(notifications => {
-        if (notifications.length === 0) {
-          return of(void 0);
-        }
-
-        const batch = writeBatch(this.firestore);
-
-        notifications.forEach(notification => {
-          const docRef = doc(
-            this.firestore,
-            this.USERS_COLLECTION,
-            userId,
-            this.NOTIFICATIONS_SUBCOLLECTION,
-            notification.id!
-          );
-          batch.delete(docRef);
-        });
-
-        return from(batch.commit());
-      }),
-      tap(() => {
-        if (userId === this.currentUserId) {
-          this.loadNotifications();
-        }
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return throwError(() => new Error('Could not delete archived notifications'));
-      })
-    );
-  }
-
-  /**
-   * Clear all notifications (delete entire collection)
-   * Uses batch delete for efficiency (max 500 per batch)
-   * @param userId - User ID
-   * @returns Observable<void>
-   */
-  clearAllNotifications(userId: string): Observable<void> {
-    return this.getNotificationsSnapshot(userId).pipe(
-      switchMap(notifications => {
-        if (notifications.length === 0) {
-          return of(void 0);
-        }
-
-        // Firestore batch limit is 500 operations
-        const batchSize = 500;
-        const batches: Promise<void>[] = [];
-
-        for (let i = 0; i < notifications.length; i += batchSize) {
-          const batch = writeBatch(this.firestore);
-          const batchNotifications = notifications.slice(i, i + batchSize);
-
-          batchNotifications.forEach(notification => {
-            const docRef = doc(
-              this.firestore,
-              this.USERS_COLLECTION,
-              userId,
-              this.NOTIFICATIONS_SUBCOLLECTION,
-              notification.id!
-            );
-            batch.delete(docRef);
-          });
-
-          batches.push(batch.commit());
-        }
-
-        return from(Promise.all(batches)).pipe(map(() => void 0));
-      }),
-      tap(() => {
-        if (userId === this.currentUserId) {
-          this.loadNotifications();
-        }
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return throwError(() => new Error('Could not clear all notifications'));
-      })
-    );
-  }
-
-  /**
-   * Count unread notifications
-   * @param userId - User ID
-   * @returns Observable<number>
-   */
-  countUnread(userId: string): Observable<number> {
-    return this.getUnreadNotifications(userId).pipe(
-      map(notifications => notifications.length),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return of(0);
-      })
-    );
-  }
-
-  /**
-   * Count all notifications
-   * @param userId - User ID
-   * @returns Observable<number>
-   */
-  countAll(userId: string): Observable<number> {
-    const notificationsCol = this.getNotificationsCollection(userId);
-
-    return from(getDocs(notificationsCol)).pipe(
-      map(querySnapshot => querySnapshot.size),
-      catchError(error => {
-        console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error);
-        return of(0);
-      })
-    );
-  }
-
-  /**
-   * Get current notifications value without subscription
-   * @returns Current array of notifications
-   */
-  getCurrentNotifications(): Notification[] {
-    return this.notificationsSubject.value;
-  }
-
-  /**
-   * Manually refresh notifications list
-   */
-  refreshNotifications(): void {
-    this.loadNotifications();
   }
 }

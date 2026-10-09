@@ -7,8 +7,6 @@ import {
   CollectionReference,
   deleteDoc,
   doc,
-  docData,
-  DocumentReference,
   Firestore,
   getDoc,
   getDocs,
@@ -115,74 +113,6 @@ export class SchoolCRUDService {
   }
 
   /**
-   * Get all schools (one-time snapshot, not real-time)
-   * @returns Observable with array of schools
-   */
-  getSchoolsSnapshot(): Observable<School[]> {
-    const q = query(this.schoolsCollection, orderBy('nombre', 'asc'));
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        const schools: School[] = [];
-        querySnapshot.forEach(doc => {
-          schools.push({
-            id: doc.id,
-            ...doc.data()
-          } as School);
-        });
-        return schools;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [school-crud.service.ts]', error);
-        return throwError(() => new Error('Could not get schools'));
-      })
-    );
-  }
-
-  /**
-   * Get a school by ID as Observable
-   * Subscribes to real-time changes
-   * @param schoolId - Document ID
-   * @returns Observable with school data
-   */
-  getSchoolById(schoolId: string): Observable<School | null> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, schoolId) as DocumentReference;
-
-    return docData(docRef, { idField: 'id' }).pipe(
-      map(data => data ? data as School : null),
-      catchError(error => {
-        console.error('❌ Schoolify: [school-crud.service.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Get a school by ID (one-time snapshot)
-   * @param schoolId - Document ID
-   * @returns Observable with school data or null
-   */
-  getSchoolByIdSnapshot(schoolId: string): Observable<School | null> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, schoolId);
-
-    return from(getDoc(docRef)).pipe(
-      map(docSnap => {
-        if (docSnap.exists()) {
-          return {
-            id: docSnap.id,
-            ...docSnap.data()
-          } as School;
-        }
-        return null;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [school-crud.service.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
-  /**
    * Search school by CCT (Clave de Centro de Trabajo)
    * @param cct - Work Center Key
    * @returns Observable with found school or null
@@ -191,35 +121,6 @@ export class SchoolCRUDService {
     const q = query(
       this.schoolsCollection,
       where('cct', '==', cct)
-    );
-
-    return from(getDocs(q)).pipe(
-      map(querySnapshot => {
-        if (querySnapshot.empty) {
-          return null;
-        }
-        const doc = querySnapshot.docs[0];
-        return {
-          id: doc.id,
-          ...doc.data()
-        } as School;
-      }),
-      catchError(error => {
-        console.error('❌ Schoolify: [school-crud.service.ts]', error);
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Search school by PIN
-   * @param pin - School PIN
-   * @returns Observable with found school or null
-   */
-  getSchoolByPIN(pin: number): Observable<School | null> {
-    const q = query(
-      this.schoolsCollection,
-      where('pin', '==', pin)
     );
 
     return from(getDocs(q)).pipe(
@@ -319,72 +220,5 @@ export class SchoolCRUDService {
         return true;
       })
     );
-  }
-
-  /**
-   * Check if a PIN already exists
-   * @param pin - School PIN
-   * @param excludeId - ID to exclude in search (useful when editing)
-   * @returns Observable<boolean>
-   */
-  pinExists(pin: number, excludeId?: string): Observable<boolean> {
-    return this.getSchoolByPIN(pin).pipe(
-      map(school => {
-        if (!school) {
-          return false;
-        }
-        // If there's an ID to exclude and it matches, then no duplicate exists
-        if (excludeId && school.id === excludeId) {
-          return false;
-        }
-        return true;
-      })
-    );
-  }
-
-  /**
-   * Search schools by name (partial search)
-   * @param searchTerm - Search term
-   * @returns Observable with array of matching schools
-   */
-  searchSchoolsByName(searchTerm: string): Observable<School[]> {
-    return this.getSchoolsSnapshot().pipe(
-      map(schools => {
-        const termLowerCase = searchTerm.toLowerCase();
-        return schools.filter(school =>
-          school.nombre.toLowerCase().includes(termLowerCase)
-        );
-      })
-    );
-  }
-
-  /**
-   * Count total registered schools
-   * @returns Observable<number>
-   */
-  countSchools(): Observable<number> {
-    return from(getDocs(this.schoolsCollection)).pipe(
-      map(querySnapshot => querySnapshot.size),
-      catchError(error => {
-        console.error('❌ Schoolify: [school-crud.service.ts]', error);
-        return of(0);
-      })
-    );
-  }
-
-  /**
-   * Manually refresh schools list
-   * Useful to force an update
-   */
-  refreshSchools(): void {
-    this.loadSchools();
-  }
-
-  /**
-   * Get current schools value without subscription
-   * @returns Current array of schools
-   */
-  getCurrentSchools(): School[] {
-    return this.schoolsSubject.value;
   }
 }

@@ -11,22 +11,6 @@ export class LocalStorageService {
 
   constructor() { }
 
-  deleteAllKeys() {
-    this.deleteKey(this.CCT_KEY);
-    this.deleteKey(this.SHIFT_KEY);
-  }
-
-  deleteKey(key: string): boolean {
-    try {
-      localStorage.removeItem(key);
-      return true;
-
-    } catch (error) {
-      console.error('❌ Schoolify: [local-storage.service.ts]', error);
-      return false;
-    }
-  }
-
   getKey(key: string): string | null {
     try {
       const value = localStorage.getItem(key);
@@ -41,10 +25,6 @@ export class LocalStorageService {
       console.error('❌ Schoolify: [local-storage.service.ts]', error);
       return null;
     }
-  }
-
-  hasKey(key: string): boolean {
-    return this.getKey(key) !== null;
   }
 
   saveKey(key: string, value: string): boolean {

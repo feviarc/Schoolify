@@ -249,20 +249,6 @@ export class NotificationService {
   }
 
   /**
-   * Obtiene el token actual sin solicitar permiso
-   */
-  getCurrentToken(): string | null {
-    return this.currentToken;
-  }
-
-  /**
-   * Verifica si el usuario ya tiene permiso concedido
-   */
-  hasPermission(): boolean {
-    return this.getPermissionStatus() === 'granted';
-  }
-
-  /**
    * Payload que quita SOLO el token indicado. No usar `tokens: []`: reemplazaria
    * el array completo y dejaria sin avisos a los demas equipos del mismo usuario.
    */

@@ -57,33 +57,9 @@ export class LoadingService {
     }
   }
 
-  isActive(): boolean {
-    return this.isLoadingActive;
-  }
-
   async updateMessage(message: string): Promise<void> {
     if (this.loading && this.isLoadingActive) {
       this.loading.message = message;
-    }
-  }
-
-  async forceClose(): Promise<void> {
-    try {
-      if (this.loading) {
-        await this.loading.dismiss();
-      }
-
-      const topLoading = await this.loadingController.getTop();
-      if (topLoading) {
-        await topLoading.dismiss();
-      }
-
-    } catch (error) {
-      console.error('❌ Schoolify: [loading-service.ts]', error);
-
-    } finally {
-      this.isLoadingActive = false;
-      this.loading = null;
     }
   }
 }

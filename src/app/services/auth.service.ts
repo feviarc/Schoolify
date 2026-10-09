@@ -11,10 +11,8 @@ import {
   User
 } from '@angular/fire/auth';
 import {
-  collection,
   doc,
   Firestore,
-  getDocs,
   setDoc,
 } from '@angular/fire/firestore';
 
@@ -56,17 +54,6 @@ export class AuthService {
   private async sendEmailVerification(user: User): Promise<void> {
     if(user) {
       await sendEmailVerification(user);
-    }
-  }
-
-  private async getInitialUserRol(): Promise<'administrador' | 'maestro' | 'tutor'> {
-    const usuariosCollection = collection(this.firestore, 'usuarios');
-    const querySnapshot = await getDocs(usuariosCollection);
-
-    if(querySnapshot.empty) {
-      return 'administrador'
-    } else {
-      return 'maestro'
     }
   }
 

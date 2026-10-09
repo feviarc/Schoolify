@@ -2,12 +2,10 @@ import { Injectable, inject } from '@angular/core';
 
 import {
   collection,
-  deleteDoc,
   doc,
   Firestore,
   getDoc,
   getDocs,
-  setDoc,
   updateDoc,
 } from '@angular/fire/firestore';
 
@@ -26,12 +24,6 @@ export class UserProfileService {
 
 
   private readonly profileCache = new Map<string, { profile: UserProfile | null; expiresAt: number }>();
-
-  async createUserProfile(profile: UserProfile): Promise<void> {
-    const userDocRef = doc(this.firestore, `usuarios/${profile.uid}`);
-    await setDoc(userDocRef, profile);
-    this.invalidateProfile(profile.uid);
-  }
 
   getUserProfile(uid: string, forceRefresh = false): Observable<UserProfile | null> {
     if(!forceRefresh) {
@@ -90,56 +82,6 @@ export class UserProfileService {
   getUsersByRoleAndCCT(rol: string, cct: string) {
     return this.getUsersByRole(rol).pipe(
       map( users => users.filter(user => user.cct === cct))
-    );
-  }
-
-  async userExists(uid: string): Promise<boolean> {
-    const userDocRef = doc(this.firestore, `usuarios/${uid}`);
-    const docSnap = await getDoc(userDocRef);
-    return docSnap.exists();
-  }
-
-  async toggleUserStatus(uid: string, activo: boolean): Promise<void> {
-    const userDocRef = doc(this.firestore, `usuarios/${uid}`);
-    await updateDoc(userDocRef, { activo });
-    this.invalidateProfile(uid);
-  }
-
-  async deleteUserProfile(uid: string): Promise<void> {
-    const userDocRef = doc(this.firestore, `usuarios/${uid}`);
-    await deleteDoc(userDocRef);
-    this.invalidateProfile(uid);
-  }
-
-  getActiveUsers(): Observable<UserProfile[]> {
-    return this.getAllUsers().pipe(
-      map(users => users.filter(user => user.activo === true))
-    );
-  }
-
-  getUsersBySchool(escuela: string): Observable<UserProfile[]> {
-    return this.getAllUsers().pipe(
-      map(users => users.filter(user =>
-        user.escuela?.toLowerCase() === escuela.toLowerCase()
-      ))
-    );
-  }
-
-  searchUsers(searchTerm: string): Observable<UserProfile[]> {
-    const term = searchTerm.toLowerCase().trim();
-
-    return this.getAllUsers().pipe(
-      map(users => users.filter(user => {
-        const nombre = user.nombre?.toLowerCase() || '';
-        const email = user.email?.toLowerCase() || '';
-        return nombre.includes(term) || email.includes(term);
-      }))
-    );
-  }
-
-  getUserCount(): Observable<number> {
-    return this.getAllUsers().pipe(
-      map(users => users.length)
     );
   }
 
