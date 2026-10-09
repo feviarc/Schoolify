@@ -51,21 +51,6 @@ export class AuthService {
     }
   }
 
-  private async sendEmailVerification(user: User): Promise<void> {
-    if(user) {
-      await sendEmailVerification(user);
-    }
-  }
-
-  private async saveUserProfile(user: User, rol: string): Promise<void> {
-    const userDocRef = doc(this.firestore, `usuarios/${user.uid}`);
-    await setDoc(userDocRef, {
-      uid: user.uid,
-      email: user.email,
-      rol: rol
-    });
-  }
-
   login(email: string, password: string): Observable<any> {
     return from(signInWithEmailAndPassword(this.auth, email, password));
   }
@@ -90,6 +75,23 @@ export class AuthService {
   private async unregisterNotificationsAndSignOut(): Promise<void> {
     await this.notificationService.deleteToken();
     await signOut(this.auth);
+  }
+
+
+  private async sendEmailVerification(user: User): Promise<void> {
+    if(user) {
+      await sendEmailVerification(user);
+    }
+  }
+
+
+  private async saveUserProfile(user: User, rol: string): Promise<void> {
+    const userDocRef = doc(this.firestore, `usuarios/${user.uid}`);
+    await setDoc(userDocRef, {
+      uid: user.uid,
+      email: user.email,
+      rol: rol
+    });
   }
 
 }

@@ -19,6 +19,16 @@ export class AppUpdateService {
     this.checkForUpdates();
   }
 
+  async applyUpdate(): Promise<void> {
+    try {
+      await this.swUpdate.activateUpdate();
+      console.log('🔄 Recargando aplicación...');
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ Schoolify: [app.update.service.ts]:', error);
+    }
+  }
+
   private checkForUpdates() {
 
     if (!this.swUpdate.isEnabled) {
@@ -40,13 +50,4 @@ export class AppUpdateService {
     }, 6 * 60 * 60 * 1000);
   }
 
-  async applyUpdate(): Promise<void> {
-    try {
-      await this.swUpdate.activateUpdate();
-      console.log('🔄 Recargando aplicación...');
-      window.location.reload();
-    } catch (error) {
-      console.error('❌ Schoolify: [app.update.service.ts]:', error);
-    }
-  }
 }

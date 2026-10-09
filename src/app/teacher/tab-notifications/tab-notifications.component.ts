@@ -126,12 +126,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     }
   };
 
-  isWeekday = (dateString: string) => {
-    const date = new Date(dateString);
-    const utcDay = date.getUTCDay();
-    return utcDay !== 0 && utcDay !== 6;
-  };
-
   public actionSheetButtons = [
     {
       text: 'Permitir',
@@ -155,6 +149,12 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       },
     },
   ];
+
+  isWeekday = (dateString: string) => {
+    const date = new Date(dateString);
+    const utcDay = date.getUTCDay();
+    return utcDay !== 0 && utcDay !== 6;
+  };
 
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);
@@ -405,11 +405,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.selectedDate = this.formatTimestampToISO(Date.now());
   }
 
-  private showToast(message: string) {
-    this.toastMessage = message;
-    this.isToastOpen = true;
-  }
-
   studentsListByGroup(groupGid: string) {
     const students = this.studentsWithGroup.filter(
       (student) => student.gid === groupGid
@@ -427,4 +422,10 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       (subject) => subject.grado === grade
     );
   }
+
+  private showToast(message: string) {
+    this.toastMessage = message;
+    this.isToastOpen = true;
+  }
+
 }

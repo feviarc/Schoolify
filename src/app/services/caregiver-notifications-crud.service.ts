@@ -77,36 +77,6 @@ export class CaregiverNotificationsCRUDService {
   private readonly USERS_COLLECTION = 'usuarios';
   private readonly NOTIFICATIONS_SUBCOLLECTION = 'notificaciones';
 
-  /**
-   * Get notifications subcollection reference for a caregiver/tutor
-   * @param tid - Tutor/Caregiver ID
-   */
-  private getNotificationsCollection(tid: string): CollectionReference {
-    return collection(
-      this.firestore,
-      this.USERS_COLLECTION,
-      tid,
-      this.NOTIFICATIONS_SUBCOLLECTION
-    );
-  }
-
-  /**
-   * Validate notification data before saving
-   * @param notification - Notification data to validate
-   * @throws Error if validation fails
-   */
-  private validateNotification(notification: NotificationInput): void {
-    // Validar que fecha sea obligatoria para tipo Inasistencia
-    if (notification.tipo === 'Inasistencia' && !notification.fecha) {
-      throw new Error('El campo "fecha" es obligatorio para el tipo "Inasistencia"');
-    }
-
-    // Validar que nombreCompleto no esté vacío
-    if (!notification.nombreCompleto || notification.nombreCompleto.trim() === '') {
-      throw new Error('El campo "nombreCompleto" es obligatorio');
-    }
-  }
-
   // ==================== NOTIFICATIONS CRUD (CREATE) ====================
 
   /**
@@ -297,4 +267,36 @@ export class CaregiverNotificationsCRUDService {
   }
 
   // ==================== UTILITY METHODS ====================
+
+  /**
+   * Get notifications subcollection reference for a caregiver/tutor
+   * @param tid - Tutor/Caregiver ID
+   */
+  private getNotificationsCollection(tid: string): CollectionReference {
+    return collection(
+      this.firestore,
+      this.USERS_COLLECTION,
+      tid,
+      this.NOTIFICATIONS_SUBCOLLECTION
+    );
+  }
+
+
+  /**
+   * Validate notification data before saving
+   * @param notification - Notification data to validate
+   * @throws Error if validation fails
+   */
+  private validateNotification(notification: NotificationInput): void {
+    // Validar que fecha sea obligatoria para tipo Inasistencia
+    if (notification.tipo === 'Inasistencia' && !notification.fecha) {
+      throw new Error('El campo "fecha" es obligatorio para el tipo "Inasistencia"');
+    }
+
+    // Validar que nombreCompleto no esté vacío
+    if (!notification.nombreCompleto || notification.nombreCompleto.trim() === '') {
+      throw new Error('El campo "nombreCompleto" es obligatorio');
+    }
+  }
+
 }

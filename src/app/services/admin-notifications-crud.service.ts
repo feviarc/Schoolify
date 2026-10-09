@@ -60,34 +60,6 @@ export class AdminNotificationsCRUDService {
   private currentUserId: string | null = null;
 
   /**
-   * Get notifications collection reference for a user
-   * @param userId - User ID
-   * @returns CollectionReference
-   */
-  private getNotificationsCollection(userId: string): CollectionReference {
-    return collection(
-      this.firestore,
-      this.USERS_COLLECTION,
-      userId,
-      this.NOTIFICATIONS_SUBCOLLECTION
-    );
-  }
-
-  /**
-   * Load all notifications and update the BehaviorSubject
-   */
-  private loadNotifications(): void {
-    if (!this.currentUserId) {
-      return;
-    }
-
-    this.getNotifications(this.currentUserId).subscribe({
-      next: (notifications) => this.notificationsSubject.next(notifications),
-      error: (error) => console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error)
-    });
-  }
-
-  /**
    * Add a new notification
    * @param userId - User ID
    * @param body - Notification message
@@ -248,4 +220,34 @@ export class AdminNotificationsCRUDService {
       })
     );
   }
+
+  /**
+   * Get notifications collection reference for a user
+   * @param userId - User ID
+   * @returns CollectionReference
+   */
+  private getNotificationsCollection(userId: string): CollectionReference {
+    return collection(
+      this.firestore,
+      this.USERS_COLLECTION,
+      userId,
+      this.NOTIFICATIONS_SUBCOLLECTION
+    );
+  }
+
+
+  /**
+   * Load all notifications and update the BehaviorSubject
+   */
+  private loadNotifications(): void {
+    if (!this.currentUserId) {
+      return;
+    }
+
+    this.getNotifications(this.currentUserId).subscribe({
+      next: (notifications) => this.notificationsSubject.next(notifications),
+      error: (error) => console.error('❌ Schoolify: [admin-notifications-crud.service.ts]', error)
+    });
+  }
+
 }

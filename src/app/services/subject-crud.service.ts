@@ -62,17 +62,6 @@ export class SubjectCRUDService {
   }
 
   /**
-   * Load all subjects and update the BehaviorSubject
-   * Private method that keeps the state updated
-   */
-  private loadSubjects(): void {
-    this.getSubjects().subscribe({
-      next: (subjects) => this.subjectsSubject.next(subjects),
-      error: (error) => console.error('❌ Schoolify: [subject-crud.service.ts]', error)
-    });
-  }
-
-  /**
    * Add a new subject
    * @param subject - Subject data (without id)
    * @returns Observable with the created document ID
@@ -158,4 +147,16 @@ export class SubjectCRUDService {
       })
     );
   }
+
+  /**
+   * Load all subjects and update the BehaviorSubject
+   * Private method that keeps the state updated
+   */
+  private loadSubjects(): void {
+    this.getSubjects().subscribe({
+      next: (subjects) => this.subjectsSubject.next(subjects),
+      error: (error) => console.error('❌ Schoolify: [subject-crud.service.ts]', error)
+    });
+  }
+
 }

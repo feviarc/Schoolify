@@ -61,17 +61,6 @@ export class GroupCRUDService {
   }
 
   /**
-   * Load all groups and update the BehaviorSubject
-   * Private method that keeps the state updated
-   */
-  private loadGroups(): void {
-    this.getGroups().subscribe({
-      next: (groups) => this.groupsSubject.next(groups),
-      error: (error) => console.error('❌ Schoolify: [group-crud.service.ts]', error)
-    });
-  }
-
-  /**
    * Add a new group
    * @param group - Group data (without id)
    * @returns Observable with the created document ID
@@ -194,4 +183,16 @@ export class GroupCRUDService {
       })
     );
   }
+
+  /**
+   * Load all groups and update the BehaviorSubject
+   * Private method that keeps the state updated
+   */
+  private loadGroups(): void {
+    this.getGroups().subscribe({
+      next: (groups) => this.groupsSubject.next(groups),
+      error: (error) => console.error('❌ Schoolify: [group-crud.service.ts]', error)
+    });
+  }
+
 }

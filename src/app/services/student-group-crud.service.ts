@@ -92,16 +92,6 @@ export class StudentGroupCRUDService {
     this.loadStudentGroups();
   }
 
-  /**
-   * Load all student groups and update the BehaviorSubject
-   */
-  private loadStudentGroups(): void {
-    this.getStudentGroups().subscribe({
-      next: (groups) => this.studentGroupsSubject.next(groups),
-      error: (error) => console.error('❌ Schoolify: [student-group-crud.service.ts]', error)
-    });
-  }
-
   // ==================== CREATE ====================
 
   /**
@@ -227,5 +217,16 @@ export class StudentGroupCRUDService {
   }
 
   // ==================== UTILITY METHODS ====================
+
+  /**
+   * Load all student groups and update the BehaviorSubject
+   */
+  private loadStudentGroups(): void {
+    this.getStudentGroups().subscribe({
+      next: (groups) => this.studentGroupsSubject.next(groups),
+      error: (error) => console.error('❌ Schoolify: [student-group-crud.service.ts]', error)
+    });
+  }
+
 }
 

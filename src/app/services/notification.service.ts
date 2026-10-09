@@ -127,79 +127,6 @@ export class NotificationService {
   }
 
   /**
-   * Guarda el token en Firestore asociado al usuario actual
-   */
-  private async saveTokenToFirestore(token: string): Promise<void> {
-    try {
-      const userId = this.auth.currentUser?.uid;
-
-      if(!userId) {
-        return;
-      }
-
-      const userRef = doc(this.firestore, `usuarios/${userId}`);
-
-      await setDoc(userRef,
-        {
-          tokens: arrayUnion(token),
-          lastTokenUpdate: serverTimestamp(),
-          platform: this.getPlatformInfo(),
-          userAgent: navigator.userAgent
-        },
-        {
-          merge: true
-        }
-      );
-    } catch (error) {
-      console.error('❌ Schoolify: [notification.service.ts]', error);
-    }
-  }
-
-  /**
-   * Escucha mensajes en primer plano (app abierta)
-   */
-  private listenToForegroundMessages(): void {
-    if (!this.isNotificationSupported()) {
-      return;
-    }
-
-    onMessage(this.messaging, (payload) => {
-      this.showForegroundNotification(payload);
-    });
-  }
-
-  /**
-   * Muestra una notificación cuando la app está activa
-   */
-  private showForegroundNotification(payload: any): void {
-    const title = payload.notification?.title || 'Escuela';
-
-    const options: NotificationOptions = {
-      body: payload.notification?.body || '',
-      icon: payload.notification?.icon || '/assets/icons/icon-192x192.png',
-      badge: '/assets/icons/icon-72x72.png',
-      tag: payload.data?.tag || 'notification-' + Date.now(),
-      data: payload.data,
-      requireInteraction: false
-    };
-
-    if (Notification.permission === 'granted') {
-      const notification = new Notification(title, options);
-
-      notification.onclick = (event) => {
-        event.preventDefault();
-        window.focus();
-        notification.close();
-
-        // Manejar navegación si hay una ruta en los datos
-        if (payload.data?.route) {
-          window.location.href = payload.data.route;
-        }
-      };
-    }
-  }
-
-  /**
    * Da de baja de las notificaciones el token de ESTE dispositivo.
    * Se invoca al cerrar sesión: sin esto el equipo sigue recibiendo los avisos
    * de la cuenta que acaba de salir.
@@ -319,4 +246,80 @@ export class NotificationService {
       return null;
     }
   }
+
+  /**
+   * Guarda el token en Firestore asociado al usuario actual
+   */
+  private async saveTokenToFirestore(token: string): Promise<void> {
+    try {
+      const userId = this.auth.currentUser?.uid;
+
+      if(!userId) {
+        return;
+      }
+
+      const userRef = doc(this.firestore, `usuarios/${userId}`);
+
+      await setDoc(userRef,
+        {
+          tokens: arrayUnion(token),
+          lastTokenUpdate: serverTimestamp(),
+          platform: this.getPlatformInfo(),
+          userAgent: navigator.userAgent
+        },
+        {
+          merge: true
+        }
+      );
+    } catch (error) {
+      console.error('❌ Schoolify: [notification.service.ts]', error);
+    }
+  }
+
+
+  /**
+   * Escucha mensajes en primer plano (app abierta)
+   */
+  private listenToForegroundMessages(): void {
+    if (!this.isNotificationSupported()) {
+      return;
+    }
+
+    onMessage(this.messaging, (payload) => {
+      this.showForegroundNotification(payload);
+    });
+  }
+
+
+  /**
+   * Muestra una notificación cuando la app está activa
+   */
+  private showForegroundNotification(payload: any): void {
+    const title = payload.notification?.title || 'Escuela';
+
+    const options: NotificationOptions = {
+      body: payload.notification?.body || '',
+      icon: payload.notification?.icon || '/assets/icons/icon-192x192.png',
+      badge: '/assets/icons/icon-72x72.png',
+      tag: payload.data?.tag || 'notification-' + Date.now(),
+      data: payload.data,
+      requireInteraction: false
+    };
+
+    if (Notification.permission === 'granted') {
+      const notification = new Notification(title, options);
+
+      notification.onclick = (event) => {
+        event.preventDefault();
+        window.focus();
+        notification.close();
+
+        // Manejar navegación si hay una ruta en los datos
+        if (payload.data?.route) {
+          window.location.href = payload.data.route;
+        }
+      };
+    }
+  }
+
 }

@@ -91,18 +91,6 @@ export class AuthPage implements OnInit {
     await this.checkUserStatus();
   }
 
-  private async checkUserStatus() {
-    try {
-      const user = await firstValueFrom(this.authService.getCurrentUser());
-
-      if(user) {
-        this.handleLoginRedirect(user);
-      }
-    } catch(error) {
-      console.error('❌ Schoolify: [auth.page.ts]', error)
-    }
-  }
-
   async onSubmit() {
 
     if (!this.authForm.valid) {
@@ -293,6 +281,19 @@ export class AuthPage implements OnInit {
   private async showNotificationSuccessToast() {
     this.toastMessage = '✅ Notificaciones activadas correctamente.';
     this.setOpenToast(true);
+  }
+
+
+  private async checkUserStatus() {
+    try {
+      const user = await firstValueFrom(this.authService.getCurrentUser());
+
+      if(user) {
+        this.handleLoginRedirect(user);
+      }
+    } catch(error) {
+      console.error('❌ Schoolify: [auth.page.ts]', error)
+    }
   }
 
 }

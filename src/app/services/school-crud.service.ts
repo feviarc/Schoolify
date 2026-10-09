@@ -61,17 +61,6 @@ export class SchoolCRUDService {
   }
 
   /**
-   * Load all schools and update the BehaviorSubject
-   * Private method that keeps the state updated
-   */
-  private loadSchools(): void {
-    this.getSchools().subscribe({
-      next: (schools) => this.schoolsSubject.next(schools),
-      error: (error) => console.error('❌ Schoolify: [school-crud.service.ts]', error)
-    });
-  }
-
-  /**
    * Add a new school
    * @param school - School data (without id)
    * @returns Observable with the created document ID
@@ -221,4 +210,16 @@ export class SchoolCRUDService {
       })
     );
   }
+
+  /**
+   * Load all schools and update the BehaviorSubject
+   * Private method that keeps the state updated
+   */
+  private loadSchools(): void {
+    this.getSchools().subscribe({
+      next: (schools) => this.schoolsSubject.next(schools),
+      error: (error) => console.error('❌ Schoolify: [school-crud.service.ts]', error)
+    });
+  }
+
 }

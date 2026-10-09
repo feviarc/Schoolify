@@ -76,16 +76,6 @@ export class StudentCRUDService {
     this.loadStudents();
   }
 
-  /**
-   * Load all students and update BehaviorSubject
-   */
-  private loadStudents(): void {
-    this.getStudents().subscribe({
-      next: (students) => this.studentsSubject.next(students),
-      error: (error) => console.error('❌ Schoolify: [student-crud.service.ts]', error)
-    });
-  }
-
   // ==================== STUDENTS CRUD (CREATE) ====================
 
   /**
@@ -318,4 +308,15 @@ export class StudentCRUDService {
 
 
   // ==================== UTILITY METHODS ====================
+
+  /**
+   * Load all students and update BehaviorSubject
+   */
+  private loadStudents(): void {
+    this.getStudents().subscribe({
+      next: (students) => this.studentsSubject.next(students),
+      error: (error) => console.error('❌ Schoolify: [student-crud.service.ts]', error)
+    });
+  }
+
 }

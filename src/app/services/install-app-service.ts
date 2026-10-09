@@ -8,16 +8,16 @@ export class InstallAppService {
 
   private installPromptEvent: any;
 
-  constructor() {
-    this.installPromptEvent = null;
-  }
-
   get promptStatus() {
     return this.installPromptEvent;
   }
 
   set promptStatus(event: any) {
     this.installPromptEvent = event;
+  }
+
+  constructor() {
+    this.installPromptEvent = null;
   }
 
   showInstallAppBanner() {
