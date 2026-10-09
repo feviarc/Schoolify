@@ -19,6 +19,13 @@ import { environment } from '../../environments/environment';
  */
 const TOKEN_REMOVAL_DEADLINE_MS = 1_000;
 
+/**
+ * Plazo maximo para obtener el token FCM. El login espera esta llamada, asi que no
+ * puede quedarse colgado si FCM no responde; si vence, el usuario entra igual y se
+ * queda sin push hasta el siguiente inicio de sesion.
+ */
+const TOKEN_REQUEST_DEADLINE_MS = 5_000;
+
 
 @Injectable({providedIn: 'root'})
 export class NotificationService {
@@ -58,7 +65,10 @@ export class NotificationService {
   }
 
   /**
-   * Solicita permiso y obtiene el token FCM
+   * Solicita permiso y obtiene el token FCM.
+   *
+   * Se invoca ANTES de navegar tras el login, asi que no puede quedarse colgada:
+   * ni esperando al service worker ni pidiendole el token a FCM.
    */
   async requestPermission(): Promise<string | null> {
     try {
@@ -67,7 +77,7 @@ export class NotificationService {
         return null;
       }
 
-      // Solicitar permiso
+      // Esto espera la decision del usuario: no se puede acotar en el tiempo.
       const permission = await Notification.requestPermission();
 
       if (permission !== 'granted') {
@@ -75,23 +85,23 @@ export class NotificationService {
         return null;
       }
 
-      // Esperar a que el service worker esté listo
-      await this.waitForServiceWorker();
+      const registration = await this.getPushRegistration();
 
-      // Obtener el token FCM
-      const token = await getToken(this.messaging, {
-        vapidKey: environment.vapidKey,
-        serviceWorkerRegistration: await navigator.serviceWorker.ready
-      });
-
-      if(token) {
-        this.currentToken = token;
-        await this.saveTokenToFirestore(token);
-        return token;
+      if(!registration) {
+        console.log('⚠️ No hay service worker registrado: no se pueden recibir notificaciones push.');
+        return null;
       }
 
-      console.log('⚠️ No se pudo obtener el token.');
-      return null;
+      const token = await this.withDeadline(
+        this.registerDeviceToken(registration),
+        TOKEN_REQUEST_DEADLINE_MS
+      );
+
+      if(!token) {
+        console.log('⚠️ No se pudo obtener el token.');
+      }
+
+      return token;
 
     } catch (error) {
       console.error('❌ Schoolify: [notification.service.ts]', error);
@@ -99,17 +109,21 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Espera a que el service worker esté registrado
-   */
-  private async waitForServiceWorker(): Promise<void> {
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.ready;
-      } catch (error) {
-        console.error('❌ Schoolify: [notification.service.ts]', error);
-      }
+  /** Obtiene el token FCM para ese service worker y lo guarda en Firestore. */
+  protected async registerDeviceToken(registration: ServiceWorkerRegistration): Promise<string | null> {
+    const token = await getToken(this.messaging, {
+      vapidKey: environment.vapidKey,
+      serviceWorkerRegistration: registration
+    });
+
+    if(!token) {
+      return null;
     }
+
+    this.currentToken = token;
+    await this.saveTokenToFirestore(token);
+
+    return token;
   }
 
   /**
@@ -218,11 +232,11 @@ export class NotificationService {
     this.currentToken = null;
   }
 
-  /** Resuelve cuando `work` termina o cuando vence el plazo, lo que ocurra primero. */
-  private withDeadline(work: Promise<void>, ms: number): Promise<void> {
+  /** Resuelve con el resultado de `work`, o con null si vence el plazo antes. */
+  private withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
     return Promise.race([
       work,
-      new Promise<void>(resolve => setTimeout(resolve, ms)),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), ms)),
     ]);
   }
 
@@ -280,12 +294,23 @@ export class NotificationService {
   }
 
   /**
-   * Recupera el token ya registrado sin volver a pedir permiso.
+   * Service worker listo para push, o null si no hay ninguno.
    *
    * OJO: no usar `navigator.serviceWorker.ready`. Esa promesa NUNCA se resuelve si
    * no hay un service worker activo (por ejemplo en desarrollo, donde el SW esta
-   * deshabilitado), y colgaria el cierre de sesion. `getRegistration()` resuelve
-   * siempre; si no hay registro, es que no hay token que dar de baja.
+   * deshabilitado), y colgaria tanto el login como el cierre de sesion.
+   * `getRegistration()` resuelve siempre.
+   */
+  protected async getPushRegistration(): Promise<ServiceWorkerRegistration | null> {
+    if(!('serviceWorker' in navigator)) {
+      return null;
+    }
+
+    return await navigator.serviceWorker.getRegistration() ?? null;
+  }
+
+  /**
+   * Recupera el token ya registrado sin volver a pedir permiso.
    */
   protected async readRegisteredToken(): Promise<string | null> {
     if(!this.isNotificationSupported() || Notification.permission !== 'granted') {
@@ -293,7 +318,7 @@ export class NotificationService {
     }
 
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
+      const registration = await this.getPushRegistration();
 
       if(!registration) {
         return null;

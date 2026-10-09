@@ -13,6 +13,9 @@ class TestableNotificationService extends NotificationService {
   registeredToken: string | null = null;
   stuckTokenLookup = false;
   failPersist = false;
+  pushRegistration: ServiceWorkerRegistration | null = null;
+  nextToken: string | null = null;
+  stuckTokenRequest = false;
 
   setSessionToken(token: string | null): void {
     this.currentToken = token;
@@ -41,6 +44,19 @@ class TestableNotificationService extends NotificationService {
     }
 
     return Promise.resolve(this.registeredToken);
+  }
+
+  protected override async getPushRegistration(): Promise<ServiceWorkerRegistration | null> {
+    return this.pushRegistration;
+  }
+
+  protected override async registerDeviceToken(): Promise<string | null> {
+    if(this.stuckTokenRequest) {
+      // Simula a FCM sin responder nunca.
+      return new Promise<string | null>(() => undefined);
+    }
+
+    return this.nextToken;
   }
 }
 
@@ -139,5 +155,58 @@ describe('NotificationService: baja del token al cerrar sesion', () => {
     expect(payload.tokens.isEqual(arrayRemove('tok-device-B'))).toBeFalse();
     expect(payload.tokens.isEqual(arrayUnion('tok-device-A'))).toBeFalse();
   });
+
+});
+
+
+describe('NotificationService: obtencion del token tras el login', () => {
+
+  let service: TestableNotificationService;
+  let notificationsSupported: boolean;
+
+  beforeEach(() => {
+    notificationsSupported = false;
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Messaging, useValue: {} },
+        { provide: Firestore, useValue: {} },
+        { provide: Auth, useValue: { currentUser: { uid: 'tutor-1' } } },
+        { provide: Platform, useValue: { is: () => !notificationsSupported, platforms: () => [] } },
+        { provide: NotificationService, useClass: TestableNotificationService },
+      ],
+    });
+
+    service = TestBed.inject(NotificationService) as TestableNotificationService;
+    notificationsSupported = true;
+
+    spyOn(Notification, 'requestPermission').and.returnValue(Promise.resolve('granted'));
+  });
+
+  it('REGRESION: sin service worker NO se cuelga (antes esperaba a serviceWorker.ready)', async () => {
+    service.pushRegistration = null;
+
+    // Con `serviceWorker.ready` esto no resolvia nunca y el login quedaba mudo.
+    await expectAsync(service.requestPermission()).toBeResolvedTo(null);
+  });
+
+  it('devuelve el token cuando hay service worker registrado', async () => {
+    service.pushRegistration = {} as ServiceWorkerRegistration;
+    service.nextToken = 'tok-device-A';
+
+    await expectAsync(service.requestPermission()).toBeResolvedTo('tok-device-A');
+  });
+
+  it('no se cuelga si FCM nunca responde: se entra igual, sin push', async () => {
+    service.pushRegistration = {} as ServiceWorkerRegistration;
+    service.stuckTokenRequest = true;
+
+    const outcome = await Promise.race([
+      service.requestPermission().then(token => `resuelto:${token}`),
+      new Promise(resolve => setTimeout(() => resolve('colgado'), 8_000)),
+    ]);
+
+    expect(outcome).toBe('resuelto:null');
+  }, 15_000);   // el plazo del servicio es de 5 s: hay que dar margen al spec
 
 });
