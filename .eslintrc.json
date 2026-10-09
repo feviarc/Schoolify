@@ -36,12 +36,15 @@
             "style": "camelCase"
           }
         ],
+        // El grupo `field` no distingue visibilidad a proposito: en este proyecto el
+        // orden entre campos privados y publicos lo impone el orden de inicializacion
+        // (subject privado -> observable publico; servicio inyectado -> campo publico),
+        // no el estilo. Exigir `public-field` antes de `private-field` es insatisfacible.
         "@typescript-eslint/member-ordering": [
           "warn",
           {
             "default": [
-              "public-field",
-              "private-field",
+              "field",
               "public-get",
               "public-set",
               "private-get",
