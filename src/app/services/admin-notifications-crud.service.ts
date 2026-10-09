@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -49,6 +49,8 @@ export interface Notification {
   providedIn: 'root'
 })
 export class AdminNotificationsCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly USERS_COLLECTION = 'usuarios';
   private readonly NOTIFICATIONS_SUBCOLLECTION = 'notificaciones';
@@ -59,8 +61,6 @@ export class AdminNotificationsCRUDService {
 
   // Current user ID (debe ser establecido al iniciar sesión)
   private currentUserId: string | null = null;
-
-  constructor(private firestore: Firestore) {}
 
   /**
    * Set the current user ID

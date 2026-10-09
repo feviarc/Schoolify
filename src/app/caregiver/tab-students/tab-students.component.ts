@@ -1,10 +1,6 @@
 /* eslint-disable @angular-eslint/prefer-inject */
 
-import {
-  Component,
-  OnInit,
-  ViewChild, OnDestroy,
-} from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy, inject } from '@angular/core';
 
 import {
   IonButton,
@@ -68,6 +64,11 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
 })
 
 export class TabStudentsComponent  implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private localStorage = inject(LocalStorageService);
+  private studentCRUDService = inject(StudentCRUDService);
+  private userProfileService = inject(UserProfileService);
+
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
 
@@ -88,13 +89,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
   private readonly CCT_KEY = this.localStorage.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
-
-  constructor(
-    private authService: AuthService,
-    private localStorage: LocalStorageService,
-    private studentCRUDService: StudentCRUDService,
-    private userProfileService: UserProfileService,
-  ) { }
 
   async ngOnInit() {
     const cct = this.localStorage.getKey(this.CCT_KEY);

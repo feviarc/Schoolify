@@ -1,14 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { LoadingController } from '@ionic/angular/standalone';
 
 
 @Injectable({providedIn: 'root'})
 export class LoadingService {
+  private loadingController = inject(LoadingController);
+
 
   private loading: HTMLIonLoadingElement | null = null;
   private isLoadingActive = false;
-
-  constructor(private loadingController: LoadingController) { }
 
   async present(message: string = '', duration: number = 0): Promise<void> {
     if (this.isLoadingActive) {

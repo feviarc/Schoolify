@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -59,6 +59,8 @@ export interface Student {
 })
 
 export class StudentCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly STUDENTS_COLLECTION = 'alumnos';
   private studentsCollection: CollectionReference;
@@ -72,7 +74,7 @@ export class StudentCRUDService {
    */
   public students$ = this.studentsSubject.asObservable();
 
-  constructor(private firestore: Firestore) {
+  constructor() {
     this.studentsCollection = collection(this.firestore, this.STUDENTS_COLLECTION);
     this.loadStudents();
   }

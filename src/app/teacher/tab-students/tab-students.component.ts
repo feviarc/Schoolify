@@ -1,11 +1,4 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  QueryList,
-  ViewChild,
-  ViewChildren,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren, inject } from '@angular/core';
 
 import {
   FormBuilder,
@@ -84,6 +77,10 @@ import { StudentCRUDService, Student } from 'src/app/services/student-crud.servi
 })
 
 export class TabStudentsComponent  implements OnInit, OnDestroy {
+  private localStorageService = inject(LocalStorageService);
+  private formBuilder = inject(FormBuilder);
+  private studentCRUDService = inject(StudentCRUDService);
+
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
@@ -138,12 +135,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       Validators.pattern('^[A-Za-zÑñÁÉÍÓÚáéíóú ]+$')
     ]]
   });
-
-  constructor(
-    private localStorageService: LocalStorageService,
-    private formBuilder: FormBuilder,
-    private studentCRUDService: StudentCRUDService,
-  ) {}
 
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);

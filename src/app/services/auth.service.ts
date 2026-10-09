@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import {
   Auth,
@@ -23,14 +23,14 @@ import { NotificationService } from './notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private auth = inject(Auth);
+  private firestore = inject(Firestore);
+  private notificationService = inject(NotificationService);
+
 
   private user: Observable<User | null>;
 
-  constructor(
-    private auth: Auth,
-    private firestore: Firestore,
-    private notificationService: NotificationService
-  ) {
+  constructor() {
     this.user = new Observable(observer => {
       onAuthStateChanged(this.auth, user => {
         observer.next(user);

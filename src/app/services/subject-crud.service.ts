@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -48,6 +48,8 @@ export interface Subject {
 })
 
 export class SubjectCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly COLLECTION_NAME = 'materias';
   private subjectsCollection: CollectionReference;
@@ -56,7 +58,7 @@ export class SubjectCRUDService {
   private subjectsSubject = new BehaviorSubject<Subject[]>([]);
   public subjects$ = this.subjectsSubject.asObservable();
 
-  constructor(private firestore: Firestore) {
+  constructor() {
     this.subjectsCollection = collection(this.firestore, this.COLLECTION_NAME);
     // Load subjects when service initializes
     this.loadSubjects();

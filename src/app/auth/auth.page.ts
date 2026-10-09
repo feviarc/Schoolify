@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {
@@ -57,6 +57,14 @@ import { UserProfileService } from '../services/user-profile.service';
 })
 
 export class AuthPage implements OnInit {
+  private alertController = inject(AlertController);
+  private authService = inject(AuthService);
+  private formBuilder = inject(FormBuilder);
+  private loadingService = inject(LoadingService);
+  private notificationService = inject(NotificationService);
+  private router = inject(Router);
+  private userProfileService = inject(UserProfileService);
+
 
   authForm!: FormGroup;
   emailVerificationMessage: string | null = null;
@@ -74,16 +82,6 @@ export class AuthPage implements OnInit {
     emailNotVerified: '⚠️  Tu correo electrónico aún no ha sido verificado. Revisa tu bandeja de entrada o la carpeta de Spam y haz clic en el enlace de verificación para activar tu cuenta.',
     default: '🛑  Ocurrió un error. Inténtalo nuevamente.'
   };
-
-  constructor(
-    private alertController: AlertController,
-    private authService: AuthService,
-    private formBuilder: FormBuilder,
-    private loadingService: LoadingService,
-    private notificationService: NotificationService,
-    private router: Router,
-    private userProfileService: UserProfileService
-  ) { }
 
   async ngOnInit() {
     this.authForm = this.formBuilder.group({

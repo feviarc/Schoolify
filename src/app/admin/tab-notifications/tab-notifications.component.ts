@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 
@@ -44,6 +44,10 @@ import { AdminNotificationsCRUDService, Notification } from 'src/app/services/ad
 })
 
 export class TabNotificationsComponent  implements OnInit, OnDestroy {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private notificationsCRUDService = inject(AdminNotificationsCRUDService);
+
 
   isLoadingData = false;
   notifications: Notification[] = [];
@@ -66,12 +70,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       },
     },
   ];
-
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private notificationsCRUDService: AdminNotificationsCRUDService,
-  ) {}
 
   ngOnInit() {
     this.isLoadingData = true;

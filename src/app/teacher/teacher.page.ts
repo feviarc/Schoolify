@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import {
   FormBuilder,
@@ -67,6 +67,14 @@ import {
 })
 
 export class TeacherPage implements OnInit {
+  private formBuilder = inject(FormBuilder);
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private localStorageService = inject(LocalStorageService);
+  private schoolCRUDService = inject(SchoolCRUDService);
+  private schoolStateService = inject(SchoolStateService);
+  private userProfileService = inject(UserProfileService);
+
 
   cct!: string;
   uid?: string;
@@ -112,16 +120,6 @@ export class TeacherPage implements OnInit {
   get telefono() {
     return this.form.get('telefono')!;
   }
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private router: Router,
-    private authService: AuthService,
-    private localStorageService: LocalStorageService,
-    private schoolCRUDService: SchoolCRUDService,
-    private schoolStateService: SchoolStateService,
-    private userProfileService: UserProfileService,
-  ) {}
 
   async ngOnInit() {
     this.getSchoolName();

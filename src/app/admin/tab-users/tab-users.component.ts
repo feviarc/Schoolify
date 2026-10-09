@@ -1,10 +1,6 @@
 import { CommonModule } from '@angular/common';
 
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
@@ -64,6 +60,9 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
 })
 
 export class TabUsersComponent  implements OnInit, OnDestroy {
+  private functions = inject(Functions);
+  private teacherDataService = inject(TeacherDataService);
+
 
   teachers: UserProfile[] = [];
   isLoading = true;
@@ -89,11 +88,6 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   ];
 
   private sub!: Subscription;
-
-  constructor(
-    private functions: Functions,
-    private teacherDataService: TeacherDataService,
-  ) {}
 
   ngOnInit() {
 

@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  QueryList,
-  ViewChildren,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 
@@ -92,6 +86,14 @@ import {
 })
 
 export class TabGroupsComponent  implements OnInit, OnDestroy {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private groupCRUDService = inject(GroupCRUDService);
+  private localStorageService = inject(LocalStorageService);
+  private schoolStateService = inject(SchoolStateService);
+  private studentCRUDService = inject(StudentCRUDService);
+  private studentGroupCRUDService = inject(StudentGroupCRUDService);
+
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
@@ -158,16 +160,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       },
     },
   ];
-
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private groupCRUDService: GroupCRUDService,
-    private localStorageService: LocalStorageService,
-    private schoolStateService: SchoolStateService,
-    private studentCRUDService: StudentCRUDService,
-    private studentGroupCRUDService: StudentGroupCRUDService,
-  ) { }
 
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);

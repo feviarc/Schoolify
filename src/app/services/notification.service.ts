@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
 import {
   arrayRemove,
@@ -29,16 +29,16 @@ const TOKEN_REQUEST_DEADLINE_MS = 5_000;
 
 @Injectable({providedIn: 'root'})
 export class NotificationService {
+  private messaging = inject(Messaging);
+  private platform = inject(Platform);
+  private firestore = inject(Firestore);
+  private auth = inject(Auth);
+
 
   /** Token de ESTE dispositivo para esta sesion. Tras recargar la app queda en null. */
   protected currentToken: string | null = null;
 
-  constructor(
-    private messaging: Messaging,
-    private platform: Platform,
-    private firestore: Firestore,
-    private auth: Auth
-  ) {
+  constructor() {
     // Escuchar mensajes cuando la app está abierta
     this.listenToForegroundMessages();
   }

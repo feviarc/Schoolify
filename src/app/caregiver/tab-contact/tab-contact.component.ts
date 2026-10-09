@@ -1,6 +1,6 @@
 /* eslint-disable @angular-eslint/prefer-inject */
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
@@ -52,6 +52,11 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
 })
 
 export class TabContactComponent implements OnInit {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private localStorage = inject(LocalStorageService);
+  private userProfileService = inject(UserProfileService);
+
 
   cctShift = '';
   escuela = '';
@@ -80,13 +85,6 @@ export class TabContactComponent implements OnInit {
 
   private readonly CCT_KEY = this.localStorage.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
-
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private localStorage: LocalStorageService,
-    private userProfileService: UserProfileService,
-  ) {}
 
   ngOnInit() {
     const cct = this.localStorage.getKey(this.CCT_KEY);

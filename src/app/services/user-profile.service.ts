@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   collection,
@@ -22,10 +22,10 @@ const PROFILE_CACHE_TTL_MS = 60_000;
 
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
+  private firestore = inject(Firestore);
+
 
   private readonly profileCache = new Map<string, { profile: UserProfile | null; expiresAt: number }>();
-
-  constructor(private firestore: Firestore) { }
 
   async createUserProfile(profile: UserProfile): Promise<void> {
     const userDocRef = doc(this.firestore, `usuarios/${profile.uid}`);

@@ -1,7 +1,7 @@
 /* eslint-disable @angular-eslint/prefer-inject */
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import {
   FormBuilder,
@@ -68,6 +68,14 @@ import { UserProfileService } from '../services/user-profile.service';
 })
 
 export class CaregiverPage implements OnInit {
+  private formBuilder = inject(FormBuilder);
+  private router = inject(Router);
+  private authService = inject(AuthService);
+  private localStorage = inject(LocalStorageService);
+  private schoolCRUDService = inject(SchoolCRUDService);
+  private schoolStateService = inject(SchoolStateService);
+  private userProfileService = inject(UserProfileService);
+
 
   uid?: string;
   cctShift?: string;
@@ -105,16 +113,6 @@ export class CaregiverPage implements OnInit {
   get nombre() {
     return this.form.get('nombre');
   }
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private router: Router,
-    private authService: AuthService,
-    private localStorage: LocalStorageService,
-    private schoolCRUDService: SchoolCRUDService,
-    private schoolStateService: SchoolStateService,
-    private userProfileService: UserProfileService,
-  ) {}
 
   async ngOnInit() {
     this.getSchoolName();

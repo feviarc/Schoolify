@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -47,6 +47,8 @@ export interface School {
 
 @Injectable({ providedIn: 'root' })
 export class SchoolCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly COLLECTION_NAME = 'escuelas';
   private schoolsCollection: CollectionReference;
@@ -54,7 +56,7 @@ export class SchoolCRUDService {
   private schoolsSubject = new BehaviorSubject<School[]>([]);
   public schools$ = this.schoolsSubject.asObservable();
 
-  constructor(private firestore: Firestore) {
+  constructor() {
     this.schoolsCollection = collection(this.firestore, this.COLLECTION_NAME);
     // Load schools when service initializes
     this.loadSchools();

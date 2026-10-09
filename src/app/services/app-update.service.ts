@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -9,11 +9,13 @@ import { filter } from 'rxjs/operators';
 })
 
 export class AppUpdateService {
+  private swUpdate = inject(SwUpdate);
+
 
   private updateAvailableSubject = new BehaviorSubject<boolean>(false);
   public updateAvailable$ = this.updateAvailableSubject.asObservable();
 
-  constructor(private swUpdate: SwUpdate) {
+  constructor() {
     this.checkForUpdates();
   }
 

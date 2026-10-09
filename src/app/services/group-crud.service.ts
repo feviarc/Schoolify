@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -47,6 +47,8 @@ export interface Group {
 @Injectable({ providedIn: 'root' })
 
 export class GroupCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly COLLECTION_NAME = 'grupos';
   private groupsCollection: CollectionReference;
@@ -55,7 +57,7 @@ export class GroupCRUDService {
   private groupsSubject = new BehaviorSubject<Group[]>([]);
   public groups$ = this.groupsSubject.asObservable();
 
-  constructor(private firestore: Firestore) {
+  constructor() {
     this.groupsCollection = collection(this.firestore, this.COLLECTION_NAME);
     // Load groups when service initializes
     this.loadGroups();

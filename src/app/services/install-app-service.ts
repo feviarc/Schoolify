@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { LoadingService } from './loading-service';
 
 @Injectable({ providedIn: 'root' })
 export class InstallAppService {
+  private loadingService = inject(LoadingService);
+
 
   private installPromptEvent: any;
 
-  constructor(private loadingService: LoadingService) {
+  constructor() {
     this.installPromptEvent = null;
   }
 

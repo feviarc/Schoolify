@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import {
   IonApp,
@@ -51,6 +51,8 @@ import { AppUpdateService } from './services/app-update.service';
 })
 
 export class AppComponent implements OnInit{
+  private appUpdateService = inject(AppUpdateService);
+
 
   updateAvailable$ = this.appUpdateService.updateAvailable$;
 
@@ -60,7 +62,7 @@ export class AppComponent implements OnInit{
     handler: () => this.updateApp()
   }];
 
-  constructor(private appUpdateService: AppUpdateService) {
+  constructor() {
     addIcons({
       add,
       book,

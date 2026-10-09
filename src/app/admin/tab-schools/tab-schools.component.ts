@@ -1,12 +1,6 @@
 import { CommonModule } from '@angular/common';
 
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  QueryList,
-  ViewChildren,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 
 import {
   AbstractControl,
@@ -109,6 +103,11 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
 })
 
 export class TabSchoolsComponent implements OnInit, OnDestroy {
+  private formBuilder = inject(FormBuilder);
+  private groupCRUDService = inject(GroupCRUDService);
+  private schoolCRUDService = inject(SchoolCRUDService);
+  private subjectCRUDService = inject(SubjectCRUDService);
+
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
 
@@ -156,13 +155,6 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   get cct() {
     return this.schoolForm.get('cct')!;
   }
-
-  constructor(
-    private formBuilder: FormBuilder,
-    private groupCRUDService: GroupCRUDService,
-    private schoolCRUDService: SchoolCRUDService,
-    private subjectCRUDService: SubjectCRUDService
-  ) {}
 
   ngOnInit() {
     const sub1 = this.schoolCRUDService.schools$.subscribe({

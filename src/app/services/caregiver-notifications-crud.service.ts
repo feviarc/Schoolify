@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   addDoc,
@@ -72,11 +72,11 @@ export interface NotificationInput {
 })
 
 export class CaregiverNotificationsCRUDService {
+  private firestore = inject(Firestore);
+
 
   private readonly USERS_COLLECTION = 'usuarios';
   private readonly NOTIFICATIONS_SUBCOLLECTION = 'notificaciones';
-
-  constructor(private firestore: Firestore) {}
 
   /**
    * Get notifications subcollection reference for a caregiver/tutor

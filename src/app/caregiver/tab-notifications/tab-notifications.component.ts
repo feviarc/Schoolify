@@ -1,6 +1,6 @@
 /* eslint-disable @angular-eslint/prefer-inject */
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import {
   IonBadge,
@@ -46,6 +46,9 @@ import { CaregiverNotificationsCRUDService, CaregiverNotification } from 'src/ap
 })
 
 export class TabNotificationsComponent  implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private caregiverNotifCRUDService = inject(CaregiverNotificationsCRUDService);
+
 
   cct!: string;
   tid?: string;
@@ -55,11 +58,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   user: User | null = null;
   notifications: CaregiverNotification[] = [];
   subscriptions: Subscription[] = [];
-
-  constructor(
-    private authService: AuthService,
-    private caregiverNotifCRUDService: CaregiverNotificationsCRUDService,
-  ) { }
 
   async ngOnInit() {
     await this.getCurrentUser();

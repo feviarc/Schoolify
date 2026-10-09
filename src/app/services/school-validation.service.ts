@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   collection,
@@ -14,13 +14,15 @@ import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SchoolValidationService {
+  private firestore = inject(Firestore);
+
 
   private readonly COLLECTION_NAME = 'escuelas';
   private collectionRef: CollectionReference;
   private cctpinValidSource = new BehaviorSubject<boolean>(false);
   cctpinValidSource$ = this.cctpinValidSource.asObservable();
 
-  constructor(private firestore: Firestore) {
+  constructor() {
     this.collectionRef = collection(this.firestore, this.COLLECTION_NAME);
   }
 

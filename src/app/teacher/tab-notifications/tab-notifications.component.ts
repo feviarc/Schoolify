@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  QueryList,
-  ViewChildren,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 
 import {
   IonAccordion,
@@ -92,6 +86,12 @@ import { SubjectCRUDService, Subject } from 'src/app/services/subject-crud.servi
 })
 
 export class TabNotificationsComponent  implements OnInit, OnDestroy {
+  private caregiverNotifCRUDService = inject(CaregiverNotificationsCRUDService);
+  private localStorageService = inject(LocalStorageService);
+  private studentCRUDService = inject(StudentCRUDService);
+  private studentGroupCRUDService = inject(StudentGroupCRUDService);
+  private subjectCRUDService = inject(SubjectCRUDService);
+
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
   @ViewChildren(IonCheckbox) checkboxes!: QueryList<IonCheckbox>;
@@ -155,14 +155,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       },
     },
   ];
-
-  constructor(
-    private caregiverNotifCRUDService: CaregiverNotificationsCRUDService,
-    private localStorageService: LocalStorageService,
-    private studentCRUDService: StudentCRUDService,
-    private studentGroupCRUDService: StudentGroupCRUDService,
-    private subjectCRUDService: SubjectCRUDService,
-  ) { }
 
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);

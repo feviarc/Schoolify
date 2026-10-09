@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import {
   collection,
@@ -14,8 +14,8 @@ import { UserProfile } from '../models/user-profile.model';
 
 @Injectable({ providedIn: 'root' })
 export class TeacherDataService {
+  private firestore = inject(Firestore);
 
-  constructor(private firestore: Firestore) {}
 
   getTeachers(): Observable<UserProfile[]> {
     const usersRef = collection(this.firestore, 'usuarios');

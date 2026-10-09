@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ActivatedRouteSnapshot,
   CanActivate,
@@ -15,12 +15,10 @@ import { UserProfileService } from '../services/user-profile.service';
 @Injectable({providedIn: 'root'})
 
 export class AuthGuard implements CanActivate, CanActivateChild {
+  private authService = inject(AuthService);
+  private userProfileService = inject(UserProfileService);
+  private router = inject(Router);
 
-  constructor(
-    private authService: AuthService,
-    private userProfileService: UserProfileService,
-    private router: Router
-  ) { }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
     return this.checkAccess(route);

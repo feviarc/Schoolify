@@ -1,11 +1,6 @@
 import { CommonModule } from '@angular/common';
 
-import {
-  Component,
-  HostListener,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -77,6 +72,13 @@ import { UserProfileService } from '../services/user-profile.service';
 })
 
 export class PortalPage implements OnInit {
+  private authService = inject(AuthService);
+  private localStorageService = inject(LocalStorageService);
+  private router = inject(Router);
+  private schoolValidationService = inject(SchoolValidationService);
+  private userProfileService = inject(UserProfileService);
+  installAppService = inject(InstallAppService);
+
 
   @ViewChild(IonModal) modal!: IonModal;
 
@@ -104,15 +106,6 @@ export class PortalPage implements OnInit {
     const iOSMatchMedia = (window.navigator as any).standalone;
     return ( androidMatchMedia || iOSMatchMedia  === true);
   }
-
-  constructor(
-    private authService: AuthService,
-    private localStorageService: LocalStorageService,
-    private router: Router,
-    private schoolValidationService: SchoolValidationService,
-    private userProfileService: UserProfileService,
-    public installAppService: InstallAppService,
-  ) {}
 
   async ngOnInit() {
     const storedCCT = this.localStorageService.getKey(this.CCT_KEY);
