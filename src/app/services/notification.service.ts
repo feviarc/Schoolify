@@ -213,6 +213,12 @@ export class NotificationService {
    * no hay un service worker activo (por ejemplo en desarrollo, donde el SW esta
    * deshabilitado), y colgaria tanto el login como el cierre de sesion.
    * `getRegistration()` resuelve siempre.
+   *
+   * Devuelve la registration de `ngsw-worker.js`, que es el SW que HOY maneja el
+   * push (Angular muestra la notificacion y el clic navega por el `onActionClick`
+   * que agrega la Cloud Function). Si algun dia se migra el push al SW de FCM, leer
+   * las trampas documentadas al inicio de `src/firebase-messaging-sw.template.js`
+   * (no se genera solo, doble notificacion y ruta del clic).
    */
   protected async getPushRegistration(): Promise<ServiceWorkerRegistration | null> {
     if(!('serviceWorker' in navigator)) {
