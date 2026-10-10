@@ -105,3 +105,12 @@ ion-textarea {
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   width: 90%;
 }
+
+/* Sliding rows: hint that they can be dragged sideways with the mouse */
+ion-item-sliding {
+  cursor: grab;
+}
+
+ion-item-sliding:active {
+  cursor: grabbing;
+}
