@@ -101,7 +101,7 @@ export class AuthPage implements OnInit {
 
     let role;
     const isFirstUser = await this.userProfileService.isFirstUser();
-    const { email, password, isTutor } = this.authForm.value;
+    const { email, password, isTeacher } = this.authForm.value;
 
     try {
       if(this.isLoginMode) {
@@ -120,12 +120,12 @@ export class AuthPage implements OnInit {
 
       } else {
 
-        if(isTutor){
-          role = 'tutor';
-        } else if(isFirstUser) {
+        if(isFirstUser) {
           role = 'administrador';
-        } else {
+        } else if(isTeacher) {
           role = 'maestro';
+        } else {
+          role = 'tutor';
         }
 
         await this.loadingService.updateMessage(`Registrando ${role}...`);
@@ -229,13 +229,13 @@ export class AuthPage implements OnInit {
   }
 
   private updateFormControls() {
-    const isTutorControl = this.authForm.get('isTutor');
+    const isTeacherControl = this.authForm.get('isTeacher');
     if(!this.isLoginMode) {
-      if(!isTutorControl) {
-        this.authForm.addControl('isTutor', this.formBuilder.control(false));
+      if(!isTeacherControl) {
+        this.authForm.addControl('isTeacher', this.formBuilder.control(false));
       }
     } else {
-      this.authForm.removeControl('isTutor');
+      this.authForm.removeControl('isTeacher');
     }
   }
 
