@@ -363,6 +363,18 @@ export const deleteTeacher = onCall(
 
     const db = getFirestore();
 
+    // Solo un administrador puede borrar cuentas. Las reglas de Firestore no
+    // cubren esta funcion (se salta el cliente), asi que el rol se comprueba aqui.
+    const solicitante = await db.collection('usuarios').doc(request.auth.uid).get();
+
+    if (!solicitante.exists || solicitante.data()?.rol !== 'administrador') {
+      throw new HttpsError('permission-denied', 'Solo un administrador puede eliminar usuarios.');
+    }
+
+    if (uid === request.auth.uid) {
+      throw new HttpsError('failed-precondition', 'No puedes eliminar tu propia cuenta de administrador.');
+    }
+
     try {
       await getAuth().deleteUser(uid);
       await db.collection('usuarios').doc(uid).delete();
