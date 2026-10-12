@@ -100,7 +100,6 @@ export class AuthPage implements OnInit {
     await this.loadingService.present();
 
     let role;
-    const isFirstUser = await this.userProfileService.isFirstUser();
     const { email, password, isTeacher } = this.authForm.value;
 
     try {
@@ -120,9 +119,9 @@ export class AuthPage implements OnInit {
 
       } else {
 
-        if(isFirstUser) {
-          role = 'administrador';
-        } else if(isTeacher) {
+        // El rol se elige en el propio registro. Los administradores NO se
+        // autoregistran: se siembran desde la consola (ver firestore.rules).
+        if(isTeacher) {
           role = 'maestro';
         } else {
           role = 'tutor';

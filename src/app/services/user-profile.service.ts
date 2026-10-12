@@ -44,12 +44,6 @@ export class UserProfileService {
     );
   }
 
-  async isFirstUser(): Promise<boolean> {
-    const usuariosCollectionRef = collection(this.firestore, 'usuarios');
-    const querySnapshot = await getDocs(usuariosCollectionRef);
-    return querySnapshot.empty;
-  }
-
   async updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
     const userDocRef = doc(this.firestore, `usuarios/${uid}`);
     try {
