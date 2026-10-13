@@ -157,7 +157,7 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    const sub1 = this.schoolCRUDService.schools$.subscribe({
+    const sub1 = this.schoolCRUDService.getSchools().subscribe({
       next: schools => {
         this.schools = schools;
         if(schools.length !== 0){

@@ -115,7 +115,7 @@ export class CaregiverPage implements OnInit {
   }
 
   async ngOnInit() {
-    this.getSchoolName();
+    await this.getSchoolName();
     await this.getCurrentUser();
     await this.getUserProfile();
 
@@ -124,21 +124,23 @@ export class CaregiverPage implements OnInit {
     }, 300);
   }
 
-  getSchoolName() {
+  /**
+   * `escuelas` solo lo lee el administrador (el documento contiene el `pin`), asi
+   * que el tutor obtiene los datos de su escuela por la funcion `getMySchool`.
+   */
+  async getSchoolName() {
     const cct = this.localStorage.getKey(this.CCT_KEY);
     const shift = this.localStorage.getKey(this.SHIFT_KEY);
     this.cctShift = `${cct}${shift}`;
 
-    this.schoolCRUDService.getSchoolByCCT(this.cctShift).subscribe({
-      next: school => {
-        if(!school) {
-          return;
-        }
+    const school = await this.schoolCRUDService.getMySchool(this.cctShift);
 
-        this.schoolStateService.setSchool(school);
-        this.form.get('escuela')?.setValue(school?.nombre);
-      }
-    });
+    if(!school) {
+      return;
+    }
+
+    this.schoolStateService.setSchool(school);
+    this.form.get('escuela')?.setValue(school.nombre);
   }
 
   onLogout() {

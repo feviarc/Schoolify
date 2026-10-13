@@ -365,9 +365,9 @@ export const deleteTeacher = onCall(
 
     // Solo un administrador puede borrar cuentas. Las reglas de Firestore no
     // cubren esta funcion (se salta el cliente), asi que el rol se comprueba aqui.
-    const solicitante = await db.collection('usuarios').doc(request.auth.uid).get();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
 
-    if (!solicitante.exists || solicitante.data()?.rol !== 'administrador') {
+    if (!caller.exists || caller.data()?.rol !== 'administrador') {
       throw new HttpsError('permission-denied', 'Solo un administrador puede eliminar usuarios.');
     }
 
@@ -383,6 +383,88 @@ export const deleteTeacher = onCall(
     } catch (error) {
       console.error('❌ Schoolify: [deleteTeacher]', error);
       throw new HttpsError('internal', 'Error al eliminar el maestro.');
+    }
+  }
+);
+
+
+/**
+ * Valida CCT + PIN desde el portal, que todavia no tiene sesion.
+ *
+ * Vive aqui porque `escuelas` dejo de ser legible por cualquiera: el PIN no puede
+ * salir del servidor. El PIN se guarda como number y la igualdad de Firestore
+ * distingue tipos, asi que se compara contra un number (con string no encontraria
+ * nada, y el portal fallaria en silencio).
+ */
+export const validateSchoolAccess = onCall(
+  async (request) => {
+    const cct = typeof request.data?.cct === 'string' ? request.data.cct.trim().toUpperCase() : '';
+    const pin = request.data?.pin;
+
+    if (!cct || typeof pin !== 'number' || !Number.isFinite(pin)) {
+      return {valid: false};
+    }
+
+    try {
+      const snapshot = await getFirestore()
+        .collection('escuelas')
+        .where('cct', '==', cct)
+        .where('pin', '==', pin)
+        .limit(1)
+        .get();
+
+      return {valid: !snapshot.empty};
+    } catch (error) {
+      console.error('❌ Schoolify: [validateSchoolAccess]', error);
+      return {valid: false};
+    }
+  }
+);
+
+
+/**
+ * Datos de la escuela de quien llama: id, cct, nombre y turno. Nunca el PIN.
+ * Maestro y tutor los usan para mostrar el nombre de su escuela.
+ */
+export const getMySchool = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    try {
+      const db = getFirestore();
+      const profile = await db.collection('usuarios').doc(request.auth.uid).get();
+
+      // El cct del perfil manda; el del cliente solo cubre perfiles antiguos,
+      // creados antes de guardar `cct` (el dato no es sensible: no incluye el PIN).
+      const cct = profile.data()?.cct ||
+        (typeof request.data?.cct === 'string' ? request.data.cct.trim().toUpperCase() : '');
+
+      if (!cct) {
+        return {school: null};
+      }
+
+      const snapshot = await db.collection('escuelas').where('cct', '==', cct).limit(1).get();
+
+      if (snapshot.empty) {
+        return {school: null};
+      }
+
+      const school = snapshot.docs[0];
+      const data = school.data();
+
+      return {
+        school: {
+          id: school.id,
+          cct: data.cct,
+          nombre: data.nombre,
+          turno: data.turno,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Schoolify: [getMySchool]', error);
+      throw new HttpsError('internal', 'No se pudo obtener la escuela.');
     }
   }
 );

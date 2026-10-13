@@ -1,124 +1,145 @@
 rules_version = '2';
 
-// Fase 2: se restringen las ESCRITURAS.
-// Antes: `allow write: if request.auth != null`, es decir cualquier persona que se
-// registrara podia reescribir toda la base, incluido su propio `rol` (auto-ascenso
-// a administrador) y el borrado de cuentas.
+// Estado actual:
+//   - Escrituras acotadas por rol. Antes eran `allow write: if request.auth != null`,
+//     asi que cualquiera que se registrara podia reescribir la base entera, incluido
+//     su propio `rol` (auto-ascenso a administrador) y el borrado de cuentas.
+//   - `escuelas` es solo del administrador porque el documento contiene el `pin`,
+//     que es la credencial de acceso al portal.
+//   - Las lecturas marcadas como "Pendiente para la 1B" siguen abiertas: acotarlas
+//     por escuela es el siguiente paso.
 //
-// Las LECTURAS siguen como estaban (publicas) y se cierran en la Fase 1.
-//
-// Antes de desplegar estas reglas:
+// Antes de desplegar:
 //   1) tiene que existir al menos un usuario con `rol: 'administrador'`; si no,
 //      se siembra a mano en la consola (el Admin SDK no pasa por estas reglas);
 //   2) el cliente ya no debe intentar registrarse como administrador
-//      (rama `isFirstUser` de auth.page.ts).
+//      (el rol se elige en auth.page.ts entre maestro y tutor).
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function autenticado() {
+    function isAuthenticated() {
       return request.auth != null;
     }
 
     // Perfil del usuario que hace la peticion. Si no existe, el acceso al campo
     // produce error y la condicion se evalua como falsa (se deniega).
-    function perfil() {
+    function profile() {
       return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
-    function esAdmin() {
-      return autenticado() && perfil().rol == 'administrador';
+    function isAdmin() {
+      return isAuthenticated() && profile().rol == 'administrador';
     }
 
-    function esMaestro() {
-      return autenticado() && perfil().rol == 'maestro';
+    function isTeacher() {
+      return isAuthenticated() && profile().rol == 'maestro';
     }
 
-    function esAdminOMaestro() {
-      return esAdmin() || esMaestro();
+    function isAdminOrTeacher() {
+      return isAdmin() || isTeacher();
     }
 
-    function esMiPerfil(uid) {
-      return autenticado() && request.auth.uid == uid;
+    function isOwnProfile(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
     }
 
     // Claves que cambiaron respecto al documento actual.
-    function cambioAlguno(claves) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasAny(claves);
+    function anyKeyChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(keys);
     }
 
-    function soloCambia(claves) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(claves);
+    function onlyKeysChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
     // ==================== usuarios ====================
 
     match /usuarios/{uid} {
+      // Pendiente para la 1B: hoy cualquier usuario autenticado lee cualquier perfil.
+      allow read: if true;
+
       // Autoregistro: solo maestro o tutor. El primer administrador se siembra
       // desde la consola, nunca desde el cliente.
-      allow create: if esMiPerfil(uid)
+      allow create: if isOwnProfile(uid)
         && request.resource.data.rol in ['maestro', 'tutor'];
 
       // El dueño mantiene su perfil, su escuela y sus tokens FCM, pero NO puede
       // tocarse el rol (aqui se corta la escalada de privilegios).
-      allow update: if esAdmin()
-        || (esMiPerfil(uid) && !cambioAlguno(['rol', 'uid', 'email']));
+      allow update: if isAdmin()
+        || (isOwnProfile(uid) && !anyKeyChanged(['rol', 'uid', 'email']));
 
       // Borrar cuentas es cosa del administrador (o de la funcion deleteTeacher).
-      allow delete: if esAdmin();
+      allow delete: if isAdmin();
     }
 
     // Avisos dentro de cada usuario: los escribe el maestro que los genera, los
     // gestiona el administrador. El tutor solo los lee.
-    match /usuarios/{uid}/notificaciones/{notificacionId} {
-      allow create: if esAdminOMaestro();
+    match /usuarios/{uid}/notificaciones/{notificationId} {
+      // Pendiente para la 1B: deberia leerlas solo su dueño (y el administrador).
+      allow read: if true;
 
-      allow update, delete: if esAdmin();
+      allow create: if isAdminOrTeacher();
+
+      allow update, delete: if isAdmin();
     }
 
     // ==================== escuelas ====================
 
-    // La gestion de escuelas vive en el panel de administrador.
-    // OJO: la lectura seguira siendo publica hasta la Fase 1 (aqui esta el `pin`).
-    match /escuelas/{escuelaId} {
-      allow write: if esAdmin();
+    // Solo el administrador: el documento contiene el `pin`, que es la credencial
+    // de acceso al portal. El portal valida CCT + PIN con la funcion
+    // `validateSchoolAccess`, y maestro/tutor obtienen su escuela con `getMySchool`;
+    // ambas usan el Admin SDK, que no pasa por estas reglas.
+    match /escuelas/{schoolId} {
+      allow read: if isAdmin();
+
+      allow write: if isAdmin();
     }
 
     // ==================== alumnos ====================
 
-    match /alumnos/{alumnoId} {
-      allow create, delete: if esAdminOMaestro();
+    match /alumnos/{studentId} {
+      // Pendiente para la 1B: acotar por escuela (`resource.data.cct`).
+      allow read: if true;
+
+      allow create, delete: if isAdminOrTeacher();
 
       // El maestro (y el administrador) editan todo. El tutor solo puede
       // reclamar al alumno para si mismo: `tid` debe ser su propio uid, y el
       // alumno no puede estar ya reclamado por otro tutor.
-      allow update: if esAdminOMaestro()
-        || (autenticado()
+      allow update: if isAdminOrTeacher()
+        || (isAuthenticated()
             && request.resource.data.tid == request.auth.uid
             && resource.data.get('tid', '') in ['', request.auth.uid]
-            && soloCambia(['tid', 'nombreTutor', 'updatedAt']));
+            && onlyKeysChanged(['tid', 'nombreTutor', 'updatedAt']));
     }
 
     // ==================== grupos y materias ====================
 
-    match /grupos/{grupoId} {
-      allow write: if esAdmin();
+    match /grupos/{groupId} {
+      // Pendiente para la 1B.
+      allow read: if true;
+
+      allow write: if isAdmin();
     }
 
-    match /materias/{materiaId} {
-      allow write: if esAdmin();
+    match /materias/{subjectId} {
+      // Pendiente para la 1B.
+      allow read: if true;
+
+      allow write: if isAdmin();
     }
 
     match /grupos_de_alumnos/{gid} {
-      allow write: if esAdminOMaestro();
+      // Pendiente para la 1B: acotar por escuela (`resource.data.cct`).
+      allow read: if true;
+
+      allow write: if isAdminOrTeacher();
     }
 
     // ==================== lecturas ====================
 
-    // Sin cambios respecto a las reglas anteriores: todo el mundo puede leer.
-    // Este bloque es lo que la Fase 1 tiene que eliminar, junto con la mudanza
-    // del `pin` a un documento privado.
-    match /{document=**} {
-      allow read: if true;
-    }
+    // No hay un bloque `match /{document=**}` que abra la lectura de todo: cada
+    // coleccion concede la lectura que necesita, y lo que no se concede queda
+    // denegado.
   }
 }

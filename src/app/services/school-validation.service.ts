@@ -1,52 +1,42 @@
 import { Injectable, inject } from '@angular/core';
 
-import {
-  collection,
-  CollectionReference,
-  getDocs,
-  Firestore,
-  query,
-  where,
-} from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import { BehaviorSubject } from 'rxjs';
 
 
 @Injectable({ providedIn: 'root' })
 export class SchoolValidationService {
-  private firestore = inject(Firestore);
+  private functions = inject(Functions);
 
 
-  private readonly COLLECTION_NAME = 'escuelas';
-  private collectionRef: CollectionReference;
   private cctpinValidSource = new BehaviorSubject<boolean>(false);
   cctpinValidSource$ = this.cctpinValidSource.asObservable();
-
-  constructor() {
-    this.collectionRef = collection(this.firestore, this.COLLECTION_NAME);
-  }
 
   getValidationStatus(): boolean {
     return this.cctpinValidSource.getValue();
   }
 
   /**
-   * El PIN se guarda como number en `escuelas` (ver `School.pin`) y la igualdad de
-   * Firestore distingue tipos, asi que la consulta TIENE que ser numerica.
-   * El portal entrega un number porque `ion-input-otp` usa `type="number"` por
-   * defecto y su value accessor aplica parseFloat (null cuando el campo esta vacio).
-   * Pasar un string aqui rompe la validacion de todas las escuelas en silencio.
+   * La validacion vive en la funcion `validateSchoolAccess` porque `escuelas` solo
+   * lo lee el administrador: el `pin` es la credencial del portal y no puede salir
+   * del servidor.
+   *
+   * El PIN se guarda como number en `escuelas` y la igualdad de Firestore distingue
+   * tipos, asi que tiene que viajar como number. El portal lo entrega asi porque
+   * `ion-input-otp` usa `type="number"` por defecto y su value accessor aplica
+   * parseFloat (null cuando el campo esta vacio). Mandarlo como string haria que la
+   * validacion fallara en silencio para todas las escuelas.
    */
   async validateCredentials(cct: string, pin: number): Promise<boolean> {
-    const q = query(
-      this.collectionRef,
-      where('cct', '==', cct),
-      where('pin', '==', pin)
-    );
-
     try {
-      const querySnapshot = await getDocs(q);
-      const isValid = !querySnapshot.empty;
+      const callable = httpsCallable<{ cct: string; pin: number }, { valid: boolean }>(
+        this.functions,
+        'validateSchoolAccess'
+      );
+
+      const { data } = await callable({ cct, pin });
+      const isValid = data?.valid === true;
       this.cctpinValidSource.next(isValid);
       return isValid;
 

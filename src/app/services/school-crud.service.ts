@@ -16,8 +16,9 @@ import {
   where,
 } from '@angular/fire/firestore';
 
+import { Functions, httpsCallable } from '@angular/fire/functions';
+
 import {
-  BehaviorSubject,
   from,
   Observable,
   of,
@@ -28,7 +29,6 @@ import {
   catchError,
   map,
   switchMap,
-  tap,
 } from 'rxjs/operators';
 
 
@@ -36,8 +36,9 @@ export interface School {
   id?: string;
   cct: string;
   nombre: string;
-  pin: number;
   turno: string;
+  /** Solo lo ve el administrador: `getMySchool` nunca lo devuelve. */
+  pin?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -46,18 +47,36 @@ export interface School {
 @Injectable({ providedIn: 'root' })
 export class SchoolCRUDService {
   private firestore = inject(Firestore);
+  private functions = inject(Functions);
 
 
   private readonly COLLECTION_NAME = 'escuelas';
   private schoolsCollection: CollectionReference;
-  // BehaviorSubject to maintain schools state
-  private schoolsSubject = new BehaviorSubject<School[]>([]);
-  public schools$ = this.schoolsSubject.asObservable();
 
   constructor() {
     this.schoolsCollection = collection(this.firestore, this.COLLECTION_NAME);
-    // Load schools when service initializes
-    this.loadSchools();
+  }
+
+  /**
+   * Datos de la escuela del usuario autenticado, sin `pin`.
+   * El cliente ya no puede leer `escuelas` (solo el administrador, que es quien ve
+   * el PIN), asi que maestro y tutor pasan por la funcion `getMySchool`.
+   * @param cct - CCT de respaldo, para perfiles antiguos sin `cct` guardado
+   */
+  async getMySchool(cct?: string): Promise<School | null> {
+    try {
+      const callable = httpsCallable<{ cct?: string }, { school: School | null }>(
+        this.functions,
+        'getMySchool'
+      );
+
+      const { data } = await callable({ cct });
+      return data?.school ?? null;
+
+    } catch(error) {
+      console.error('❌ Schoolify: [school-crud.service.ts]', error);
+      return null;
+    }
   }
 
   /**
@@ -74,9 +93,6 @@ export class SchoolCRUDService {
 
     return from(addDoc(this.schoolsCollection, schoolWithTimestamps)).pipe(
       map(docRef => docRef.id),
-      tap(id => {
-        this.loadSchools(); // Update list
-      }),
       catchError(error => {
         console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not add school'));
@@ -155,9 +171,6 @@ export class SchoolCRUDService {
 
         return from(updateDoc(docRef, dataWithTimestamp));
       }),
-      tap(() => {
-        this.loadSchools(); // Update list
-      }),
       catchError(error => {
         console.error('❌ Schoolify: [school-crud.service.ts]', error);
         return throwError(() => new Error('Could not update school'));
@@ -179,9 +192,6 @@ export class SchoolCRUDService {
           return throwError(() => new Error('School does not exist'));
         }
         return from(deleteDoc(docRef));
-      }),
-      tap(() => {
-        this.loadSchools(); // Update list
       }),
       catchError(error => {
         console.error('❌ Schoolify: [school-crud.service.ts]', error);
@@ -209,17 +219,6 @@ export class SchoolCRUDService {
         return true;
       })
     );
-  }
-
-  /**
-   * Load all schools and update the BehaviorSubject
-   * Private method that keeps the state updated
-   */
-  private loadSchools(): void {
-    this.getSchools().subscribe({
-      next: (schools) => this.schoolsSubject.next(schools),
-      error: (error) => console.error('❌ Schoolify: [school-crud.service.ts]', error)
-    });
   }
 
 }

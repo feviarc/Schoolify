@@ -122,7 +122,7 @@ export class TeacherPage implements OnInit {
   }
 
   async ngOnInit() {
-    this.getSchoolName();
+    await this.getSchoolName();
     await this.getCurrentUser();
     await this.getUserProfile();
 
@@ -131,7 +131,11 @@ export class TeacherPage implements OnInit {
     }, 300);
   }
 
-  getSchoolName() {
+  /**
+   * `escuelas` solo lo lee el administrador (el documento contiene el `pin`), asi
+   * que el maestro obtiene los datos de su escuela por la funcion `getMySchool`.
+   */
+  async getSchoolName() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);
     const shift = this.localStorageService.getKey(this.SHIFT_KEY);
 
@@ -141,15 +145,14 @@ export class TeacherPage implements OnInit {
 
     this.cct = `${cct}${shift}`;
 
-    this.schoolCRUDService.getSchoolByCCT(this.cct).subscribe({
-      next: school => {
-        if(!school) {
-          return;
-        }
-        this.schoolStateService.setSchool(school);
-        this.form.get('escuela')?.setValue(school?.nombre);
-      }
-    });
+    const school = await this.schoolCRUDService.getMySchool(this.cct);
+
+    if(!school) {
+      return;
+    }
+
+    this.schoolStateService.setSchool(school);
+    this.form.get('escuela')?.setValue(school.nombre);
   }
 
   onLogout() {
