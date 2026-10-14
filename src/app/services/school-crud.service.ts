@@ -37,6 +37,8 @@ export interface School {
   cct: string;
   nombre: string;
   turno: string;
+  /** Telefono fijo de la escuela: lo usa la pestaña de contacto del tutor. */
+  telefono?: string;
   /** Solo lo ve el administrador: `getMySchool` nunca lo devuelve. */
   pin?: number;
   createdAt?: Date;

@@ -156,6 +156,10 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     return this.schoolForm.get('cct')!;
   }
 
+  get telefono() {
+    return this.schoolForm.get('telefono')!;
+  }
+
   ngOnInit() {
     const sub1 = this.schoolCRUDService.getSchools().subscribe({
       next: schools => {
@@ -253,6 +257,11 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
         Validators.minLength(15),
         Validators.maxLength(100)
       ]],
+      // Telefono fijo de la escuela: es el que ve el tutor en la pestaña de contacto.
+      telefono: ['', [
+        Validators.required,
+        Validators.pattern('^[0-9]{10}$')
+      ]],
       turno: ['TM'],
       pin: [this.pin]
     });
@@ -276,17 +285,19 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     });
   }
 
-  isNotDataChanged(school: any, updateNameInput: any, updatePinInput: any) {
+  isNotDataChanged(school: any, updateNameInput: any, updatePinInput: any, updatePhoneInput: any) {
     if(+updatePinInput.value < 1111 || updateNameInput.value.length < 15 ) {
       return true;
     }
 
     const schoolName: string = updateNameInput.value;
     const schoolPin = +updatePinInput.value;
+    const schoolPhone: string = updatePhoneInput.value ?? '';
     const isSameSchoolName = school.nombre === schoolName.toUpperCase() ? true : false;
     const isSameSchoolPin = school.pin ===  schoolPin ? true : false;
+    const isSameSchoolPhone = (school.telefono ?? '') === schoolPhone ? true : false;
 
-    return (isSameSchoolName && isSameSchoolPin);
+    return (isSameSchoolName && isSameSchoolPin && isSameSchoolPhone);
   }
 
   isValidClassLetter() {
@@ -333,8 +344,8 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
   onAddSchool() {
     this.isSaveButtonDisabled = true;
 
-    const {nombre, turno, pin, cct} = this.schoolForm.value;
-    const school = {nombre, turno, pin, cct: `${cct}${turno}`};
+    const {nombre, turno, pin, cct, telefono} = this.schoolForm.value;
+    const school = {nombre, turno, pin, telefono: telefono.trim(), cct: `${cct}${turno}`};
 
     this.schoolCRUDService.addSchool(school).subscribe({
       next: () => {
@@ -389,16 +400,17 @@ export class TabSchoolsComponent implements OnInit, OnDestroy {
     });
   }
 
-  onEditInputChange(school: any, nameInput: any, pinInput: any) {
-    this.isSaveButtonDisabled = this.isNotDataChanged(school, nameInput, pinInput);
+  onEditInputChange(school: any, nameInput: any, pinInput: any, phoneInput: any) {
+    this.isSaveButtonDisabled = this.isNotDataChanged(school, nameInput, pinInput, phoneInput);
   }
 
-  onUpdateSchool(school: any, nameInput: any, pinInput: any) {
+  onUpdateSchool(school: any, nameInput: any, pinInput: any, phoneInput: any) {
     this.isSaveButtonDisabled = true;
 
     const updatedData = {
       nombre: nameInput.value.toUpperCase(),
-      pin: +pinInput.value
+      pin: +pinInput.value,
+      telefono: (phoneInput.value ?? '').trim()
     };
 
     this.schoolCRUDService.updateSchool(school.id, updatedData).subscribe({

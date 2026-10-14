@@ -460,6 +460,7 @@ export const getMySchool = onCall(
           cct: data.cct,
           nombre: data.nombre,
           turno: data.turno,
+          telefono: data.telefono ?? '',
         },
       };
     } catch (error) {
