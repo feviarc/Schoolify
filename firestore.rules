@@ -6,8 +6,12 @@ rules_version = '2';
 //     su propio `rol` (auto-ascenso a administrador) y el borrado de cuentas.
 //   - `escuelas` es solo del administrador porque el documento contiene el `pin`,
 //     que es la credencial de acceso al portal.
-//   - Las lecturas marcadas como "Pendiente para la 1B" siguen abiertas: acotarlas
-//     por escuela es el siguiente paso.
+//   - El resto de las lecturas estan acotadas por escuela o por dueño: nadie lee
+//     datos de otra escuela.
+//
+// Ojo: las reglas no son filtros. Cada consulta del cliente tiene que ser compatible
+// (filtrar por `cct`, por `tid` o por el uid del dueño); si no, Firestore la rechaza
+// entera. Las consultas reales de la app estan cubiertas en tools/rules-tests.mjs.
 //
 // Antes de desplegar:
 //   1) tiene que existir al menos un usuario con `rol: 'administrador'`; si no,
@@ -43,6 +47,18 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
 
+    // La escuela del usuario que hace la peticion.
+    function ownCct() {
+      return profile().cct;
+    }
+
+    // Compañeros de escuela: el tutor ve a los maestros de la suya, y el maestro
+    // las notificaciones de los tutores de la suya.
+    function sameSchoolAs(uid) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/usuarios/$(uid)).data.cct == ownCct();
+    }
+
     // Claves que cambiaron respecto al documento actual.
     function anyKeyChanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(keys);
@@ -55,8 +71,11 @@ service cloud.firestore {
     // ==================== usuarios ====================
 
     match /usuarios/{uid} {
-      // Pendiente para la 1B: hoy cualquier usuario autenticado lee cualquier perfil.
-      allow read: if true;
+      // El dueño, el administrador y los compañeros de la misma escuela
+      // (la agenda del tutor consulta `where('cct', '==', ...)`).
+      allow read: if isOwnProfile(uid)
+        || isAdmin()
+        || (isAuthenticated() && resource.data.cct == ownCct());
 
       // Autoregistro: solo maestro o tutor. El primer administrador se siembra
       // desde la consola, nunca desde el cliente.
@@ -72,11 +91,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Avisos dentro de cada usuario: los escribe el maestro que los genera, los
-    // gestiona el administrador. El tutor solo los lee.
+    // Avisos dentro de cada usuario: los escribe el maestro que los genera y los
+    // gestiona el administrador. Los lee el tutor dueño y el maestro de su escuela
+    // (el historial que abre desde la lista de alumnos).
     match /usuarios/{uid}/notificaciones/{notificationId} {
-      // Pendiente para la 1B: deberia leerlas solo su dueño (y el administrador).
-      allow read: if true;
+      allow read: if isOwnProfile(uid)
+        || isAdmin()
+        || (isTeacher() && sameSchoolAs(uid));
 
       allow create: if isAdminOrTeacher();
 
@@ -98,8 +119,13 @@ service cloud.firestore {
     // ==================== alumnos ====================
 
     match /alumnos/{studentId} {
-      // Pendiente para la 1B: acotar por escuela (`resource.data.cct`).
-      allow read: if true;
+      // Cualquier miembro de la escuela (maestro o tutor) lee los alumnos de SU
+      // escuela con `where('cct', '==', ...)`: el tutor necesita ver a los alumnos
+      // sin tutor para reclamar al suyo. El tutor conserva ademas la rama por
+      // `tid`, que lo cubre aunque su perfil no tenga `cct` guardado.
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.cct == ownCct())
+        || (isAuthenticated() && resource.data.tid == request.auth.uid);
 
       allow create, delete: if isAdminOrTeacher();
 
@@ -115,31 +141,24 @@ service cloud.firestore {
 
     // ==================== grupos y materias ====================
 
+    // Catalogos generales: los lee el personal de la escuela para armar los avisos.
     match /grupos/{groupId} {
-      // Pendiente para la 1B.
-      allow read: if true;
+      allow read: if isAdminOrTeacher();
 
       allow write: if isAdmin();
     }
 
     match /materias/{subjectId} {
-      // Pendiente para la 1B.
-      allow read: if true;
+      allow read: if isAdminOrTeacher();
 
       allow write: if isAdmin();
     }
 
     match /grupos_de_alumnos/{gid} {
-      // Pendiente para la 1B: acotar por escuela (`resource.data.cct`).
-      allow read: if true;
+      // El maestro, los de su escuela (`where('cct', '==', ...)`).
+      allow read: if isAdmin() || (isTeacher() && resource.data.cct == ownCct());
 
       allow write: if isAdminOrTeacher();
     }
-
-    // ==================== lecturas ====================
-
-    // No hay un bloque `match /{document=**}` que abra la lectura de todo: cada
-    // coleccion concede la lectura que necesita, y lo que no se concede queda
-    // denegado.
   }
 }

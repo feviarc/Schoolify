@@ -16,7 +16,6 @@ import {
 } from '@angular/fire/firestore';
 
 import {
-  BehaviorSubject,
   from,
   Observable,
   throwError,
@@ -26,7 +25,6 @@ import {
   catchError,
   map,
   switchMap,
-  tap,
 } from 'rxjs/operators';
 
 // ==================== INTERFACES ====================
@@ -82,14 +80,8 @@ export class StudentGroupCRUDService {
   private readonly COLLECTION_NAME = 'grupos_de_alumnos';
   private studentGroupsCollection: CollectionReference;
 
-  // BehaviorSubject to maintain student groups state
-  private studentGroupsSubject = new BehaviorSubject<StudentGroup[]>([]);
-  public studentGroups$ = this.studentGroupsSubject.asObservable();
-
   constructor() {
     this.studentGroupsCollection = collection(this.firestore, this.COLLECTION_NAME);
-    // Load student groups when service initializes
-    this.loadStudentGroups();
   }
 
   // ==================== CREATE ====================
@@ -118,9 +110,6 @@ export class StudentGroupCRUDService {
 
         return from(setDoc(docRef, groupWithTimestamps));
       }),
-      tap(() => {
-        this.loadStudentGroups();
-      }),
       catchError(error => {
         console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error(error.message || 'Could not add student group'));
@@ -129,27 +118,6 @@ export class StudentGroupCRUDService {
   }
 
   // ==================== READ ====================
-
-  /**
-   * Get all student groups (real-time)
-   * Ordered by grado and letra
-   * @returns Observable with array of student groups
-   */
-  getStudentGroups(): Observable<StudentGroup[]> {
-    const q = query(
-      this.studentGroupsCollection,
-      orderBy('grado', 'asc'),
-      orderBy('letra', 'asc')
-    );
-
-    return collectionData(q, { idField: 'gid' }).pipe(
-      map(groups => groups as StudentGroup[]),
-      catchError(error => {
-        console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
-        return throwError(() => new Error('Could not get student groups'));
-      })
-    );
-  }
 
   /**
    * Get student groups by CCT (real-time)
@@ -206,9 +174,6 @@ export class StudentGroupCRUDService {
         }
         return from(deleteDoc(docRef));
       }),
-      tap(() => {
-        this.loadStudentGroups();
-      }),
       catchError(error => {
         console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
         return throwError(() => new Error('Could not delete student group'));
@@ -217,16 +182,6 @@ export class StudentGroupCRUDService {
   }
 
   // ==================== UTILITY METHODS ====================
-
-  /**
-   * Load all student groups and update the BehaviorSubject
-   */
-  private loadStudentGroups(): void {
-    this.getStudentGroups().subscribe({
-      next: (groups) => this.studentGroupsSubject.next(groups),
-      error: (error) => console.error('❌ Schoolify: [student-group-crud.service.ts]', error)
-    });
-  }
 
 }
 

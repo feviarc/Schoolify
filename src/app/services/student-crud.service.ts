@@ -16,7 +16,6 @@ import {
 } from '@angular/fire/firestore';
 
 import {
-  BehaviorSubject,
   Observable,
 } from 'rxjs';
 
@@ -62,18 +61,8 @@ export class StudentCRUDService {
   private readonly STUDENTS_COLLECTION = 'alumnos';
   private studentsCollection: CollectionReference;
 
-  // BehaviorSubject to maintain students state
-  private studentsSubject = new BehaviorSubject<Student[]>([]);
-
-  /**
-   * Observable stream of all students (real-time)
-   * ⚠️ REQUIERE UNSUBSCRIBE: Usa async pipe o unsubscribe en ngOnDestroy
-   */
-  public students$ = this.studentsSubject.asObservable();
-
   constructor() {
     this.studentsCollection = collection(this.firestore, this.STUDENTS_COLLECTION);
-    this.loadStudents();
   }
 
   // ==================== STUDENTS CRUD (CREATE) ====================
@@ -92,7 +81,6 @@ export class StudentCRUDService {
 
       const studentData = {...timeStamp, ...student};
       const docRef = await addDoc(this.studentsCollection, studentData);
-      this.loadStudents(); // Refresh list
 
       return docRef.id;
 
@@ -103,24 +91,6 @@ export class StudentCRUDService {
   }
 
   // ==================== STUDENTS CRUD (READ) ====================
-
-  /**
-   * Get all students (real-time)
-   * Ordered by nombre
-   * ⚠️ REQUIERE UNSUBSCRIBE: Usa async pipe o unsubscribe en ngOnDestroy
-   * @returns Observable with array of students
-   */
-  getStudents(): Observable<Student[]> {
-    const q = query(this.studentsCollection, orderBy('nombre', 'asc'));
-
-    return collectionData(q, { idField: 'id' }).pipe(
-      map(students => students as Student[]),
-      catchError(error => {
-        console.error('❌ Schoolify: [student-crud.service.ts]', error);
-        throw error;
-      })
-    );
-  }
 
   /**
    * Get students by tutor ID
@@ -225,7 +195,6 @@ export class StudentCRUDService {
       };
 
       await updateDoc(docRef, updateData);
-      this.loadStudents(); // Refresh list
     } catch (error) {
       console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not update student');
@@ -299,7 +268,6 @@ export class StudentCRUDService {
 
       // Delete student
       await deleteDoc(docRef);
-      this.loadStudents(); // Refresh list
     } catch (error) {
       console.error('❌ Schoolify: [student-crud.service.ts]', error);
       throw new Error('Could not delete student');
@@ -308,15 +276,5 @@ export class StudentCRUDService {
 
 
   // ==================== UTILITY METHODS ====================
-
-  /**
-   * Load all students and update BehaviorSubject
-   */
-  private loadStudents(): void {
-    this.getStudents().subscribe({
-      next: (students) => this.studentsSubject.next(students),
-      error: (error) => console.error('❌ Schoolify: [student-crud.service.ts]', error)
-    });
-  }
 
 }

@@ -2,11 +2,13 @@ import { Injectable, inject } from '@angular/core';
 
 import {
   collection,
+  collectionData,
   doc,
   Firestore,
   getDoc,
-  getDocs,
+  query,
   updateDoc,
+  where,
 } from '@angular/fire/firestore';
 
 import { from, Observable, of } from 'rxjs';
@@ -54,28 +56,20 @@ export class UserProfileService {
     this.invalidateProfile(uid);
   }
 
-  getAllUsers(): Observable<UserProfile[]> {
+  /**
+   * Compañeros de la misma escuela con el rol indicado.
+   *
+   * El filtro por `cct` va en la consulta, no en memoria: las reglas acotan la
+   * lectura a la propia escuela y rechazan la consulta entera si no la filtra
+   * ("las reglas no son filtros"). El rol se filtra despues para no necesitar un
+   * indice compuesto (rol, cct).
+   */
+  getUsersByRoleAndCCT(rol: string, cct: string): Observable<UserProfile[]> {
     const usuariosCollectionRef = collection(this.firestore, 'usuarios');
+    const q = query(usuariosCollectionRef, where('cct', '==', cct));
 
-    return from(getDocs(usuariosCollectionRef)).pipe(
-      map(querySnapshot => {
-        return querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data() as UserProfile
-        }));
-      })
-    );
-  }
-
-  getUsersByRole(rol: string): Observable<UserProfile[]> {
-    return this.getAllUsers().pipe(
-      map(users => users.filter(user => user.rol === rol))
-    );
-  }
-
-  getUsersByRoleAndCCT(rol: string, cct: string) {
-    return this.getUsersByRole(rol).pipe(
-      map( users => users.filter(user => user.cct === cct))
+    return collectionData(q, { idField: 'id' }).pipe(
+      map(users => (users as UserProfile[]).filter(user => user.rol === rol))
     );
   }
 

@@ -9,6 +9,10 @@
 // Requiere Java 21 (el emulador de Firestore no acepta versiones anteriores) y
 // corre SOLO contra la base local del emulador: nunca toca el proyecto real.
 // Los ids que crea se limpian al inicio de cada corrida, asi que se puede repetir.
+//
+// Ademas de lecturas y escrituras por documento, prueba las CONSULTAS reales de la
+// app (`query`): las reglas no son filtros, asi que una consulta que no filtre por
+// `cct`, `tid` o el uid del dueño se rechaza entera.
 
 const PROJECT = 'demo-schoolify';
 const BASE = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents`;
@@ -42,15 +46,61 @@ const bool = (value) => ({ booleanValue: value });
 const timestamp = () => ({ timestampValue: new Date().toISOString() });
 const num = (value) => ({ integerValue: String(value) });
 
+// `Connection: close` evita reutilizar un socket que el emulador cerro al responder
+// un 403: Node lo reusaba y la peticion siguiente se quedaba esperando sin fin.
+// El timeout es la red de seguridad para que un cuelgue se vea como error.
+const REQUEST_TIMEOUT_MS = 15000;
+const commonHeaders = () => ({ 'Content-Type': 'application/json', Connection: 'close' });
+
+function toFirestoreValue(value) {
+  if (typeof value === 'number') return num(value);
+  if (typeof value === 'boolean') return bool(value);
+  return str(value);
+}
+
 async function sendRequest(method, path, { token, fields, mask } = {}) {
   const url = new URL(`${BASE}/${path}`);
   if (mask) mask.forEach((field) => url.searchParams.append('updateMask.fieldPaths', field));
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = commonHeaders();
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(url, {
     method,
     headers,
     body: fields ? JSON.stringify({ fields }) : undefined,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  return response.status;
+}
+
+// `path` es la ruta de la coleccion: `alumnos` o `usuarios/tutor1/notificaciones`.
+async function sendQuery(path, { token, where = [], orderBy = [] } = {}) {
+  const segments = path.split('/');
+  const collectionId = segments.pop();
+  const parentPath = segments.join('/');
+
+  const filters = where.map(({ field, op = 'EQUAL', value }) => ({
+    fieldFilter: { field: { fieldPath: field }, op, value: toFirestoreValue(value) },
+  }));
+
+  const structuredQuery = {
+    from: [{ collectionId }],
+    ...(filters.length === 1 ? { where: filters[0] } : {}),
+    ...(filters.length > 1 ? { where: { compositeFilter: { op: 'AND', filters } } } : {}),
+    ...(orderBy.length ? { orderBy: orderBy.map((field) => ({ field: { fieldPath: field } })) } : {}),
+  };
+
+  // El `parent` va en la URL, no en el cuerpo: el emulador se queda colgado si se
+  // manda en el cuerpo de la peticion.
+  const url = parentPath ? `${BASE}/${parentPath}:runQuery` : `${BASE}:runQuery`;
+
+  const headers = commonHeaders();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ structuredQuery }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   return response.status;
 }
@@ -62,14 +112,20 @@ const HTTP_METHOD = { get: 'GET', list: 'GET', post: 'POST', update: 'PATCH', de
 
 async function seed() {
   const documents = [
-    ['usuarios/admin1', { rol: str('administrador'), email: str('admin1@test.mx') }],
-    ['usuarios/maestro1', { rol: str('maestro'), email: str('maestro1@test.mx') }],
-    ['usuarios/tutor1', { rol: str('tutor'), email: str('tutor1@test.mx') }],
-    ['usuarios/tutor2', { rol: str('tutor'), email: str('tutor2@test.mx') }],
+    // Dos escuelas distintas: CCT1 (admin1, maestro1, tutor1) y CCT2 (tutor2).
+    ['usuarios/admin1', { rol: str('administrador'), email: str('admin1@test.mx'), cct: str('CCT1') }],
+    ['usuarios/maestro1', { rol: str('maestro'), email: str('maestro1@test.mx'), cct: str('CCT1') }],
+    ['usuarios/tutor1', { rol: str('tutor'), email: str('tutor1@test.mx'), cct: str('CCT1') }],
+    ['usuarios/tutor2', { rol: str('tutor'), email: str('tutor2@test.mx'), cct: str('CCT2') }],
     ['alumnos/a1', { nombre: str('ALUMNO LIBRE'), cct: str('CCT1'), validado: bool(false) }],
     ['alumnos/a2', { nombre: str('ALUMNO DE TUTOR2'), cct: str('CCT1'), tid: str('tutor2') }],
+    ['alumnos/a4', { nombre: str('ALUMNO DE OTRA ESCUELA'), cct: str('CCT2') }],
+    ['grupos_de_alumnos/g1', { cct: str('CCT1'), grado: str('1'), letra: str('A') }],
+    ['grupos_de_alumnos/g2', { cct: str('CCT2'), grado: str('1'), letra: str('B') }],
+    ['usuarios/tutor1/notificaciones/n0', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
     ['escuelas/e1', { cct: str('CCT1'), nombre: str('ESCUELA'), pin: num(1921) }],
     ['materias/m1', { nombre: str('MATEMATICAS'), grado: str('1') }],
+    ['grupos/gr1', { grado: str('1'), letra: str('A'), nombre: str('Grupo 1 A') }],
   ];
 
   for (const [path, fields] of documents) {
@@ -79,6 +135,7 @@ async function seed() {
 }
 
 const cases = [
+  // ==================== escrituras (acotadas por rol) ====================
   ['tutor1 se asciende a administrador en su propio perfil', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { rol: str('administrador') }, mask: ['rol'] }, 'denegado'],
   ['tutor1 cambia otro usuario (tutor2)', 'update', 'usuarios/tutor2', { token: TUTOR1, fields: { activo: bool(false) }, mask: ['activo'] }, 'denegado'],
   ['tutor1 edita su propio nombre', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { nombre: str('TUTOR UNO') }, mask: ['nombre'] }, 'permitido'],
@@ -97,15 +154,55 @@ const cases = [
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
   ['admin1 borra un usuario', 'delete', 'usuarios/tutor2', { token: ADMIN }, 'permitido'],
-  ['sin sesion: leer un documento', 'get', 'alumnos/a1', {}, 'permitido'],
-  ['sin sesion: listar una coleccion', 'list', 'alumnos', {}, 'permitido'],
-  // `escuelas` contiene el `pin`: solo la lee el administrador.
+
+  // ==================== escuelas (solo administrador) ====================
   ['sin sesion: leer una escuela', 'get', 'escuelas/e1', {}, 'denegado'],
-  ['sin sesion: listar escuelas', 'list', 'escuelas', {}, 'denegado'],
   ['maestro1 lee una escuela', 'get', 'escuelas/e1', { token: TEACHER }, 'denegado'],
-  ['maestro1 lista escuelas', 'list', 'escuelas', { token: TEACHER }, 'denegado'],
   ['admin1 lee una escuela', 'get', 'escuelas/e1', { token: ADMIN }, 'permitido'],
-  ['admin1 lista escuelas', 'list', 'escuelas', { token: ADMIN }, 'permitido'],
+
+  // ==================== alumnos: por escuela o por dueño ====================
+  ['sin sesion: leer un alumno', 'get', 'alumnos/a1', {}, 'denegado'],
+  ['sin sesion: listar alumnos', 'list', 'alumnos', {}, 'denegado'],
+  ['maestro1 lee un alumno de su escuela', 'get', 'alumnos/a1', { token: TEACHER }, 'permitido'],
+  ['maestro1 lee un alumno de otra escuela', 'get', 'alumnos/a4', { token: TEACHER }, 'denegado'],
+  ['maestro1 lista los alumnos de su escuela', 'query', 'alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
+  ['maestro1 lista los alumnos de otra escuela', 'query', 'alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['nombre'] }, 'denegado'],
+  ['maestro1 lista alumnos sin filtrar por escuela', 'query', 'alumnos', { token: TEACHER, orderBy: ['nombre'] }, 'denegado'],
+  ['tutor1 lista a sus alumnos', 'query', 'alumnos', { token: TUTOR1, where: [{ field: 'tid', value: 'tutor1' }], orderBy: ['nombre'] }, 'permitido'],
+  ['tutor1 lista a los alumnos sin tutor de su escuela', 'query', 'alumnos', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
+  ['tutor1 lee un alumno de su escuela', 'get', 'alumnos/a2', { token: TUTOR1 }, 'permitido'],
+  ['tutor1 lista los alumnos de otra escuela', 'query', 'alumnos', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['nombre'] }, 'denegado'],
+  ['tutor1 lee un alumno de otra escuela', 'get', 'alumnos/a4', { token: TUTOR1 }, 'denegado'],
+  ['tutor1 lista alumnos sin filtrar por escuela', 'query', 'alumnos', { token: TUTOR1, orderBy: ['nombre'] }, 'denegado'],
+  ['admin1 lista todos los alumnos', 'query', 'alumnos', { token: ADMIN, orderBy: ['nombre'] }, 'permitido'],
+
+  // ==================== grupos de alumnos: por escuela ====================
+  ['maestro1 lista los grupos de su escuela', 'query', 'grupos_de_alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['grado', 'letra'] }, 'permitido'],
+  ['maestro1 lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
+  ['sin sesion: listar grupos de alumnos', 'list', 'grupos_de_alumnos', {}, 'denegado'],
+
+  // ==================== usuarios: dueño, admin o misma escuela ====================
+  ['tutor1 lee su propio perfil', 'get', 'usuarios/tutor1', { token: TUTOR1 }, 'permitido'],
+  ['tutor1 lee a un maestro de su escuela', 'get', 'usuarios/maestro1', { token: TUTOR1 }, 'permitido'],
+  ['tutor1 lee a un usuario de otra escuela', 'get', 'usuarios/tutor2', { token: TUTOR1 }, 'denegado'],
+  ['tutor1 lista los usuarios de su escuela (agenda)', 'query', 'usuarios', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }] }, 'permitido'],
+  ['tutor1 lista usuarios sin filtrar por escuela', 'query', 'usuarios', { token: TUTOR1 }, 'denegado'],
+  ['maestro1 lista los usuarios de otra escuela', 'query', 'usuarios', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }] }, 'denegado'],
+  ['admin1 lista todos los usuarios', 'query', 'usuarios', { token: ADMIN }, 'permitido'],
+
+  // ==================== notificaciones: dueño o maestro de su escuela ====================
+  ['tutor1 lista sus propias notificaciones', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'permitido'],
+  ['tutor1 lista sus notificaciones de un alumno', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
+  ['tutor1 lista las notificaciones de otro tutor', 'query', 'usuarios/tutor2/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'denegado'],
+  ['maestro1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
+  ['maestro1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
+  ['admin1 lista las notificaciones de un tutor', 'query', 'usuarios/tutor1/notificaciones', { token: ADMIN, orderBy: ['createdAt'] }, 'permitido'],
+
+  // ==================== catalogos generales ====================
+  ['maestro1 lee una materia', 'get', 'materias/m1', { token: TEACHER }, 'permitido'],
+  ['maestro1 lista los grupos escolares', 'list', 'grupos', { token: TEACHER }, 'permitido'],
+  ['tutor1 lee una materia', 'get', 'materias/m1', { token: TUTOR1 }, 'denegado'],
+  ['sin sesion: listar materias', 'list', 'materias', {}, 'denegado'],
 ];
 
 async function waitForEmulator(maxMs = 240000) {
@@ -113,7 +210,10 @@ async function waitForEmulator(maxMs = 240000) {
   while (Date.now() - startedAt < maxMs) {
     try {
       // Cualquier respuesta HTTP (incluido 404) significa que el emulador ya escucha.
-      const response = await fetch(`${BASE}/usuarios`, { headers: { Authorization: `Bearer ${OWNER}` } });
+      const response = await fetch(`${BASE}/usuarios`, {
+        headers: { Authorization: `Bearer ${OWNER}`, Connection: 'close' },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
       if (response.status < 500) return true;
     } catch {
       // el emulador todavia no escucha
@@ -137,15 +237,23 @@ async function waitForEmulator(maxMs = 240000) {
   }
 
   await seed();
-  console.log('Datos sembrados: admin1, maestro1, tutor1, tutor2, alumnos a1/a2, escuela e1, materia m1\n');
+  console.log('Sembrado: 2 escuelas (CCT1 y CCT2), admin1, maestro1, tutor1, tutor2, alumnos a1/a2/a4, grupos g1/g2, escuela e1, materia m1\n');
 
   let failures = 0;
   const rows = [];
 
   for (const [name, method, path, options, expected] of cases) {
-    const status = await sendRequest(HTTP_METHOD[method], path, options);
+    let status;
+    try {
+      status = method === 'query'
+        ? await sendQuery(path, options)
+        : await sendRequest(HTTP_METHOD[method], path, options);
+    } catch (error) {
+      status = `error (${error.name})`;
+    }
+
     const allowed = succeeded(status);
-    const actual = allowed ? 'permitido' : 'denegado';
+    const actual = typeof status === 'string' ? status : (allowed ? 'permitido' : 'denegado');
     const passed = actual === expected;
     if (!passed) failures++;
     rows.push(`${passed ? '✅' : '❌'} ${actual.padEnd(10)} (esperado ${expected.padEnd(10)}) HTTP ${String(status).padEnd(4)} ${name}`);
