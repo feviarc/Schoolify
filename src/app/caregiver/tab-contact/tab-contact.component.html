@@ -19,13 +19,20 @@
         <ion-card-title>{{ escuela }}</ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <p class="phone-number">{{ telefono }}</p>
-        <div class="button-wrapper">
-          <a href="tel:+52{{telefono}}" class="btn-call">
-            <ion-icon name="call"></ion-icon>
-          </a>
-        </div>
-        <p class="tap-instruction">Presiona para llamar</p>
+        @if(telefono) {
+          <p class="phone-number">{{ telefono }}</p>
+          <div class="button-wrapper">
+            <a href="tel:+52{{telefono}}" class="btn-call">
+              <ion-icon name="call"></ion-icon>
+            </a>
+          </div>
+          <p class="tap-instruction">Presiona para llamar</p>
+        }
+        @else {
+          <p class="tap-instruction">
+            El maestro de tu escuela todavía no ha registrado un teléfono de contacto.
+          </p>
+        }
       </ion-card-content>
     </ion-card>
   </div>

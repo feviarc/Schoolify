@@ -24,6 +24,7 @@ import { OverlayEventDetail } from '@ionic/core/components';
 import { take } from 'rxjs';
 import { AuthService } from 'src/app/services/auth.service';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
+import { SchoolCRUDService } from 'src/app/services/school-crud.service';
 import { UserProfile } from 'src/app/models/user-profile.model';
 import { UserProfileService } from 'src/app/services/user-profile.service';
 
@@ -55,6 +56,7 @@ export class TabContactComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private localStorage = inject(LocalStorageService);
+  private schoolCRUDService = inject(SchoolCRUDService);
   private userProfileService = inject(UserProfileService);
 
 
@@ -91,18 +93,8 @@ export class TabContactComponent implements OnInit {
     const shift = this.localStorage.getKey(this.SHIFT_KEY);
     this.cctShift = `${cct}${shift}`;
 
-    this.userProfileService.getUsersByRoleAndCCT('maestro', this.cctShift)
-    .pipe(take(1))
-    .subscribe({
-      next: (users) => {
-        this.escuela = users[0].escuela ?? '';
-        this.telefono = users[0].telefono ?? '';
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.log('❌ Schoolify: [tab-contact.component.ts]', error);
-      }
-    });
+    this.loadSchoolName();
+    this.loadTeacherContact();
   }
 
   onLogout(event: CustomEvent<OverlayEventDetail>) {
@@ -118,6 +110,46 @@ export class TabContactComponent implements OnInit {
       },
       error: error => {
         console.log('❌ Schoolify: [tab-contact.component.ts]',  error);
+      }
+    });
+  }
+
+  /**
+   * El nombre de la escuela sale del documento de la escuela (funcion `getMySchool`),
+   * que es la fuente confiable: el perfil del maestro puede tenerlo vacio.
+   */
+  private async loadSchoolName() {
+    const school = await this.schoolCRUDService.getMySchool(this.cctShift);
+
+    if(school?.nombre) {
+      this.escuela = school.nombre;
+    }
+  }
+
+  /**
+   * El telefono es del maestro de la escuela. Si no hay ninguno registrado, o no
+   * dejo telefono, la tarjeta lo dice en lugar de quedarse cargando para siempre.
+   */
+  private loadTeacherContact() {
+    this.userProfileService.getUsersByRoleAndCCT('maestro', this.cctShift)
+    .pipe(take(1))
+    .subscribe({
+      next: (teachers) => {
+        const teacher = teachers[0];
+
+        if(!teacher) {
+          console.warn(`⚠️ Schoolify: [tab-contact.component.ts] sin maestro registrado para ${this.cctShift}`);
+          this.isLoading = false;
+          return;
+        }
+
+        this.escuela = teacher.escuela || this.escuela;
+        this.telefono = teacher.telefono ?? '';
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.log('❌ Schoolify: [tab-contact.component.ts]', error);
+        this.isLoading = false;
       }
     });
   }
