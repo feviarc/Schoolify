@@ -83,8 +83,6 @@ service cloud.firestore {
     // ==================== usuarios ====================
 
     match /usuarios/{uid} {
-      // El dueño, el administrador y los compañeros de la misma escuela
-      // (la agenda del tutor consulta `where('cct', '==', ...)`).
       // Solo el dueño y el administrador. El correo, el celular y los tokens FCM
       // son datos personales: antes tambien los veian los compañeros de escuela para
       // la agenda del tutor, pero esa pantalla ya no consulta usuarios (el telefono
