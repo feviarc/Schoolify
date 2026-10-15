@@ -53,7 +53,7 @@
               </ion-avatar>
               <ion-label>
                 <h2>{{ teacher.nombre || 'NUEVO USUARIO'}}</h2>
-                <p>{{ teacher.escuela || 'No ha registrado sus datos aún'}}</p>
+                <p>{{ teacher.activo ? 'Perfil completo' : 'No ha registrado sus datos aún'}}</p>
                 <a href="mailto://{{ teacher.email }}" target="_blank">
                   <ion-chip color="secondary" outline>
                     <ion-icon name="mail"></ion-icon>

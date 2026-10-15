@@ -5,8 +5,6 @@ export interface UserProfile {
   activo?: boolean;
   cct?: string;
   celular?: string;
-  escuela?: string;
   id?: string;
   nombre?: string;
-  telefono?: string;
 }

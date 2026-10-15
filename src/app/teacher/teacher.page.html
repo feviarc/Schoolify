@@ -27,41 +27,6 @@
   <ion-content class="ion-padding" color="light">
     <form [formGroup]="form">
       <ion-list-header>
-        Datos de la escuela
-      </ion-list-header>
-      <ion-note>
-        Número de teléfono de tu escuela.
-      </ion-note>
-      <ion-list [inset]="true">
-        <ion-item>
-          <ion-input
-           formControlName="escuela"
-           readonly
-          >
-          </ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-          formControlName="telefono"
-          label="Teléfono:"
-          type="tel"
-          maxlength="10"
-          >
-          </ion-input>
-        </ion-item>
-        @if (telefono.touched && telefono.invalid) {
-          <ion-text color="danger">
-            @if (telefono.errors?.['required']) {
-              <small class="ion-padding">El teléfono es obligatorio.</small>
-            }
-            @if (telefono.errors?.['pattern']) {
-              <small class="ion-padding">El teléfono debe tener 10 dígitos numéricos.</small>
-            }
-          </ion-text>
-        }
-      </ion-list>
-
-      <ion-list-header>
         Tus datos
       </ion-list-header>
       <ion-note>

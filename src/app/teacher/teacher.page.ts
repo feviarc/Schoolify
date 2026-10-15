@@ -97,11 +97,6 @@ export class TeacherPage implements OnInit {
     nombre: ['',[
       Validators.required,
       Validators.pattern('^[A-Za-zÑñÁÉÍÓÚáéíóú ]+$')
-    ]],
-    escuela: [''],
-    telefono: ['',[
-        Validators.required,
-        Validators.pattern('^[0-9]{10}$')
     ]]
   });
 
@@ -109,16 +104,8 @@ export class TeacherPage implements OnInit {
     return this.form.get('celular')!;
   }
 
-  get escuela() {
-    return this.form.get('escuela');
-  }
-
   get nombre() {
     return this.form.get('nombre')!;
-  }
-
-  get telefono() {
-    return this.form.get('telefono')!;
   }
 
   async ngOnInit() {
@@ -152,7 +139,6 @@ export class TeacherPage implements OnInit {
     }
 
     this.schoolStateService.setSchool(school);
-    this.form.get('escuela')?.setValue(school.nombre);
   }
 
   onLogout() {
@@ -198,8 +184,6 @@ export class TeacherPage implements OnInit {
     const fields: Partial<UserProfile> = {};
     fields.celular = this.celular?.value ?? '';
     fields.nombre = this.nombre?.value ?? '';
-    fields.telefono = this.telefono?.value ?? '';
-    fields.escuela = this.escuela?.value ?? '';
     fields.cct = this.cct;
     fields.activo = true;
 
