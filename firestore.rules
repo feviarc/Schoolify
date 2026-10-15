@@ -6,16 +6,23 @@ rules_version = '2';
 //     su propio `rol` (auto-ascenso a administrador) y el borrado de cuentas.
 //   - `escuelas` es solo del administrador porque el documento contiene el `pin`,
 //     que es la credencial de acceso al portal.
-//   - El resto de las lecturas estan acotadas por escuela o por dueño: nadie lee
-//     datos de otra escuela.
+//   - Las lecturas estan acotadas por escuela o por dueño: nadie lee datos de otra
+//     escuela.
+//   - Todo lo que no sea registrarse exige CORREO VERIFICADO. Sin esto, una cuenta
+//     recien creada (que la interfaz bloquea, pero la API no) podia leer los datos
+//     de su escuela. El unico permiso que se conserva sin verificar es el propio
+//     autoregistro, porque en ese momento el usuario todavia no puede verificar.
+//     OJO: el token del usuario tarda hasta una hora en reflejar la verificacion,
+//     asi que quien acabe de verificar debe cerrar sesion y volver a entrar.
 //
 // Ojo: las reglas no son filtros. Cada consulta del cliente tiene que ser compatible
 // (filtrar por `cct`, por `tid` o por el uid del dueño); si no, Firestore la rechaza
 // entera. Las consultas reales de la app estan cubiertas en tools/rules-tests.mjs.
 //
 // Antes de desplegar:
-//   1) tiene que existir al menos un usuario con `rol: 'administrador'`; si no,
-//      se siembra a mano en la consola (el Admin SDK no pasa por estas reglas);
+//   1) tiene que existir al menos un usuario con `rol: 'administrador'` y con el
+//      correo VERIFICADO; si no, se siembra a mano en la consola (el Admin SDK no
+//      pasa por estas reglas);
 //   2) el cliente ya no debe intentar registrarse como administrador
 //      (el rol se elige en auth.page.ts entre maestro y tutor).
 service cloud.firestore {
@@ -25,6 +32,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // El candado normal: hay sesion y el correo esta verificado.
+    function hasVerifiedEmail() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
     // Perfil del usuario que hace la peticion. Si no existe, el acceso al campo
     // produce error y la condicion se evalua como falsa (se deniega).
     function profile() {
@@ -32,11 +44,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && profile().rol == 'administrador';
+      return hasVerifiedEmail() && profile().rol == 'administrador';
     }
 
     function isTeacher() {
-      return isAuthenticated() && profile().rol == 'maestro';
+      return hasVerifiedEmail() && profile().rol == 'maestro';
     }
 
     function isAdminOrTeacher() {
@@ -44,7 +56,7 @@ service cloud.firestore {
     }
 
     function isOwnProfile(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
+      return hasVerifiedEmail() && request.auth.uid == uid;
     }
 
     // La escuela del usuario que hace la peticion.
@@ -55,7 +67,7 @@ service cloud.firestore {
     // Compañeros de escuela: el tutor ve a los maestros de la suya, y el maestro
     // las notificaciones de los tutores de la suya.
     function sameSchoolAs(uid) {
-      return isAuthenticated()
+      return hasVerifiedEmail()
         && get(/databases/$(database)/documents/usuarios/$(uid)).data.cct == ownCct();
     }
 
@@ -75,11 +87,12 @@ service cloud.firestore {
       // (la agenda del tutor consulta `where('cct', '==', ...)`).
       allow read: if isOwnProfile(uid)
         || isAdmin()
-        || (isAuthenticated() && resource.data.cct == ownCct());
+        || (hasVerifiedEmail() && resource.data.cct == ownCct());
 
-      // Autoregistro: solo maestro o tutor. El primer administrador se siembra
-      // desde la consola, nunca desde el cliente.
-      allow create: if isOwnProfile(uid)
+      // Autoregistro. Es el unico permiso que NO exige correo verificado: en este
+      // momento el usuario acaba de crearse y todavia no puede haber verificado.
+      allow create: if isAuthenticated()
+        && request.auth.uid == uid
         && request.resource.data.rol in ['maestro', 'tutor'];
 
       // El dueño mantiene su perfil, su escuela y sus tokens FCM, pero NO puede
@@ -108,8 +121,8 @@ service cloud.firestore {
 
     // Solo el administrador: el documento contiene el `pin`, que es la credencial
     // de acceso al portal. El portal valida CCT + PIN con la funcion
-    // `validateSchoolAccess`, y maestro/tutor obtienen su escuela con `getMySchool`;
-    // ambas usan el Admin SDK, que no pasa por estas reglas.
+    // `validateSchoolAccess` (que es publica a proposito: el usuario todavia no
+    // tiene sesion), y maestro/tutor obtienen su escuela con `getMySchool`.
     match /escuelas/{schoolId} {
       allow read: if isAdmin();
 
@@ -124,8 +137,8 @@ service cloud.firestore {
       // sin tutor para reclamar al suyo. El tutor conserva ademas la rama por
       // `tid`, que lo cubre aunque su perfil no tenga `cct` guardado.
       allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.cct == ownCct())
-        || (isAuthenticated() && resource.data.tid == request.auth.uid);
+        || (hasVerifiedEmail() && resource.data.cct == ownCct())
+        || (hasVerifiedEmail() && resource.data.tid == request.auth.uid);
 
       allow create, delete: if isAdminOrTeacher();
 
@@ -133,7 +146,7 @@ service cloud.firestore {
       // reclamar al alumno para si mismo: `tid` debe ser su propio uid, y el
       // alumno no puede estar ya reclamado por otro tutor.
       allow update: if isAdminOrTeacher()
-        || (isAuthenticated()
+        || (hasVerifiedEmail()
             && request.resource.data.tid == request.auth.uid
             && resource.data.get('tid', '') in ['', request.auth.uid]
             && onlyKeysChanged(['tid', 'nombreTutor', 'updatedAt']));

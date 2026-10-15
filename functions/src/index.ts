@@ -423,13 +423,18 @@ export const validateSchoolAccess = onCall(
 
 
 /**
- * Datos de la escuela de quien llama: id, cct, nombre y turno. Nunca el PIN.
- * Maestro y tutor los usan para mostrar el nombre de su escuela.
+ * Datos de la escuela de quien llama: id, cct, nombre, turno y telefono. Nunca el PIN.
+ * Maestro y tutor los usan para mostrar los datos de su escuela.
  */
 export const getMySchool = onCall(
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    // Mismo candado que las reglas de Firestore: correo verificado.
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
     }
 
     try {

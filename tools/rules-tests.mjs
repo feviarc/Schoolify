@@ -19,7 +19,7 @@ const BASE = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/d
 
 const toBase64Url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
 
-function tokenFor(uid) {
+function tokenFor(uid, { emailVerified = true } = {}) {
   const header = toBase64Url({ alg: 'none', typ: 'JWT' });
   const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url({
@@ -29,6 +29,8 @@ function tokenFor(uid) {
     user_id: uid,
     iat: now,
     exp: now + 3600,
+    email: `${uid}@test.mx`,
+    email_verified: emailVerified,
     firebase: { identities: {}, sign_in_provider: 'password' },
   });
   return `${header}.${payload}.`;
@@ -39,7 +41,10 @@ const ADMIN = tokenFor('admin1');
 const TEACHER = tokenFor('maestro1');
 const TUTOR1 = tokenFor('tutor1');
 const TUTOR2 = tokenFor('tutor2');
-const NEW_USER = tokenFor('newuser');
+// Recien registrado: todavia no verifico su correo.
+const NEW_USER = tokenFor('newuser', { emailVerified: false });
+// La misma cuenta de tutor, pero con el correo sin verificar.
+const TUTOR1_UNVERIFIED = tokenFor('tutor1', { emailVerified: false });
 
 const str = (value) => ({ stringValue: value });
 const bool = (value) => ({ booleanValue: value });
@@ -140,7 +145,11 @@ const cases = [
   ['tutor1 cambia otro usuario (tutor2)', 'update', 'usuarios/tutor2', { token: TUTOR1, fields: { activo: bool(false) }, mask: ['activo'] }, 'denegado'],
   ['tutor1 edita su propio nombre', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { nombre: str('TUTOR UNO') }, mask: ['nombre'] }, 'permitido'],
   ['registro nuevo con rol administrador', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('administrador'), email: str('n@test.mx') } }, 'denegado'],
-  ['registro nuevo con rol tutor', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('tutor'), email: str('n2@test.mx') } }, 'permitido'],
+  ['registro nuevo sin correo verificado (rol tutor)', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('tutor'), email: str('n2@test.mx') } }, 'permitido'],
+  // El correo sin verificar no da acceso a nada mas: ni al propio perfil.
+  ['correo sin verificar: leer su propio perfil', 'get', 'usuarios/tutor1', { token: TUTOR1_UNVERIFIED }, 'denegado'],
+  ['correo sin verificar: lista los alumnos de su escuela', 'query', 'alumnos', { token: TUTOR1_UNVERIFIED, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'denegado'],
+  ['correo sin verificar: crea un aviso', 'post', 'usuarios/tutor1/notificaciones?documentId=n3', { token: TUTOR1_UNVERIFIED, fields: { sid: str('a1'), tipo: str('Inasistencia') } }, 'denegado'],
   ['tutor1 reclama un alumno libre (sin tid)', 'update', 'alumnos/a1', { token: TUTOR1, fields: { tid: str('tutor1'), nombreTutor: str('TUTOR UNO'), updatedAt: timestamp() }, mask: ['tid', 'nombreTutor', 'updatedAt'] }, 'permitido'],
   ['tutor1 roba el alumno de tutor2', 'update', 'alumnos/a2', { token: TUTOR1, fields: { tid: str('tutor1') }, mask: ['tid'] }, 'denegado'],
   ['tutor1 marca validado a un alumno', 'update', 'alumnos/a1', { token: TUTOR1, fields: { validado: bool(true) }, mask: ['validado'] }, 'denegado'],
@@ -232,7 +241,7 @@ async function waitForEmulator(maxMs = 240000) {
   // Los casos de creacion usan ids fijos: se limpian para poder repetir la corrida.
   for (const path of ['alumnos/a3', 'grupos_de_alumnos/g9', 'escuelas/e8', 'escuelas/e9',
                       'materias/m9', 'usuarios/newuser', 'usuarios/tutor1/notificaciones/n1',
-                      'usuarios/tutor1/notificaciones/n2']) {
+                      'usuarios/tutor1/notificaciones/n2', 'usuarios/tutor1/notificaciones/n3']) {
     await sendRequest('DELETE', path, { token: OWNER });
   }
 

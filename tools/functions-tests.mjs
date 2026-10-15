@@ -14,7 +14,7 @@ const OWNER = 'owner';
 
 const toBase64Url = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
 
-function tokenFor(uid) {
+function tokenFor(uid, { emailVerified = true } = {}) {
   const header = toBase64Url({ alg: 'none', typ: 'JWT' });
   const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url({
@@ -24,12 +24,15 @@ function tokenFor(uid) {
     user_id: uid,
     iat: now,
     exp: now + 3600,
+    email: `${uid}@test.mx`,
+    email_verified: emailVerified,
     firebase: { identities: {}, sign_in_provider: 'password' },
   });
   return `${header}.${payload}.`;
 }
 
 const TEACHER = tokenFor('maestro9');
+const TEACHER_UNVERIFIED = tokenFor('maestro9', { emailVerified: false });
 
 const str = (value) => ({ stringValue: value });
 const num = (value) => ({ integerValue: String(value) });
@@ -78,6 +81,7 @@ const cases = [
   ['getMySchool sin sesion', 'getMySchool', {}, undefined, (r) => r.status >= 400, 'error de autenticacion'],
   ['getMySchool con sesion de maestro', 'getMySchool', {}, TEACHER, (r) => r.body?.result?.school?.nombre === 'ESCUELA DE PRUEBA' && r.body.result.school.pin === undefined, 'escuela sin pin'],
   ['getMySchool devuelve el telefono de la escuela', 'getMySchool', {}, TEACHER, (r) => r.body?.result?.school?.telefono === '3531008338', 'telefono'],
+  ['getMySchool con correo sin verificar', 'getMySchool', {}, TEACHER_UNVERIFIED, (r) => r.status >= 400, 'error de correo no verificado'],
 ];
 
 (async () => {
