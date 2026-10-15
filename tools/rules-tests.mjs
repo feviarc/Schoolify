@@ -190,14 +190,17 @@ const cases = [
   ['maestro1 lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
   ['sin sesion: listar grupos de alumnos', 'list', 'grupos_de_alumnos', {}, 'denegado'],
 
-  // ==================== usuarios: dueño, admin o misma escuela ====================
+  // ==================== usuarios: solo el dueño y el administrador ====================
   ['tutor1 lee su propio perfil', 'get', 'usuarios/tutor1', { token: TUTOR1 }, 'permitido'],
-  ['tutor1 lee a un maestro de su escuela', 'get', 'usuarios/maestro1', { token: TUTOR1 }, 'permitido'],
+  ['maestro1 lee su propio perfil', 'get', 'usuarios/maestro1', { token: TEACHER }, 'permitido'],
+  ['tutor1 lee el perfil de un maestro de su escuela', 'get', 'usuarios/maestro1', { token: TUTOR1 }, 'denegado'],
+  ['maestro1 lee el perfil de un tutor de su escuela', 'get', 'usuarios/tutor1', { token: TEACHER }, 'denegado'],
   ['tutor1 lee a un usuario de otra escuela', 'get', 'usuarios/tutor2', { token: TUTOR1 }, 'denegado'],
-  ['tutor1 lista los usuarios de su escuela (agenda)', 'query', 'usuarios', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }] }, 'permitido'],
+  ['tutor1 lista los usuarios de su escuela', 'query', 'usuarios', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }] }, 'denegado'],
   ['tutor1 lista usuarios sin filtrar por escuela', 'query', 'usuarios', { token: TUTOR1 }, 'denegado'],
-  ['maestro1 lista los usuarios de otra escuela', 'query', 'usuarios', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }] }, 'denegado'],
+  ['maestro1 lista los usuarios de su escuela', 'query', 'usuarios', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }] }, 'denegado'],
   ['admin1 lista todos los usuarios', 'query', 'usuarios', { token: ADMIN }, 'permitido'],
+  ['admin1 lee el perfil de un maestro', 'get', 'usuarios/maestro1', { token: ADMIN }, 'permitido'],
 
   // ==================== notificaciones: dueño o maestro de su escuela ====================
   ['tutor1 lista sus propias notificaciones', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'permitido'],
