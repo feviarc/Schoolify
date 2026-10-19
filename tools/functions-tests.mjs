@@ -84,11 +84,80 @@ const cases = [
   ['getMySchool con correo sin verificar', 'getMySchool', {}, TEACHER_UNVERIFIED, (r) => r.status >= 400, 'error de correo no verificado'],
 ];
 
+// ==================== triggers ====================
+// Casos que no se llaman por HTTP: se provoca un cambio en la base y se espera
+// el efecto que debe producir la funcion.
+
+async function firestore(method, path, { token = OWNER, fields } = {}) {
+  return fetch(`${FIRESTORE}/${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Connection: 'close',
+    },
+    body: fields ? JSON.stringify({ fields }) : undefined,
+    signal: AbortSignal.timeout(15000),
+  });
+}
+
+async function readField(path, field) {
+  const response = await firestore('GET', path);
+  if (!response.ok) return null;
+  const document = await response.json();
+  return document.fields?.[field]?.stringValue ?? null;
+}
+
+async function waitUntil(check, timeoutMs = 20000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await check()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return false;
+}
+
+const triggerCases = [
+  {
+    name: 'borrar una cuenta borra sus avisos y libera a sus alumnos',
+    run: async () => {
+      await firestore('PATCH', 'usuarios/tutorborrado', { fields: { rol: str('tutor'), cct: str('CCT1') } });
+      await firestore('PATCH', 'usuarios/tutorborrado/notificaciones/n1', { fields: { sid: str('ad1'), tipo: str('Inasistencia') } });
+      await firestore('PATCH', 'alumnos/ad1', { fields: { nombre: str('ALUMNO DEL TUTOR BORRADO'), cct: str('CCT1'), tid: str('tutorborrado') } });
+
+      await firestore('DELETE', 'usuarios/tutorborrado');
+
+      const studentFreed = await waitUntil(async () => (await readField('alumnos/ad1', 'tid')) === '');
+
+      const notificationsGone = await waitUntil(async () => {
+        const response = await firestore('GET', 'usuarios/tutorborrado/notificaciones');
+        if (!response.ok) return false;
+        const body = await response.json();
+        return !body.documents || body.documents.length === 0;
+      });
+
+      return studentFreed && notificationsGone;
+    },
+  },
+  {
+    name: 'un aviso sin datos no revienta la funcion',
+    run: async () => {
+      // Documento sin campos: antes hacia fallar el trigger al desestructurar.
+      await firestore('PATCH', 'usuarios/tutor9/notificaciones/vacia', { fields: {} });
+
+      // Si la funcion sobrevive, el emulador sigue respondiendo y el documento existe.
+      const response = await firestore('GET', 'usuarios/tutor9/notificaciones/vacia');
+      return response.ok;
+    },
+  },
+];
+
 (async () => {
   await seed();
   console.log('Sembrado: escuelas/e1 (cct CCT1, pin 1921) y usuarios/maestro9 (cct CCT1)\n');
 
   let failures = 0;
+  let total = cases.length + triggerCases.length;
 
   for (const [name, fn, data, token, check, expected] of cases) {
     let passed = false;
@@ -106,6 +175,19 @@ const cases = [
     console.log(`${passed ? '✅' : '❌'} ${name.padEnd(38)} esperado ${expected.padEnd(22)} ${detail}`);
   }
 
-  console.log(`\n${cases.length - failures}/${cases.length} casos correctos`);
+  for (const triggerCase of triggerCases) {
+    let passed = false;
+
+    try {
+      passed = await triggerCase.run();
+    } catch (error) {
+      console.log(`   excepcion: ${error.message}`);
+    }
+
+    if (!passed) failures++;
+    console.log(`${passed ? '✅' : '❌'} ${triggerCase.name}`);
+  }
+
+  console.log(`\n${total - failures}/${total} casos correctos`);
   process.exit(failures === 0 ? 0 : 1);
 })();

@@ -8,7 +8,7 @@
 import {getFirestore, FieldValue} from 'firebase-admin/firestore';
 import {getMessaging} from 'firebase-admin/messaging';
 import {initializeApp} from 'firebase-admin/app';
-import {onDocumentCreated} from 'firebase-functions/v2/firestore';
+import {onDocumentCreated, onDocumentDeleted} from 'firebase-functions/v2/firestore';
 
 import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {getAuth} from 'firebase-admin/auth';
@@ -34,7 +34,45 @@ function buildClickAction(route: string): {[key: string]: unknown} {
 }
 
 
-export const onNewUserNotification = onDocumentCreated('usuarios/{userId}/notificaciones/{notificationId}',
+/**
+ * Decide si un token FCM ya no sirve y hay que quitarlo del usuario.
+ *
+ * La API v1 responde con dos codigos distintos segun como este roto el token:
+ *   - `messaging/registration-token-not-registered`: la app se desinstalo o el
+ *     token se renovo.
+ *   - `messaging/invalid-registration-token`: token invalido (nombre heredado).
+ *   - `messaging/invalid-argument` con el mensaje "The registration token is not a
+ *     valid FCM registration token": token mal formado. Es el que devuelve la API
+ *     v1 para un token inventado, y sin este caso los tokens basura se acumulan.
+ *
+ * Ojo: un payload invalido TAMBIEN da `invalid-argument`, pero en todas las
+ * respuestas del envio; por eso se exige ademas el mensaje especifico del token,
+ * para no borrar tokens buenos por un error nuestro.
+ */
+function isTokenGone(code: string | undefined, message: string | undefined): boolean {
+  if (code === 'messaging/registration-token-not-registered') return true;
+  if (code === 'messaging/invalid-registration-token') return true;
+
+  return code === 'messaging/invalid-argument' &&
+    /not a valid FCM registration token/i.test(message ?? '');
+}
+
+
+/**
+ * Region de los triggers de Firestore.
+ *
+ * `firebase-functions` v7 toma por defecto la region de la base
+ * (`northamerica-south1`), donde Cloud Functions v2 no esta disponible en este
+ * proyecto: el deploy falla con `403 Location ... not found or access is
+ * unauthorized`. Las funciones de este archivo viven en `us-central1`, asi que la
+ * region se declara explicitamente para que no dependa del valor por defecto.
+ */
+const TRIGGER_REGION = 'us-central1';
+
+export const onNewUserNotification = onDocumentCreated({
+  document: 'usuarios/{userId}/notificaciones/{notificationId}',
+  region: TRIGGER_REGION,
+},
   async (event) => {
     const snapshot = event.data;
 
@@ -47,6 +85,13 @@ export const onNewUserNotification = onDocumentCreated('usuarios/{userId}/notifi
     const notificationId = event.params.notificationId;
     const notificationData = snapshot.data();
     const db = getFirestore();
+
+    // Un documento sin campos (o un evento sin datos) hacia reventar a los
+    // manejadores con "Cannot destructure property ... as it is undefined".
+    if (!notificationData) {
+      console.log(`⚠️ La notificación ${notificationId} no tiene datos: no se envía push`);
+      return {success: false, message: 'Notificación sin datos'};
+    }
 
     try {
       const userDoc = await db.collection('usuarios').doc(userId).get();
@@ -166,10 +211,7 @@ async function handleTutorNotification(
             resp.error?.code
           );
 
-          if (
-            resp.error?.code === 'messaging/invalid-registration-token' ||
-            resp.error?.code === 'messaging/registration-token-not-registered'
-          ) {
+          if (isTokenGone(resp.error?.code, resp.error?.message)) {
             tokensToRemove.push(tutorTokens[idx]);
           }
         }
@@ -179,12 +221,10 @@ async function handleTutorNotification(
         console.log(`🧹 Limpiando ${tokensToRemove.length} token(s) inválido(s)`);
         const db = getFirestore();
 
-        const cleanedTokens = tutorTokens.filter(
-          (token: string) => !tokensToRemove.includes(token)
-        );
-
+        // `arrayRemove` quita SOLO los tokens invalidos. Reescribir el array
+        // completo perderia el token que un dispositivo acabe de registrar.
         await db.collection('usuarios').doc(tutorId).update({
-          tokens: cleanedTokens,
+          tokens: FieldValue.arrayRemove(...tokensToRemove),
         });
       }
     }
@@ -204,7 +244,10 @@ async function handleTutorNotification(
   }
 }
 
-export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
+export const onNewUserRegistered = onDocumentCreated({
+  document: 'usuarios/{userId}',
+  region: TRIGGER_REGION,
+},
   async (event) => {
     const snapshot = event.data;
 
@@ -310,10 +353,7 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
               resp.error?.code
             );
 
-            if (
-              resp.error?.code === 'messaging/invalid-registration-token' ||
-              resp.error?.code === 'messaging/registration-token-not-registered'
-            ) {
+            if (isTokenGone(resp.error?.code, resp.error?.message)) {
               tokensToRemove.push(adminTokens[idx]);
             }
           }
@@ -322,17 +362,20 @@ export const onNewUserRegistered = onDocumentCreated('usuarios/{userId}',
         if (tokensToRemove.length > 0) {
           console.log(`🧹 Limpiando ${tokensToRemove.length} tokens inválidos`);
 
-          adminSnapshot.forEach(async (adminDoc) => {
-            const adminData = adminDoc.data();
-            const currentTokens = adminData.tokens || [];
-            const cleanedTokens = currentTokens.filter(
-              (token: string) => !tokensToRemove.includes(token)
-            );
+          // Un `arrayRemove` por administrador, en un batch: quitar de un
+          // documento un token que no tiene es inofensivo, y asi no se pierde el
+          // que se haya registrado mientras se enviaba la notificacion. (Antes
+          // reescribia el array completo y ademas lanzaba los updates sin
+          // esperarlos dentro del forEach.)
+          const batch = db.batch();
 
-            await adminDoc.ref.update({
-              tokens: cleanedTokens,
+          adminSnapshot.forEach((adminDoc) => {
+            batch.update(adminDoc.ref, {
+              tokens: FieldValue.arrayRemove(...tokensToRemove),
             });
           });
+
+          await batch.commit();
         }
       }
 
@@ -471,6 +514,59 @@ export const getMySchool = onCall(
     } catch (error) {
       console.error('❌ Schoolify: [getMySchool]', error);
       throw new HttpsError('internal', 'No se pudo obtener la escuela.');
+    }
+  }
+);
+
+
+/**
+ * Limpieza al borrar una cuenta (lo hace `deleteTeacher` o la consola).
+ *
+ *   1) Borra su subcoleccion de notificaciones: sin esto quedan avisos huerfanos
+ *      que ya nadie puede leer (las reglas no dan acceso a un perfil inexistente).
+ *   2) Suelta a sus alumnos: si el tutor desaparece y sus alumnos conservan el
+ *      `tid`, dejan de aparecer en la lista de "alumnos sin tutor" y nadie puede
+ *      volver a reclamarlos.
+ *
+ * El array `alumnos[]` de `grupos_de_alumnos` no se toca: hoy se crea vacio y
+ * ninguna pantalla lo lee.
+ */
+export const onUserDeleted = onDocumentDeleted({
+  document: 'usuarios/{userId}',
+  region: TRIGGER_REGION,
+},
+  async (event) => {
+    const userId = event.params.userId;
+    const db = getFirestore();
+
+    try {
+      const notifications = await db.collection('usuarios').doc(userId)
+        .collection('notificaciones').get();
+
+      if (!notifications.empty) {
+        const batch = db.batch();
+        notifications.docs.forEach((notification) => batch.delete(notification.ref));
+        await batch.commit();
+        console.log(`🧹 ${notifications.size} notificación(es) borradas de ${userId}`);
+      }
+
+      const students = await db.collection('alumnos').where('tid', '==', userId).get();
+
+      if (!students.empty) {
+        const batch = db.batch();
+        students.docs.forEach((student) => batch.update(student.ref, {
+          tid: '',
+          nombreTutor: '',
+          updatedAt: FieldValue.serverTimestamp(),
+        }));
+        await batch.commit();
+        console.log(`🧹 ${students.size} alumno(s) liberados de ${userId}`);
+      }
+
+      return {success: true};
+    } catch (error) {
+      console.error('❌ Schoolify: [onUserDeleted]', error);
+      throw error;
     }
   }
 );

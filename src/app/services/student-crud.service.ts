@@ -34,6 +34,8 @@ export interface Student {
   id?: string; // Autogenerado por Firestore
   gid?: string; // ID del grupo (opcional, se asigna después)
   tid?: string; // ID del tutor (opcional, se asigna después)
+  /** Clave de la escuela (con turno). Filtra las consultas y las reglas. */
+  cct?: string;
   validado?: boolean;
   nombre: string; // Requerido en creación
   apellidoPaterno: string;
