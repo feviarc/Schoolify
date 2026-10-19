@@ -127,6 +127,38 @@ export class NotificationService {
   }
 
   /**
+   * Vuelve a registrar el token de este dispositivo sin pedir permiso.
+   *
+   * El token rota sin que la app se entere: el navegador o iOS renuevan la
+   * suscripcion mientras la app esta cerrada. Si el dispositivo no lo vuelve a
+   * registrar, el servidor se queda con un token que FCM ya rechaza y las
+   * notificaciones dejan de llegar hasta el siguiente login. Por eso se llama en
+   * cada arranque: `arrayUnion` es idempotente, asi que repetirlo no ensucia nada.
+   */
+  async refreshDeviceToken(): Promise<string | null> {
+    if(!this.isNotificationSupported() || this.getPermissionStatus() !== 'granted') {
+      return null;
+    }
+
+    try {
+      const registration = await this.getPushRegistration();
+
+      if(!registration) {
+        return null;
+      }
+
+      return await this.withDeadline(
+        this.registerDeviceToken(registration),
+        TOKEN_REQUEST_DEADLINE_MS
+      );
+
+    } catch(error) {
+      console.error('❌ Schoolify: [notification.service.ts]', error);
+      return null;
+    }
+  }
+
+  /**
    * Da de baja de las notificaciones el token de ESTE dispositivo.
    * Se invoca al cerrar sesión: sin esto el equipo sigue recibiendo los avisos
    * de la cuenta que acaba de salir.
