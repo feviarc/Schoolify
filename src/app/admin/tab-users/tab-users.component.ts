@@ -8,6 +8,8 @@ import {
   IonActionSheet,
   IonAvatar,
   IonBadge,
+  IonButton,
+  IonButtons,
   IonChip,
   IonContent,
   IonHeader,
@@ -18,7 +20,11 @@ import {
   IonItemSliding,
   IonLabel,
   IonList,
+  IonListHeader,
+  IonModal,
   IonProgressBar,
+  IonRadio,
+  IonRadioGroup,
   IonSpinner,
   IonTitle,
   IonToast,
@@ -26,9 +32,17 @@ import {
 } from "@ionic/angular/standalone";
 
 import type { OverlayEventDetail } from '@ionic/core/components';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { UserProfile } from 'src/app/models/user-profile.model';
-import { TeacherDataService } from 'src/app/services/teacher-data.service';
+import { AuthService } from 'src/app/services/auth.service';
+import { UserDataService } from 'src/app/services/user-data.service';
+
+
+/** Estado de la cuenta en Firebase Auth (no vive en Firestore). */
+interface AuthStatus {
+  emailVerified: boolean;
+  disabled: boolean;
+}
 
 
 @Component({
@@ -41,6 +55,8 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
     IonActionSheet,
     IonAvatar,
     IonBadge,
+    IonButton,
+    IonButtons,
     IonChip,
     IonContent,
     IonHeader,
@@ -51,7 +67,11 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
     IonItemSliding,
     IonLabel,
     IonList,
+    IonListHeader,
+    IonModal,
     IonProgressBar,
+    IonRadio,
+    IonRadioGroup,
     IonSpinner,
     IonTitle,
     IonToast,
@@ -61,14 +81,24 @@ import { TeacherDataService } from 'src/app/services/teacher-data.service';
 
 export class TabUsersComponent  implements OnInit, OnDestroy {
   private functions = inject(Functions);
-  private teacherDataService = inject(TeacherDataService);
+  private userDataService = inject(UserDataService);
+  private authService = inject(AuthService);
 
 
-  teachers: UserProfile[] = [];
+  users: UserProfile[] = [];
+  authStatus: {[uid: string]: AuthStatus} = {};
+  currentUid = '';
   isLoading = true;
   isSpinnerActive = false;
+  spinnerText = '';
   isToastOpen = false;
   toastMessage = '';
+
+  roleOptions = [
+    { value: 'maestro', label: 'Maestro' },
+    { value: 'tutor', label: 'Tutor' },
+    { value: 'administrador', label: 'Administrador' },
+  ];
 
   actionSheetButtons = [
     {
@@ -90,25 +120,82 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   private sub!: Subscription;
 
   ngOnInit() {
-
-    this.sub = this.teacherDataService.getTeachers().subscribe({
-      next: teachers => {
-        this.teachers = teachers;
-        this.isLoading = teachers.length === 0;
+    this.sub = this.userDataService.getUsers().subscribe({
+      next: users => {
+        this.users = users;
+        this.isLoading = users.length === 0;
       },
       error: error => {
-        this.isLoading = true;
+        console.error('❌ Schoolify: [tab-users.component.ts]', error);
+        this.isLoading = false;
       }
     });
+
+    this.loadAuthStatus();
+    this.loadCurrentUid();
   }
 
   ngOnDestroy() {
     this.sub.unsubscribe();
   }
 
-  async onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, teacher: UserProfile) {
+  /** Estado en Auth del usuario, con un valor por defecto mientras carga. */
+  statusOf(user: UserProfile): AuthStatus {
+    return this.authStatus[user.uid] ?? {emailVerified: true, disabled: false};
+  }
 
-    if(!teacher.id || !event.detail.data) {
+  roleLabel(rol?: string): string {
+    switch(rol) {
+      case 'maestro': return 'Maestro';
+      case 'tutor': return 'Tutor';
+      case 'administrador': return 'Administrador';
+      default: return 'Sin rol';
+    }
+  }
+
+  isCurrentUser(user: UserProfile): boolean {
+    return !!this.currentUid && user.uid === this.currentUid;
+  }
+
+  async onChangeRole(user: UserProfile, roleGroup: {value?: string}, modal: IonModal) {
+    modal.dismiss();
+
+    const rol = roleGroup?.value;
+
+    if(!user.uid || !rol || rol === user.rol) {
+      return;
+    }
+
+    if(this.isCurrentUser(user)) {
+      this.showToast('⚠️ No puedes cambiar tu propio rol.');
+      return;
+    }
+
+    await this.updateUser(user, {rol}, `👤 ${user.nombre || user.email} ahora es ${this.roleLabel(rol).toLowerCase()}.`);
+  }
+
+  async onToggleDisabled(user: UserProfile) {
+    if(!user.uid) {
+      return;
+    }
+
+    if(this.isCurrentUser(user)) {
+      this.showToast('⚠️ No puedes deshabilitar tu propia cuenta.');
+      return;
+    }
+
+    const disabled = !this.statusOf(user).disabled;
+
+    await this.updateUser(
+      user,
+      {disabled},
+      disabled ? '🚫 Cuenta deshabilitada.' : '✅ Cuenta habilitada.'
+    );
+  }
+
+  async onDeleteTeacher(event: CustomEvent<OverlayEventDetail>, user: UserProfile) {
+
+    if(!user.uid || !event.detail.data) {
       return;
     }
 
@@ -119,10 +206,11 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
     }
 
     this.isSpinnerActive = true;
+    this.spinnerText = 'Eliminando...';
 
     try {
       const deleteFn = httpsCallable(this.functions, 'deleteTeacher');
-      await deleteFn({ uid: teacher.uid });
+      await deleteFn({ uid: user.uid });
 
     } catch (error) {
       console.error('❌ Schoolify: [tab-users.component.ts]', error);
@@ -130,12 +218,59 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
     } finally {
       this.isSpinnerActive = false;
-      this.showToast(`🗑️ Se eliminó a ${teacher.nombre || teacher.email}`);
+      this.showToast(`🗑️ Se eliminó a ${user.nombre || user.email}`);
     }
   }
 
   setOpenToast(isOpen: boolean) {
     this.isToastOpen = isOpen;
+  }
+
+  /**
+   * El estado de las cuentas (correo verificado, deshabilitada) vive en Auth y no
+   * se puede leer desde el cliente: lo devuelve una funcion solo para administradores.
+   */
+  private async loadAuthStatus() {
+    try {
+      const statusFn = httpsCallable<unknown, {status: {[uid: string]: AuthStatus}}>(
+        this.functions,
+        'getUsersAuthStatus'
+      );
+
+      const { data } = await statusFn({});
+      this.authStatus = data?.status ?? {};
+
+    } catch (error) {
+      console.error('❌ Schoolify: [tab-users.component.ts]', error);
+    }
+  }
+
+  private async loadCurrentUid() {
+    const user = await firstValueFrom(this.authService.getCurrentUser());
+    this.currentUid = user?.uid ?? '';
+  }
+
+  private async updateUser(
+    user: UserProfile,
+    changes: {rol?: string; disabled?: boolean},
+    successMessage: string
+  ) {
+    this.isSpinnerActive = true;
+    this.spinnerText = 'Guardando...';
+
+    try {
+      const updateFn = httpsCallable(this.functions, 'updateUserByAdmin');
+      await updateFn({uid: user.uid, ...changes});
+      this.showToast(successMessage);
+      await this.loadAuthStatus();
+
+    } catch (error) {
+      console.error('❌ Schoolify: [tab-users.component.ts]', error);
+      this.showToast('❌ No se pudo actualizar la cuenta.');
+
+    } finally {
+      this.isSpinnerActive = false;
+    }
   }
 
   private showToast(message: string) {

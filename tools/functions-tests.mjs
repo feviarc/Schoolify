@@ -2,7 +2,7 @@
 // Sin dependencias: habla el protocolo de los callables por HTTP.
 //
 // Uso:
-//   terminal A:  firebase --project demo-schoolify emulators:start --only firestore,functions
+//   terminal A:  firebase --project demo-schoolify emulators:start --only auth,firestore,functions
 //   terminal B:  npm --prefix functions run build && node tools/functions-tests.mjs
 //
 // Requiere Java 21 y corre SOLO contra los emuladores: nunca toca el proyecto real.
@@ -33,14 +33,33 @@ function tokenFor(uid, { emailVerified = true } = {}) {
 
 const TEACHER = tokenFor('maestro9');
 const TEACHER_UNVERIFIED = tokenFor('maestro9', { emailVerified: false });
+const ADMIN = tokenFor('admin9');
+
+const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
 
 const str = (value) => ({ stringValue: value });
 const num = (value) => ({ integerValue: String(value) });
+
+/** Crea una cuenta en el emulador de Auth y devuelve su uid. */
+async function createAuthUser(email) {
+  const response = await fetch(AUTH_EMULATOR, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Connection: 'close' },
+    body: JSON.stringify({ email, password: 'Password123', returnSecureToken: true }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!response.ok) throw new Error(`No se pudo crear ${email} en Auth: ${response.status}`);
+
+  const body = await response.json();
+  return body.localId;
+}
 
 async function seed() {
   const documents = [
     ['escuelas/e1', { cct: str('CCT1'), nombre: str('ESCUELA DE PRUEBA'), turno: str('TM'), pin: num(1921), telefono: str('3531008338') }],
     ['usuarios/maestro9', { rol: str('maestro'), cct: str('CCT1') }],
+    ['usuarios/admin9', { rol: str('administrador'), cct: str('CCT1') }],
   ];
 
   for (const [path, fields] of documents) {
@@ -117,7 +136,7 @@ async function waitUntil(check, timeoutMs = 20000) {
   return false;
 }
 
-const triggerCases = [
+const scenarioCases = [
   {
     name: 'borrar una cuenta borra sus avisos y libera a sus alumnos',
     run: async () => {
@@ -150,6 +169,55 @@ const triggerCases = [
       return response.ok;
     },
   },
+  // ==================== administracion de cuentas ====================
+  {
+    name: 'solo un administrador puede cambiar el rol de otra cuenta',
+    run: async () => {
+      const uid = await createAuthUser('gestion@test.mx');
+      await firestore('PATCH', `usuarios/${uid}`, { fields: { rol: str('tutor'), cct: str('CCT1') } });
+
+      const asTeacher = await callFunction('updateUserByAdmin', { uid, rol: 'maestro' }, TEACHER);
+      if (asTeacher.status < 400) return false;
+
+      const asAdmin = await callFunction('updateUserByAdmin', { uid, rol: 'maestro' }, ADMIN);
+      if (asAdmin.status >= 400) return false;
+
+      return (await readField(`usuarios/${uid}`, 'rol')) === 'maestro';
+    },
+  },
+  {
+    name: 'el administrador deshabilita y habilita una cuenta',
+    run: async () => {
+      const uid = await createAuthUser('baja@test.mx');
+      await firestore('PATCH', `usuarios/${uid}`, { fields: { rol: str('tutor'), cct: str('CCT1') } });
+
+      const disabled = await callFunction('updateUserByAdmin', { uid, disabled: true }, ADMIN);
+      if (disabled.status >= 400) return false;
+
+      const afterDisable = await callFunction('getUsersAuthStatus', {}, ADMIN);
+      if (afterDisable.body?.result?.status?.[uid]?.disabled !== true) return false;
+
+      const enabled = await callFunction('updateUserByAdmin', { uid, disabled: false }, ADMIN);
+      if (enabled.status >= 400) return false;
+
+      const afterEnable = await callFunction('getUsersAuthStatus', {}, ADMIN);
+      return afterEnable.body?.result?.status?.[uid]?.disabled === false;
+    },
+  },
+  {
+    name: 'el administrador no puede deshabilitarse a si mismo',
+    run: async () => {
+      const response = await callFunction('updateUserByAdmin', { uid: 'admin9', disabled: true }, ADMIN);
+      return response.status >= 400;
+    },
+  },
+  {
+    name: 'un maestro no puede leer el estado de las cuentas',
+    run: async () => {
+      const response = await callFunction('getUsersAuthStatus', {}, TEACHER);
+      return response.status >= 400;
+    },
+  },
 ];
 
 (async () => {
@@ -157,7 +225,7 @@ const triggerCases = [
   console.log('Sembrado: escuelas/e1 (cct CCT1, pin 1921) y usuarios/maestro9 (cct CCT1)\n');
 
   let failures = 0;
-  let total = cases.length + triggerCases.length;
+  let total = cases.length + scenarioCases.length;
 
   for (const [name, fn, data, token, check, expected] of cases) {
     let passed = false;
@@ -175,7 +243,7 @@ const triggerCases = [
     console.log(`${passed ? '✅' : '❌'} ${name.padEnd(38)} esperado ${expected.padEnd(22)} ${detail}`);
   }
 
-  for (const triggerCase of triggerCases) {
+  for (const triggerCase of scenarioCases) {
     let passed = false;
 
     try {

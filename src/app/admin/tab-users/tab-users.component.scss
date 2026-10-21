@@ -31,3 +31,10 @@ ion-label {
     width: 50px;
   }
 }
+
+.card__user--badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}

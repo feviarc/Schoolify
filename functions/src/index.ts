@@ -570,3 +570,143 @@ export const onUserDeleted = onDocumentDeleted({
     }
   }
 );
+
+
+/** Roles validos de la app. */
+const VALID_ROLES = ['administrador', 'maestro', 'tutor'];
+
+
+/**
+ * Devuelve true si quien llama es administrador con el correo verificado.
+ * Se usa en las callables que gestionan cuentas ajenas.
+ */
+async function isAdminCaller(uid: string): Promise<boolean> {
+  const caller = await getFirestore().collection('usuarios').doc(uid).get();
+  return caller.exists && caller.data()?.rol === 'administrador';
+}
+
+
+/**
+ * Cambia el rol y/o el estado de una cuenta. Solo administradores.
+ *
+ * El estado se maneja con `disabled` de Firebase Auth (no con `activo` del
+ * perfil): es lo unico que bloquea de verdad el inicio de sesion. El rol se
+ * escribe en Firestore, que es de donde lo leen la app y las reglas.
+ *
+ * Salvaguarda: un administrador no puede cambiarse el rol ni deshabilitarse a si
+ * mismo, para no quedarse fuera de su propio panel (misma idea que deleteTeacher).
+ */
+export const updateUserByAdmin = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const uid: string = request.data?.uid;
+    const rol: string | undefined = request.data?.rol;
+    const disabled: boolean | undefined = request.data?.disabled;
+
+    if (!uid || typeof uid !== 'string') {
+      throw new HttpsError('invalid-argument', 'El UID de la cuenta es requerido.');
+    }
+
+    if (rol !== undefined && !VALID_ROLES.includes(rol)) {
+      throw new HttpsError('invalid-argument', 'Rol no válido.');
+    }
+
+    if (disabled !== undefined && typeof disabled !== 'boolean') {
+      throw new HttpsError('invalid-argument', 'El estado debe ser booleano.');
+    }
+
+    if (rol === undefined && disabled === undefined) {
+      throw new HttpsError('invalid-argument', 'No hay nada que actualizar.');
+    }
+
+    if (!(await isAdminCaller(request.auth.uid))) {
+      throw new HttpsError('permission-denied', 'Solo un administrador puede actualizar cuentas.');
+    }
+
+    if (uid === request.auth.uid) {
+      throw new HttpsError(
+        'failed-precondition',
+        'No puedes cambiar tu propio rol ni deshabilitar tu cuenta.'
+      );
+    }
+
+    const db = getFirestore();
+    const target = await db.collection('usuarios').doc(uid).get();
+
+    if (!target.exists) {
+      throw new HttpsError('not-found', 'La cuenta no existe.');
+    }
+
+    try {
+      if (rol !== undefined) {
+        await db.collection('usuarios').doc(uid).update({rol});
+        console.log(`👤 Rol de ${uid} cambiado a ${rol}`);
+      }
+
+      if (disabled !== undefined) {
+        await getAuth().updateUser(uid, {disabled});
+        console.log(`👤 Cuenta ${uid} ${disabled ? 'deshabilitada' : 'habilitada'}`);
+      }
+
+      return {success: true};
+    } catch (error) {
+      console.error('❌ Schoolify: [updateUserByAdmin]', error);
+
+      if ((error as {code?: string}).code === 'auth/user-not-found') {
+        throw new HttpsError('not-found', 'La cuenta no existe en Auth.');
+      }
+
+      throw new HttpsError('internal', 'No se pudo actualizar la cuenta.');
+    }
+  }
+);
+
+
+/**
+ * Estado de las cuentas en Firebase Auth: correo verificado, deshabilitada y
+ * ultimo acceso. Solo administradores. Sirve para que el panel muestre a quien le
+ * falta verificar el correo o quien esta dado de baja.
+ *
+ * `listUsers` devuelve como maximo 1000 usuarios por pagina; con el tamaño actual
+ * de la base alcanza y sobra.
+ */
+export const getUsersAuthStatus = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    if (!(await isAdminCaller(request.auth.uid))) {
+      throw new HttpsError('permission-denied', 'Solo un administrador puede consultar cuentas.');
+    }
+
+    try {
+      const list = await getAuth().listUsers(1000);
+      const status: {[uid: string]: {emailVerified: boolean; disabled: boolean}} = {};
+
+      list.users.forEach((user) => {
+        status[user.uid] = {
+          emailVerified: user.emailVerified,
+          disabled: user.disabled,
+        };
+      });
+
+      return {status};
+    } catch (error) {
+      console.error('❌ Schoolify: [getUsersAuthStatus]', error);
+      throw new HttpsError('internal', 'No se pudo consultar el estado de las cuentas.');
+    }
+  }
+);
+

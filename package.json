@@ -11,7 +11,7 @@
     "test": "ng test",
     "test:unit": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
     "test:rules": "firebase --project demo-schoolify emulators:exec --only firestore \"node tools/rules-tests.mjs\"",
-    "test:functions": "npm --prefix functions run build && firebase --project demo-schoolify emulators:exec --only firestore,functions \"node tools/functions-tests.mjs\"",
+    "test:functions": "npm --prefix functions run build && firebase --project demo-schoolify emulators:exec --only auth,firestore,functions \"node tools/functions-tests.mjs\"",
     "lint": "ng lint"
   },
   "private": true,

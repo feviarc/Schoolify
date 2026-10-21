@@ -80,6 +80,7 @@ export class AuthPage implements OnInit {
     passwordReset: '✅  Se envió un correo de restablecimiento de contraseña.',
     emailVerification: '✅  Se envió un correo de verificación. Revisa tu bandeja de entrada o Spam.',
     emailNotVerified: '⚠️  Tu correo electrónico aún no ha sido verificado. Revisa tu bandeja de entrada o la carpeta de Spam y haz clic en el enlace de verificación para activar tu cuenta.',
+    accountDisabled: '🚫  Tu cuenta está deshabilitada. Contacta al administrador de tu escuela.',
     default: '🛑  Ocurrió un error. Inténtalo nuevamente.'
   };
 
@@ -142,6 +143,9 @@ export class AuthPage implements OnInit {
           break;
         case 'auth/email-already-in-use':
           this.toastMessage = this.messages.emailAlreadyInUse;
+          break;
+        case 'auth/user-disabled':
+          this.toastMessage = this.messages.accountDisabled;
           break;
         default:
           this.toastMessage = this.messages.default;

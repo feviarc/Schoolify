@@ -1,12 +1,12 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Docentes</ion-title>
+    <ion-title>Usuarios</ion-title>
     <ion-badge
      color="secondary"
      slot="end"
      class="nav_badge--margin-right"
     >
-      {{ teachers.length }}
+      {{ users.length }}
     </ion-badge>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
@@ -18,31 +18,30 @@
   @if(isSpinnerActive) {
     <div class="container__spinner">
       <ion-spinner color="primary"></ion-spinner>
-      <p>Eliminando...</p>
+      <p>{{ spinnerText }}</p>
     </div>
   }
   @if(!isSpinnerActive) {
       <ion-list lines="none">
-      @if(!isLoading && teachers.length === 0) {
+      @if(!isLoading && users.length === 0) {
         <ion-item>
-          <ion-label>No hay personal registrado aún.</ion-label>
+          <ion-label>No hay usuarios registrados aún.</ion-label>
         </ion-item>
       } @else {
-        @for(teacher of teachers; track teacher.id) {
-          <ion-item-sliding class="sliding-item-card card__user" #teacherSlidingItem>
+        @for(user of users; track user.id) {
+          <ion-item-sliding class="sliding-item-card card__user" #userSlidingItem>
 
             <ion-item-options side="start">
-              <!-- <ion-item-option id="delete-{{ teacher.id }}" color="danger"> -->
-              <ion-item-option id="delete-{{ teacher.id }}" color="danger">
+              <ion-item-option id="delete-{{ user.id }}" color="danger">
                 <ion-icon slot="icon-only" name="trash"></ion-icon>
               </ion-item-option>
               <ion-action-sheet
-              trigger="delete-{{ teacher.id }}"
+              trigger="delete-{{ user.id }}"
               header="Presiona el botón Eliminar para borrar a"
-              subHeader="{{ teacher.nombre || teacher.email}}"
+              subHeader="{{ user.nombre || user.email }}"
               [buttons]="actionSheetButtons"
-              (didDismiss)="onDeleteTeacher($event, teacher)"
-              (willDismiss)="teacherSlidingItem.close()"
+              (didDismiss)="onDeleteTeacher($event, user)"
+              (willDismiss)="userSlidingItem.close()"
               >
               </ion-action-sheet>
             </ion-item-options>
@@ -52,25 +51,80 @@
                 <img src="../../../assets/img/avatar.svg" alt="User Avatar">
               </ion-avatar>
               <ion-label>
-                <h2>{{ teacher.nombre || 'NUEVO USUARIO'}}</h2>
-                <p>{{ teacher.activo ? 'Perfil completo' : 'No ha registrado sus datos aún'}}</p>
-                <a href="mailto://{{ teacher.email }}" target="_blank">
+                <h2>{{ user.nombre || 'NUEVO USUARIO'}}</h2>
+                <p>{{ user.activo ? 'Perfil completo' : 'No ha registrado sus datos aún'}}</p>
+                <div class="card__user--badges">
+                  <ion-badge color="medium">{{ roleLabel(user.rol) }}</ion-badge>
+                  @if(!statusOf(user).emailVerified) {
+                    <ion-badge color="warning">Correo sin verificar</ion-badge>
+                  }
+                  @if(statusOf(user).disabled) {
+                    <ion-badge color="danger">Deshabilitada</ion-badge>
+                  }
+                </div>
+                <a href="mailto://{{ user.email }}" target="_blank">
                   <ion-chip color="secondary" outline>
                     <ion-icon name="mail"></ion-icon>
-                    <ion-label>{{ teacher.email }}</ion-label>
+                    <ion-label>{{ user.email }}</ion-label>
                   </ion-chip>
                 </a>
-                @if(teacher.celular) {
-                <a href="https://api.whatsapp.com/send/?phone={{ teacher.celular }}" target="_blank">
+                @if(user.celular) {
+                <a href="https://api.whatsapp.com/send/?phone={{ user.celular }}" target="_blank">
                   <ion-chip color="success" outline>
                     <ion-icon name="logo-whatsapp"></ion-icon>
-                    <ion-label>{{ teacher.celular }}</ion-label>
+                    <ion-label>{{ user.celular }}</ion-label>
                   </ion-chip>
                 </a>
                 }
               </ion-label>
             </ion-item>
+
+            <ion-item-options side="end">
+              <ion-item-option id="role-{{ user.id }}" color="tertiary">
+                <ion-icon slot="icon-only" name="person"></ion-icon>
+              </ion-item-option>
+              <ion-item-option
+               color="{{ statusOf(user).disabled ? 'success' : 'warning' }}"
+               (click)="onToggleDisabled(user)"
+              >
+                <ion-icon slot="icon-only" name="power"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
           </ion-item-sliding>
+
+          <!-- Modal (Cambiar rol) -->
+          <ion-modal
+           trigger="role-{{ user.id }}"
+           [initialBreakpoint]="0.5"
+           [breakpoints]="[0, 0.5]"
+           (willDismiss)="userSlidingItem.close()"
+           #roleModal
+          >
+            <ng-template>
+              <ion-header>
+                <ion-toolbar color="secondary">
+                  <ion-buttons slot="start">
+                    <ion-button (click)="roleModal.dismiss()">Cancelar</ion-button>
+                  </ion-buttons>
+                  <ion-buttons slot="end">
+                    <ion-button [strong]="true" (click)="onChangeRole(user, roleGroup, roleModal)">
+                      Guardar
+                    </ion-button>
+                  </ion-buttons>
+                </ion-toolbar>
+              </ion-header>
+              <ion-content class="ion-padding">
+                <ion-list-header>Rol de {{ user.nombre || user.email }}</ion-list-header>
+                <ion-radio-group [value]="user.rol" #roleGroup>
+                  @for(option of roleOptions; track option.value) {
+                    <ion-item>
+                      <ion-radio [value]="option.value">{{ option.label }}</ion-radio>
+                    </ion-item>
+                  }
+                </ion-radio-group>
+              </ion-content>
+            </ng-template>
+          </ion-modal>
         }
       }
     </ion-list>

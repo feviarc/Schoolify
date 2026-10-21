@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import {
   IonApp,
@@ -28,6 +29,7 @@ import {
   person,
   personAdd,
   personRemove,
+  power,
   refreshCircle,
   sad,
   school,
@@ -58,9 +60,13 @@ export class AppComponent implements OnInit{
   private appUpdateService = inject(AppUpdateService);
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private router = inject(Router);
 
 
   updateAvailable$ = this.appUpdateService.updateAvailable$;
+
+  /** Aviso cuando la cuenta fue deshabilitada desde el panel del administrador. */
+  sessionMessage: string | null = null;
 
   toastButtons = [{
     text: 'Actualizar',
@@ -88,6 +94,7 @@ export class AppComponent implements OnInit{
       person,
       personAdd,
       personRemove,
+      power,
       refreshCircle,
       sad,
       school,
@@ -100,12 +107,41 @@ export class AppComponent implements OnInit{
     console.log('Versión Actual: [v0.1.0]');
     console.log('🔍 Buscando actualizaciones...');
 
+    this.validateSession();
     this.refreshNotificationsToken();
   }
 
   updateApp() {
     console.log('🔄 Usuario solicitó actualización');
     this.appUpdateService.applyUpdate();
+  }
+
+  /**
+   * Renueva el token al arrancar. Si la cuenta fue deshabilitada desde el panel,
+   * el servidor rechaza la renovacion (`auth/user-disabled`) y aqui se cierra la
+   * sesion con un aviso; sin esto, el usuario deshabilitado seguiria adentro hasta
+   * que caducara su token.
+   */
+  private async validateSession() {
+    const user = await firstValueFrom(this.authService.getCurrentUser());
+
+    if(!user) {
+      return;
+    }
+
+    try {
+      await user.getIdToken(true);
+
+    } catch(error) {
+      if((error as {code?: string}).code === 'auth/user-disabled') {
+        this.sessionMessage = '🚫 Tu cuenta fue deshabilitada. Contacta al administrador de tu escuela.';
+        await firstValueFrom(this.authService.logout());
+        this.router.navigateByUrl('/auth');
+        return;
+      }
+
+      console.error('❌ Schoolify: [app.component.ts]', error);
+    }
   }
 
   /**

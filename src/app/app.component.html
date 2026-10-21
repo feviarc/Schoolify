@@ -8,6 +8,15 @@
   >
   </ion-toast>
 
+  <ion-toast
+   color="danger"
+   [message]="sessionMessage ?? ''"
+   [isOpen]="!!sessionMessage"
+   [duration]="5000"
+   (didDismiss)="sessionMessage = null"
+  >
+  </ion-toast>
+
   <ion-router-outlet></ion-router-outlet>
 
 </ion-app>
