@@ -103,37 +103,17 @@ export const onNewUserNotification = onDocumentCreated({
 
       const userData = userDoc.data();
       const rol = userData?.rol;
-      console.log(`📬 Nueva notificación creada para ${rol}: ${userId}`);
+      console.log(`📬 Nuevo aviso creado para ${rol}: ${userId}`);
 
-      switch (rol) {
-        case 'administrador':
-          return await handleAdminNotification(notificationId, notificationData);
-        case 'tutor':
-          return await handleTutorNotification(userId, notificationId, notificationData, userData);
-        default:
-          console.log(`⚠️ Rol desconocido o no soportado: ${rol}`);
-          return {success: false, message: 'Rol no soportado'};
-      }
+      // Esta subcoleccion solo lleva avisos de alumnos (las reglas validan la
+      // forma); los mensajes internos viven en `mensajes` y no pasan por aqui.
+      return await handleTutorNotification(userId, notificationId, notificationData, userData);
     } catch (error) {
       console.error('❌ Error procesando notificación:', error);
       throw error;
     }
   }
 );
-
-async function handleAdminNotification(
- notificationId: string,
- notificationData: any
-): Promise<any> {
-  console.log(`✅ Notificación de administrador creada: ${notificationId}`);
-  console.log(`📄 Contenido: ${notificationData.body}`);
-
-  return {
-    success: true,
-    type: 'admin_notification',
-    notificationId: notificationId,
-  };
-}
 
 async function handleTutorNotification(
  tutorId: string,
@@ -294,7 +274,7 @@ export const onNewUserRegistered = onDocumentCreated({
         await db
           .collection('usuarios')
           .doc(adminId)
-          .collection('notificaciones')
+          .collection('mensajes')
           .add({
             body: notificationBody,
             createdAt: timestamp,
@@ -302,7 +282,7 @@ export const onNewUserRegistered = onDocumentCreated({
       });
 
       await Promise.all(notificationPromises);
-      console.log(`💾 Notificación guardada en Firestore para ${adminIds.length} administrador(es)`);
+      console.log(`💾 Mensaje guardado en Firestore para ${adminIds.length} administrador(es)`);
 
       if (adminTokens.length === 0) {
         console.log('⚠️ El administrador no tiene tokens FCM');

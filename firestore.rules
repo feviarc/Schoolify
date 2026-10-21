@@ -106,17 +106,29 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Avisos dentro de cada usuario: los escribe el maestro que los genera y los
-    // gestiona el administrador. Los lee el tutor dueño y el maestro de su escuela
-    // (el historial que abre desde la lista de alumnos).
+    // Avisos de un alumno: los escribe el maestro que los genera y los gestiona el
+    // administrador. Los lee el tutor dueño y el maestro de su escuela (el historial
+    // que abre desde la lista de alumnos).
     match /usuarios/{uid}/notificaciones/{notificationId} {
       allow read: if isOwnProfile(uid)
         || isAdmin()
         || (isTeacher() && sameSchoolAs(uid));
 
-      allow create: if isAdminOrTeacher();
+      // Un aviso siempre es de un alumno: se valida la forma para que nadie escriba
+      // aqui un mensaje interno (esos van a /mensajes).
+      allow create: if isAdminOrTeacher()
+        && request.resource.data.tipo in ['Inasistencia', 'Incumplimiento', 'Indisciplina']
+        && request.resource.data.sid is string;
 
       allow update, delete: if isAdmin();
+    }
+
+    // Mensajes internos del sistema (por ejemplo "se registró un maestro"). Los
+    // escribe la Cloud Function con el Admin SDK; el cliente solo los lee.
+    match /usuarios/{uid}/mensajes/{messageId} {
+      allow read: if isOwnProfile(uid) || isAdmin();
+
+      allow write: if false;
     }
 
     // ==================== escuelas ====================

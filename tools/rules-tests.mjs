@@ -128,6 +128,7 @@ async function seed() {
     ['grupos_de_alumnos/g1', { cct: str('CCT1'), grado: str('1'), letra: str('A') }],
     ['grupos_de_alumnos/g2', { cct: str('CCT2'), grado: str('1'), letra: str('B') }],
     ['usuarios/tutor1/notificaciones/n0', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
+    ['usuarios/admin1/mensajes/m1', { body: str('Se registró un usuario'), createdAt: timestamp() }],
     ['escuelas/e1', { cct: str('CCT1'), nombre: str('ESCUELA'), pin: num(1921) }],
     ['materias/m1', { nombre: str('MATEMATICAS'), grado: str('1') }],
     ['grupos/gr1', { grado: str('1'), letra: str('A'), nombre: str('Grupo 1 A') }],
@@ -209,6 +210,12 @@ const cases = [
   ['maestro1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
   ['maestro1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
   ['admin1 lista las notificaciones de un tutor', 'query', 'usuarios/tutor1/notificaciones', { token: ADMIN, orderBy: ['createdAt'] }, 'permitido'],
+
+  // Avisos y mensajes internos ya no comparten subcoleccion (y no se mezclan).
+  ['maestro1 escribe un mensaje interno en notificaciones', 'post', 'usuarios/tutor1/notificaciones?documentId=mezcla', { token: TEACHER, fields: { body: str('texto suelto') } }, 'denegado'],
+  ['el administrador lee sus mensajes internos', 'get', 'usuarios/admin1/mensajes/m1', { token: ADMIN }, 'permitido'],
+  ['nadie crea mensajes internos desde el cliente', 'post', 'usuarios/admin1/mensajes?documentId=m2', { token: ADMIN, fields: { body: str('texto') } }, 'denegado'],
+  ['un maestro no lee los mensajes de un administrador', 'get', 'usuarios/admin1/mensajes/m1', { token: TEACHER }, 'denegado'],
 
   // La app comprueba si el grupo existe antes de crearlo (get de un id que aun no
   // existe): en ese documento no hay `cct` que comparar.

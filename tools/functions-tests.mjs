@@ -255,6 +255,20 @@ const scenarioCases = [
     },
   },
   {
+    name: 'registrar un maestro deja el mensaje en /mensajes del administrador',
+    run: async () => {
+      await firestore('PATCH', 'usuarios/adminmsg', { fields: { rol: str('administrador'), cct: str('CCT1') } });
+      await firestore('PATCH', 'usuarios/nuevomaestro', { fields: { rol: str('maestro'), cct: str('CCT1'), email: str('nuevo@test.mx') } });
+
+      return waitUntil(async () => {
+        const response = await firestore('GET', 'usuarios/adminmsg/mensajes');
+        if (!response.ok) return false;
+        const body = await response.json();
+        return (body.documents?.length ?? 0) > 0;
+      });
+    },
+  },
+  {
     name: 'si el grupo se borra igual, sus alumnos quedan libres',
     run: async () => {
       await firestore('PATCH', 'grupos_de_alumnos/gtrigger', { fields: { cct: str('CCT1'), grado: str('3'), letra: str('Z') } });
