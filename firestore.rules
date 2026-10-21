@@ -171,9 +171,18 @@ service cloud.firestore {
 
     match /grupos_de_alumnos/{gid} {
       // El maestro, los de su escuela (`where('cct', '==', ...)`).
-      allow read: if isAdmin() || (isTeacher() && resource.data.cct == ownCct());
+      // `resource == null` cubre la comprobacion de existencia que hace la app al
+      // crear un grupo: en un documento que aun no existe no hay `cct` que comparar
+      // y la lectura se denegaba.
+      allow read: if isAdmin()
+        || (isTeacher() && (resource == null || resource.data.cct == ownCct()));
 
-      allow write: if isAdminOrTeacher();
+      allow create, update: if isAdminOrTeacher();
+
+      // Borrar un grupo pasa SOLO por la funcion `deleteStudentGroup`, que exige
+      // que el grupo este vacio. Un borrado directo desde el cliente saltaria esa
+      // comprobacion, asi que aqui se niega (el Admin SDK no pasa por estas reglas).
+      allow delete: if false;
     }
   }
 }

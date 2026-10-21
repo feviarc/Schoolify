@@ -338,6 +338,9 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.log('❌ Schoolify: [tab-groups.component.ts]', error);
+        // La funcion explica por que no se puede (por ejemplo, si tiene alumnos).
+        this.showToast(`🛑 ${error.message}`);
+        this.isSpinnerActive = false;
       }
     });
 
@@ -366,7 +369,17 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       alumnos: []
     };
 
-    const sub = this.studentGroupCRUDService.addStudentGroup(newGroup).subscribe();
+    const sub = this.studentGroupCRUDService.addStudentGroup(newGroup).subscribe({
+      next: () => {
+        this.showToast(`✅ Se agregó el ${selectedGroup?.nombre ?? 'grupo'}.`);
+      },
+      error: (error) => {
+        // Antes fallaba en silencio: si la regla o la red lo impedian, el usuario
+        // solo veia que "no pasaba nada".
+        console.error('❌ Schoolify: [tab-groups.component.ts]', error);
+        this.showToast(`🛑 ${error.message}`);
+      }
+    });
     this.subscriptions.push(sub);
   }
 

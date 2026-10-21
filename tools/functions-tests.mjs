@@ -218,6 +218,53 @@ const scenarioCases = [
       return response.status >= 400;
     },
   },
+  // ==================== borrado de grupos ====================
+  {
+    name: 'no se puede borrar un grupo con alumnos asignados',
+    run: async () => {
+      await firestore('PATCH', 'grupos_de_alumnos/gcon', { fields: { cct: str('CCT1'), grado: str('1'), letra: str('Z') } });
+      await firestore('PATCH', 'alumnos/acon', { fields: { nombre: str('ALUMNO DEL GRUPO'), cct: str('CCT1'), gid: str('gcon') } });
+
+      const response = await callFunction('deleteStudentGroup', { gid: 'gcon' }, TEACHER);
+      if (response.status < 400) return false;
+
+      // El grupo sigue existiendo.
+      const stillThere = await firestore('GET', 'grupos_de_alumnos/gcon');
+      return stillThere.ok;
+    },
+  },
+  {
+    name: 'se puede borrar un grupo vacio',
+    run: async () => {
+      await firestore('PATCH', 'grupos_de_alumnos/gvacio', { fields: { cct: str('CCT1'), grado: str('2'), letra: str('Z') } });
+
+      const response = await callFunction('deleteStudentGroup', { gid: 'gvacio' }, TEACHER);
+      if (response.status >= 400) return false;
+
+      const gone = await firestore('GET', 'grupos_de_alumnos/gvacio');
+      return gone.status === 404;
+    },
+  },
+  {
+    name: 'un maestro no puede borrar un grupo de otra escuela',
+    run: async () => {
+      await firestore('PATCH', 'grupos_de_alumnos/gotra', { fields: { cct: str('CCT2'), grado: str('1'), letra: str('B') } });
+
+      const response = await callFunction('deleteStudentGroup', { gid: 'gotra' }, TEACHER);
+      return response.status >= 400;
+    },
+  },
+  {
+    name: 'si el grupo se borra igual, sus alumnos quedan libres',
+    run: async () => {
+      await firestore('PATCH', 'grupos_de_alumnos/gtrigger', { fields: { cct: str('CCT1'), grado: str('3'), letra: str('Z') } });
+      await firestore('PATCH', 'alumnos/atrigger', { fields: { nombre: str('ALUMNO DEL GRUPO BORRADO'), cct: str('CCT1'), gid: str('gtrigger') } });
+
+      await firestore('DELETE', 'grupos_de_alumnos/gtrigger');
+
+      return waitUntil(async () => (await readField('alumnos/atrigger', 'gid')) === '');
+    },
+  },
 ];
 
 (async () => {

@@ -4,7 +4,6 @@ import {
   collection,
   collectionData,
   CollectionReference,
-  deleteDoc,
   doc,
   Firestore,
   getDoc,
@@ -14,6 +13,8 @@ import {
   setDoc,
   where,
 } from '@angular/fire/firestore';
+
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import {
   from,
@@ -75,6 +76,7 @@ export interface StudentInput {
 })
 export class StudentGroupCRUDService {
   private firestore = inject(Firestore);
+  private functions = inject(Functions);
 
 
   private readonly COLLECTION_NAME = 'grupos_de_alumnos';
@@ -164,19 +166,24 @@ export class StudentGroupCRUDService {
    * @param gid - Group ID
    * @returns Observable<void>
    */
+  /**
+   * Borra un grupo VACIO.
+   *
+   * Va por la funcion `deleteStudentGroup` porque las reglas no dejan borrar el
+   * documento al cliente: la funcion comprueba que no tenga alumnos asignados y
+   * devuelve su mensaje cuando no se puede.
+   */
   deleteStudentGroup(gid: string): Observable<void> {
-    const docRef = doc(this.firestore, this.COLLECTION_NAME, gid);
+    const callable = httpsCallable<{gid: string}, {success: boolean}>(
+      this.functions,
+      'deleteStudentGroup'
+    );
 
-    return from(getDoc(docRef)).pipe(
-      switchMap(docSnap => {
-        if (!docSnap.exists()) {
-          return throwError(() => new Error('Student group does not exist'));
-        }
-        return from(deleteDoc(docRef));
-      }),
+    return from(callable({gid})).pipe(
+      map(() => undefined),
       catchError(error => {
         console.error('❌ Schoolify: [student-group-crud.service.ts]', error);
-        return throwError(() => new Error('Could not delete student group'));
+        return throwError(() => new Error(error?.message || 'Could not delete student group'));
       })
     );
   }

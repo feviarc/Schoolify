@@ -210,11 +210,20 @@ const cases = [
   ['maestro1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
   ['admin1 lista las notificaciones de un tutor', 'query', 'usuarios/tutor1/notificaciones', { token: ADMIN, orderBy: ['createdAt'] }, 'permitido'],
 
+  // La app comprueba si el grupo existe antes de crearlo (get de un id que aun no
+  // existe): en ese documento no hay `cct` que comparar.
+  ['maestro1 comprueba si existe un grupo (id inexistente)', 'get', 'grupos_de_alumnos/nuevo', { token: TEACHER }, 'permitido'],
+  ['maestro1 lee un grupo de su escuela', 'get', 'grupos_de_alumnos/g1', { token: TEACHER }, 'permitido'],
+  ['maestro1 lee un grupo de otra escuela', 'get', 'grupos_de_alumnos/g2', { token: TEACHER }, 'denegado'],
+
   // ==================== catalogos generales ====================
   ['maestro1 lee una materia', 'get', 'materias/m1', { token: TEACHER }, 'permitido'],
   ['maestro1 lista los grupos escolares', 'list', 'grupos', { token: TEACHER }, 'permitido'],
   ['tutor1 lee una materia', 'get', 'materias/m1', { token: TUTOR1 }, 'denegado'],
   ['sin sesion: listar materias', 'list', 'materias', {}, 'denegado'],
+  // Borrar un grupo solo lo puede hacer la funcion deleteStudentGroup (Admin SDK).
+  ['maestro1 borra un grupo directamente', 'delete', 'grupos_de_alumnos/g1', { token: TEACHER }, 'denegado'],
+  ['admin1 borra un grupo directamente', 'delete', 'grupos_de_alumnos/g2', { token: ADMIN }, 'denegado'],
 ];
 
 async function waitForEmulator(maxMs = 240000) {
@@ -264,7 +273,9 @@ async function waitForEmulator(maxMs = 240000) {
       status = `error (${error.name})`;
     }
 
-    const allowed = succeeded(status);
+    // En un `get`, un 404 significa que las reglas DEJARON pasar y el documento no
+    // existe (es el caso de la comprobacion de existencia al crear un grupo).
+    const allowed = succeeded(status) || (method === 'get' && status === 404);
     const actual = typeof status === 'string' ? status : (allowed ? 'permitido' : 'denegado');
     const passed = actual === expected;
     if (!passed) failures++;

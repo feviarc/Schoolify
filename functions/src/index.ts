@@ -710,3 +710,118 @@ export const getUsersAuthStatus = onCall(
   }
 );
 
+
+/**
+ * Borra un grupo de alumnos, solo si esta vacio. Solo administradores y maestros.
+ *
+ * El cliente no puede borrar el documento (las reglas lo niegan): esta funcion es
+ * la unica puerta, y por eso puede garantizar que un grupo con alumnos no se borre.
+ * Si se borrara desde la consola, el trigger `onGroupDeleted` igual libera a los
+ * alumnos como red de seguridad.
+ */
+export const deleteStudentGroup = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const gid: string = request.data?.gid;
+
+    if (!gid || typeof gid !== 'string') {
+      throw new HttpsError('invalid-argument', 'El identificador del grupo es requerido.');
+    }
+
+    const db = getFirestore();
+
+    try {
+      const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+      const callerData = caller.data();
+      const isAdmin = callerData?.rol === 'administrador';
+      const isTeacher = callerData?.rol === 'maestro';
+
+      if (!caller.exists || (!isAdmin && !isTeacher)) {
+        throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede borrar grupos.');
+      }
+
+      const group = await db.collection('grupos_de_alumnos').doc(gid).get();
+
+      if (!group.exists) {
+        throw new HttpsError('not-found', 'El grupo no existe.');
+      }
+
+      // Un maestro solo borra grupos de su escuela.
+      if (!isAdmin && group.data()?.cct !== callerData?.cct) {
+        throw new HttpsError('permission-denied', 'Ese grupo no pertenece a tu escuela.');
+      }
+
+      const students = await db.collection('alumnos').where('gid', '==', gid).limit(1).get();
+
+      if (!students.empty) {
+        const count = await db.collection('alumnos').where('gid', '==', gid).count().get();
+        const total = count.data().count;
+
+        throw new HttpsError(
+          'failed-precondition',
+          `No se puede eliminar el grupo: tiene ${total} alumno(s) asignado(s).`
+        );
+      }
+
+      await db.collection('grupos_de_alumnos').doc(gid).delete();
+      console.log(`🗑️ Grupo eliminado: ${gid}`);
+
+      return {success: true};
+    } catch (error) {
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+
+      console.error('❌ Schoolify: [deleteStudentGroup]', error);
+      throw new HttpsError('internal', 'No se pudo eliminar el grupo.');
+    }
+  }
+);
+
+
+/**
+ * Red de seguridad al borrar un grupo de alumnos: suelta a los alumnos que lo
+ * tuvieran asignado, para que no queden apuntando a un grupo que ya no existe.
+ *
+ * Lo normal es que el grupo se borre vacio (la funcion `deleteStudentGroup` lo
+ * exige), pero un borrado desde la consola si puede dejar alumnos colgando.
+ */
+export const onGroupDeleted = onDocumentDeleted({
+  document: 'grupos_de_alumnos/{gid}',
+  region: TRIGGER_REGION,
+},
+  async (event) => {
+    const gid = event.params.gid;
+    const db = getFirestore();
+
+    try {
+      const students = await db.collection('alumnos').where('gid', '==', gid).get();
+
+      if (students.empty) {
+        return {success: true};
+      }
+
+      const batch = db.batch();
+
+      students.docs.forEach((student) => batch.update(student.ref, {
+        gid: '',
+        updatedAt: FieldValue.serverTimestamp(),
+      }));
+
+      await batch.commit();
+      console.log(`🧹 ${students.size} alumno(s) liberados del grupo ${gid}`);
+
+      return {success: true};
+    } catch (error) {
+      console.error('❌ Schoolify: [onGroupDeleted]', error);
+      throw error;
+    }
+  }
+);
