@@ -118,12 +118,14 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   ];
 
   private sub!: Subscription;
+  private knownUids = new Set<string>();
 
   ngOnInit() {
     this.sub = this.userDataService.getUsers().subscribe({
       next: users => {
         this.users = users;
         this.isLoading = users.length === 0;
+        this.refreshAuthStatusIfUsersChanged(users);
       },
       error: error => {
         console.error('❌ Schoolify: [tab-users.component.ts]', error);
@@ -141,7 +143,7 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   /** Estado en Auth del usuario, con un valor por defecto mientras carga. */
   statusOf(user: UserProfile): AuthStatus {
-    return this.authStatus[user.uid] ?? {emailVerified: true, disabled: false};
+    return this.authStatus[user.id ?? user.uid] ?? {emailVerified: true, disabled: false};
   }
 
   roleLabel(rol?: string): string {
@@ -224,6 +226,25 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   setOpenToast(isOpen: boolean) {
     this.isToastOpen = isOpen;
+  }
+
+  /**
+   * Vuelve a pedir el estado de Auth cuando aparece o desaparece una cuenta.
+   *
+   * Antes se pedia una sola vez al abrir la pestaña, asi que un usuario que se
+   * registraba con el panel abierto se quedaba sin sus distintivos ("Correo sin
+   * verificar") hasta recargar o hasta que otra accion forzara la recarga.
+   */
+  private refreshAuthStatusIfUsersChanged(users: UserProfile[]) {
+    const uids = users.map(user => user.id ?? user.uid).filter(Boolean);
+    const changed = uids.length !== this.knownUids.size || uids.some(uid => !this.knownUids.has(uid));
+
+    if(!changed) {
+      return;
+    }
+
+    this.knownUids = new Set(uids);
+    this.loadAuthStatus();
   }
 
   /**
