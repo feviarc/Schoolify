@@ -38,3 +38,44 @@ ion-label {
   gap: 0.25rem;
   margin-top: 0.35rem;
 }
+
+.role-bar {
+  --background: #888fed;
+
+  .role-search {
+    --background: #ffffff;
+    --color: #222d3a;
+    --icon-color: #222d3a;
+    --placeholder-color: #666666;
+    --clear-button-color: #222d3a;
+    /*
+     * Ionic (MD) agrega 8px de padding al host y el host ocupa todo el ancho, asi
+     * que el margen derecho no se respetaba. Con padding simetrico la caja blanca
+     * queda igual de separada a la izquierda y a la derecha.
+     */
+    padding: 0.5rem 0.5rem 0.75rem;
+    margin: 0;
+  }
+}
+
+.role-filters {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0 0.5rem 0.6rem;
+  scrollbar-width: none;
+
+  .role-chip {
+    --background: transparent;
+    --color: #ffffff;
+    border: 1px solid #ffffff;
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .role-chip--active {
+    --background: #ffffff;
+    --color: #888fed;
+    font-weight: 600;
+  }
+}

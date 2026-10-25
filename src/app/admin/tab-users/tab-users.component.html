@@ -6,11 +6,33 @@
      slot="end"
      class="nav_badge--margin-right"
     >
-      {{ users.length }}
+      {{ filteredUsers.length }}
     </ion-badge>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }
+  </ion-toolbar>
+
+  <ion-toolbar class="role-bar">
+    <ion-searchbar
+     class="role-search"
+     placeholder="Buscar por nombre, correo o celular..."
+     [debounce]="400"
+     (ionInput)="onSearchInput($event)"
+    >
+    </ion-searchbar>
+
+    <div class="role-filters">
+      @for(filter of roleFilters; track filter.value) {
+        <ion-chip
+         class="role-chip"
+         [class.role-chip--active]="roleFilter === filter.value"
+         (click)="setRoleFilter(filter.value)"
+        >
+          {{ filter.label }}
+        </ion-chip>
+      }
+    </div>
   </ion-toolbar>
 </ion-header>
 
@@ -23,12 +45,12 @@
   }
   @if(!isSpinnerActive) {
       <ion-list lines="none">
-      @if(!isLoading && users.length === 0) {
+      @if(!isLoading && filteredUsers.length === 0) {
         <ion-item>
-          <ion-label>No hay usuarios registrados aún.</ion-label>
+          <ion-label>{{ emptyMessage }}</ion-label>
         </ion-item>
       } @else {
-        @for(user of users; track user.id) {
+        @for(user of filteredUsers; track user.id) {
           <ion-item-sliding class="sliding-item-card card__user" #userSlidingItem>
 
             <ion-item-options side="start">

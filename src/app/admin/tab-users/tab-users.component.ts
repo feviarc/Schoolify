@@ -25,6 +25,7 @@ import {
   IonProgressBar,
   IonRadio,
   IonRadioGroup,
+  IonSearchbar,
   IonSpinner,
   IonTitle,
   IonToast,
@@ -72,6 +73,7 @@ interface AuthStatus {
     IonProgressBar,
     IonRadio,
     IonRadioGroup,
+    IonSearchbar,
     IonSpinner,
     IonTitle,
     IonToast,
@@ -86,6 +88,7 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
 
   users: UserProfile[] = [];
+  filteredUsers: UserProfile[] = [];
   authStatus: {[uid: string]: AuthStatus} = {};
   currentUid = '';
   isLoading = true;
@@ -93,6 +96,16 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   spinnerText = '';
   isToastOpen = false;
   toastMessage = '';
+
+  searchQuery = '';
+  roleFilter = 'todos';
+
+  roleFilters = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'maestro', label: 'Maestros' },
+    { value: 'tutor', label: 'Tutores' },
+    { value: 'administrador', label: 'Administradores' },
+  ];
 
   roleOptions = [
     { value: 'maestro', label: 'Maestro' },
@@ -120,11 +133,30 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   private sub!: Subscription;
   private knownUids = new Set<string>();
 
+  /** Mensaje para la lista vacía, distinguiendo "no hay nadie" de "no hubo match". */
+  get emptyMessage(): string {
+    if(this.users.length === 0) {
+      return 'No hay usuarios registrados aún.';
+    }
+
+    const roleName = this.roleFilters.find(filter => filter.value === this.roleFilter)?.label ?? '';
+    const search = this.searchQuery.trim();
+    const parts = [
+      search ? `que coincidan con "${search}"` : '',
+      this.roleFilter === 'todos' ? '' : `con rol ${roleName.toLowerCase()}`,
+    ]
+      .filter(Boolean)
+      .join(' y ');
+
+    return parts ? `No se encontraron usuarios ${parts}.` : 'No se encontraron usuarios.';
+  }
+
   ngOnInit() {
     this.sub = this.userDataService.getUsers().subscribe({
       next: users => {
         this.users = users;
         this.isLoading = users.length === 0;
+        this.applyFilters();
         this.refreshAuthStatusIfUsersChanged(users);
       },
       error: error => {
@@ -153,6 +185,17 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
       case 'administrador': return 'Administrador';
       default: return 'Sin rol';
     }
+  }
+
+  onSearchInput(event: Event) {
+    const target = event.target as HTMLIonSearchbarElement;
+    this.searchQuery = target.value ?? '';
+    this.applyFilters();
+  }
+
+  setRoleFilter(rol: string) {
+    this.roleFilter = rol;
+    this.applyFilters();
   }
 
   isCurrentUser(user: UserProfile): boolean {
@@ -226,6 +269,40 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   setOpenToast(isOpen: boolean) {
     this.isToastOpen = isOpen;
+  }
+
+  /**
+   * Aplica la busqueda y el filtro de rol sobre la lista completa. Se hace en
+   * memoria: el panel ya carga todos los usuarios en tiempo real.
+   */
+  private applyFilters() {
+    const query = this.normalize(this.searchQuery);
+
+    this.filteredUsers = this.users.filter(user => {
+      if(this.roleFilter !== 'todos' && user.rol !== this.roleFilter) {
+        return false;
+      }
+
+      if(!query) {
+        return true;
+      }
+
+      const searchable = `${user.nombre ?? ''} ${user.email ?? ''} ${user.celular ?? ''}`;
+
+      return this.normalize(searchable).includes(query);
+    });
+  }
+
+  /**
+   * Minusculas y sin acentos: asi "jose" encuentra "JOSÉ" y al reves. El buscador
+   * de estudiantes no normaliza y por eso le pide al usuario probar con y sin acentos.
+   */
+  private normalize(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
   }
 
   /**
