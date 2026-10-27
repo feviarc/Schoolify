@@ -3,3 +3,39 @@ ion-note {
   margin-left: 1rem;
   margin-top: 0.5rem;
 }
+
+.group-bar {
+  --background: #888fed;
+
+  .group-search {
+    --background: #ffffff;
+    --color: #222d3a;
+    --icon-color: #222d3a;
+    --placeholder-color: #666666;
+    --clear-button-color: #222d3a;
+    padding: 0.5rem 0.5rem 0.75rem;
+    margin: 0;
+  }
+}
+
+.group-filters {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0 0.5rem 0.6rem;
+  scrollbar-width: none;
+
+  .group-chip {
+    --background: transparent;
+    --color: #ffffff;
+    border: 1px solid #ffffff;
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .group-chip--active {
+    --background: #ffffff;
+    --color: #888fed;
+    font-weight: 600;
+  }
+}

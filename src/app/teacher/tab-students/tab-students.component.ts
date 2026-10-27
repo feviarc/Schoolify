@@ -98,8 +98,16 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   isUpdateButtonDisable = true;
   spinnerText = '';
   students: Student[] = [];
-  tabMessage = 'No hay alumnos registrados todavía.';
   toastMessage = '';
+
+  searchQuery = '';
+  groupFilter = 'todos';
+
+  groupFilters = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'con', label: 'Con grupo' },
+    { value: 'sin', label: 'Sin grupo' },
+  ];
 
   private subscriptions: Subscription[] = [];
   private readonly CCT_KEY = this.localStorageService.CCT_KEY;
@@ -135,6 +143,28 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       Validators.pattern('^[A-Za-zÑñÁÉÍÓÚáéíóú ]+$')
     ]]
   });
+
+  /** Mensaje de lista vacia, distinguiendo "no hay nadie" de "no hubo match". */
+  get emptyMessage(): string {
+    if(this.students.length === 0) {
+      return 'No hay alumnos registrados todavía.';
+    }
+
+    const search = this.searchQuery.trim();
+    const groupLabel = this.groupFilters.find(filter => filter.value === this.groupFilter)?.label ?? '';
+    const parts = [
+      search ? `que coincidan con "${search}"` : '',
+      this.groupFilter === 'todos' ? '' : `con "${groupLabel.toLowerCase()}"`,
+    ]
+      .filter(Boolean)
+      .join(' y ');
+
+    if(parts) {
+      return `No se encontraron alumnos ${parts}.`;
+    }
+
+    return 'No se encontraron alumnos.';
+  }
 
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);
@@ -186,16 +216,15 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     return JSON.stringify(this.formSnapshot) === JSON.stringify(this.form.value);
   }
 
-  handleInput(event: Event) {
+  onSearchInput(event: Event) {
     const target = event.target as HTMLIonSearchbarElement;
-    const query = target.value?.toUpperCase() || '';
-    this.filteredStudents = this.students.filter(
-      (student) => student.nombreCompleto.includes(query)
-    );
+    this.searchQuery = target.value ?? '';
+    this.applyFilters();
+  }
 
-    if(this.filteredStudents.length === 0) {
-      this.tabMessage = `No se encontraron alumnos con la frase "${query}". Puedes intentar buscar colocando o quitando acentos en tu búsqueda.`;
-    }
+  setGroupFilter(value: string) {
+    this.groupFilter = value;
+    this.applyFilters();
   }
 
   loadStudentData(student: Student) {
@@ -216,7 +245,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
           (a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto)
         );
         this.students = students;
-        this.filteredStudents = [...this.students];
+        this.applyFilters();
 
         if(this.isFirstEmission) {
           this.isFirstEmission = false;
@@ -225,6 +254,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
         if(this.searchbar) {
           this.searchbar.value = '';
+          this.searchQuery = '';
+          this.applyFilters();
         }
       },
       error: (error) => {
@@ -308,6 +339,44 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.isSpinnerActive = false;
     this.isSaving = false;
+  }
+
+  /** Aplica buscador (nombre o grupo) y chips (con/sin grupo) juntos. */
+  private applyFilters() {
+    const query = this.normalize(this.searchQuery);
+
+    this.filteredStudents = this.students.filter(student => {
+      const hasGroup = !!student.gid;
+
+      if(this.groupFilter === 'con' && !hasGroup) {
+        return false;
+      }
+
+      if(this.groupFilter === 'sin' && hasGroup) {
+        return false;
+      }
+
+      if(!query) {
+        return true;
+      }
+
+      const grupo = hasGroup ? this.getGroupFromSID(student.gid as string) : '';
+      const searchable = `${student.nombreCompleto} ${grupo}`;
+
+      return this.normalize(searchable).includes(query);
+    });
+  }
+
+  /**
+   * Minusculas y sin acentos: asi "jose" encuentra "JOSÉ" y al reves, y ya no hace
+   * falta pedirle al usuario que pruebe con y sin acentos.
+   */
+  private normalize(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
   }
 
   private showToast(message: string) {
