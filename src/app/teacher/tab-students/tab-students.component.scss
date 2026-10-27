@@ -4,10 +4,10 @@ ion-note {
   margin-top: 0.5rem;
 }
 
-.group-bar {
+.filters-bar {
   --background: #888fed;
 
-  .group-search {
+  .filters-search {
     --background: #ffffff;
     --color: #222d3a;
     --icon-color: #222d3a;
@@ -18,22 +18,24 @@ ion-note {
   }
 }
 
-.group-filters {
+.filter-chips {
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
   padding: 0 0.5rem 0.6rem;
   scrollbar-width: none;
 
-  .group-chip {
+  .filter-chip {
     --background: transparent;
     --color: #ffffff;
     border: 1px solid #ffffff;
-    flex: 0 0 auto;
+    /* Los chips crecen para llenar el ancho, con una separacion corta entre ellos. */
+    flex: 1 1 0;
+    justify-content: center;
     margin: 0;
   }
 
-  .group-chip--active {
+  .filter-chip--active {
     --background: #ffffff;
     --color: #888fed;
     font-weight: 600;

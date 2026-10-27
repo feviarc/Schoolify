@@ -9,21 +9,33 @@
       {{ filteredStudents.length }}
     </ion-badge>
   </ion-toolbar>
-  <ion-toolbar class="group-bar">
+  <ion-toolbar class="filters-bar">
     <ion-searchbar
-     class="group-search"
+     class="filters-search"
      placeholder="Buscar por nombre o grupo..."
      [debounce]="400"
      (ionInput)="onSearchInput($event)"
     >
     </ion-searchbar>
 
-    <div class="group-filters">
+    <div class="filter-chips">
       @for(filter of groupFilters; track filter.value) {
         <ion-chip
-         class="group-chip"
-         [class.group-chip--active]="groupFilter === filter.value"
+         class="filter-chip"
+         [class.filter-chip--active]="groupFilter === filter.value"
          (click)="setGroupFilter(filter.value)"
+        >
+          {{ filter.label }}
+        </ion-chip>
+      }
+    </div>
+
+    <div class="filter-chips">
+      @for(filter of tutorFilters; track filter.value) {
+        <ion-chip
+         class="filter-chip"
+         [class.filter-chip--active]="tutorFilter === filter.value"
+         (click)="setTutorFilter(filter.value)"
         >
           {{ filter.label }}
         </ion-chip>

@@ -109,6 +109,14 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     { value: 'sin', label: 'Sin grupo' },
   ];
 
+  tutorFilter = 'todos';
+
+  tutorFilters = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'con', label: 'Con tutor' },
+    { value: 'sin', label: 'Sin tutor' },
+  ];
+
   private subscriptions: Subscription[] = [];
   private readonly CCT_KEY = this.localStorageService.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
@@ -150,20 +158,25 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       return 'No hay alumnos registrados todavía.';
     }
 
+    const conditions: string[] = [];
     const search = this.searchQuery.trim();
-    const groupLabel = this.groupFilters.find(filter => filter.value === this.groupFilter)?.label ?? '';
-    const parts = [
-      search ? `que coincidan con "${search}"` : '',
-      this.groupFilter === 'todos' ? '' : `con "${groupLabel.toLowerCase()}"`,
-    ]
-      .filter(Boolean)
-      .join(' y ');
 
-    if(parts) {
-      return `No se encontraron alumnos ${parts}.`;
+    if(search) {
+      conditions.push(`que coincidan con "${search}"`);
     }
 
-    return 'No se encontraron alumnos.';
+    const groupLabel = this.groupFilters.find(filter => filter.value === this.groupFilter)?.label ?? '';
+    const tutorLabel = this.tutorFilters.find(filter => filter.value === this.tutorFilter)?.label ?? '';
+
+    if(this.groupFilter !== 'todos') {
+      conditions.push(`con "${groupLabel.toLowerCase()}"`);
+    }
+
+    if(this.tutorFilter !== 'todos') {
+      conditions.push(`con "${tutorLabel.toLowerCase()}"`);
+    }
+
+    return conditions.length ? `No se encontraron alumnos ${conditions.join(' y ')}.` : 'No se encontraron alumnos.';
   }
 
   ngOnInit() {
@@ -224,6 +237,11 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
   setGroupFilter(value: string) {
     this.groupFilter = value;
+    this.applyFilters();
+  }
+
+  setTutorFilter(value: string) {
+    this.tutorFilter = value;
     this.applyFilters();
   }
 
@@ -347,12 +365,22 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.filteredStudents = this.students.filter(student => {
       const hasGroup = !!student.gid;
+      // "Con tutor" = tutor autorizado por el maestro, no solo reclamado.
+      const hasTutor = !!student.validado;
 
       if(this.groupFilter === 'con' && !hasGroup) {
         return false;
       }
 
       if(this.groupFilter === 'sin' && hasGroup) {
+        return false;
+      }
+
+      if(this.tutorFilter === 'con' && !hasTutor) {
+        return false;
+      }
+
+      if(this.tutorFilter === 'sin' && hasTutor) {
         return false;
       }
 
