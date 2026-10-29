@@ -805,3 +805,86 @@ export const onGroupDeleted = onDocumentDeleted({
     }
   }
 );
+
+
+/**
+ * Cuenta los avisos SIN VER de cada alumno de la escuela del maestro.
+ *
+ * Las notificaciones viven en `usuarios/{tid}/notificaciones`, asi que leerlas de
+ * todos los alumnos desde el cliente serian N consultas (y un collection group
+ * dejaria a un maestro ver las de otras escuelas). Aqui el servidor agrupa a los
+ * alumnos por tutor y hace una sola consulta por tutor, limitada a los 200 avisos
+ * mas recientes (mas antiguos no cuentan).
+ *
+ * Solo para maestros: es el distintivo de SU lista de alumnos.
+ */
+export const getUnseenNotificationCounts = onCall(
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const callerData = caller.data();
+
+    if (!caller.exists || callerData?.rol !== 'maestro') {
+      throw new HttpsError('permission-denied', 'Solo un maestro puede consultar esta lista.');
+    }
+
+    const cct = callerData?.cct;
+
+    if (!cct) {
+      return {counts: {}};
+    }
+
+    try {
+      const students = await db.collection('alumnos').where('cct', '==', cct).get();
+
+      // Agrupa los alumnos por tutor: una consulta por tutor en lugar de una por alumno.
+      const byTutor: Record<string, string[]> = {};
+
+      students.forEach((doc) => {
+        const tid = doc.data().tid;
+
+        if (!tid) {
+          return;
+        }
+
+        byTutor[tid] = byTutor[tid] ?? [];
+        byTutor[tid].push(doc.id);
+      });
+
+      const counts: Record<string, number> = {};
+
+      for (const [tid, sids] of Object.entries(byTutor)) {
+        const studentIds = new Set(sids);
+        const notifications = await db
+          .collection('usuarios')
+          .doc(tid)
+          .collection('notificaciones')
+          .orderBy('createdAt', 'desc')
+          .limit(200)
+          .get();
+
+        notifications.forEach((notification) => {
+          const data = notification.data();
+          const sid = data?.sid;
+
+          if (sid && studentIds.has(sid) && data?.leido !== true) {
+            counts[sid] = (counts[sid] ?? 0) + 1;
+          }
+        });
+      }
+
+      return {counts};
+    } catch (error) {
+      console.error('❌ Schoolify: [getUnseenNotificationCounts]', error);
+      throw new HttpsError('internal', 'No se pudieron contar los avisos.');
+    }
+  }
+);

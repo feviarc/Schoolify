@@ -19,6 +19,8 @@ import {
   where,
 } from '@angular/fire/firestore';
 
+import { Functions, httpsCallable } from '@angular/fire/functions';
+
 import {
   from,
   of,
@@ -82,6 +84,23 @@ export class CaregiverNotificationsCRUDService {
   private readonly NOTIFICATIONS_SUBCOLLECTION = 'notificaciones';
 
   private firestore = inject(Firestore);
+  private functions = inject(Functions);
+
+  /**
+   * Avisos SIN VER por alumno, de toda la escuela del maestro, en una sola llamada.
+   * La cuenta la hace una funcion: las notificaciones viven bajo cada tutor y
+   * leerlas desde el cliente serian N consultas.
+   */
+  async getUnseenCounts(): Promise<{[sid: string]: number}> {
+    const countsFn = httpsCallable<unknown, {counts: {[sid: string]: number}}>(
+      this.functions,
+      'getUnseenNotificationCounts'
+    );
+
+    const { data } = await countsFn({});
+
+    return data?.counts ?? {};
+  }
 
   /**
    * Marca el aviso como visto: lo llama el tutor al abrir la notificación.

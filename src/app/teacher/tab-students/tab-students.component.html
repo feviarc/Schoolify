@@ -75,7 +75,12 @@
         </ion-item-options>
         <ion-item class="item-background__color--surface-light">
           <ion-label>
-            <h2>{{ filteredStudent.nombreCompleto }}</h2>
+            <h2 class="student-name">
+              {{ filteredStudent.nombreCompleto }}
+              @if(unseenCount(filteredStudent) > 0) {
+                <ion-badge class="unseen-badge" color="danger">{{ unseenCount(filteredStudent) }}</ion-badge>
+              }
+            </h2>
           </ion-label>
           @if(filteredStudent.gid) {
             <ion-chip>{{ getGroupFromSID(filteredStudent.gid) }}</ion-chip>

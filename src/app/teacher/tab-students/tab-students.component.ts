@@ -37,6 +37,7 @@ import {
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
+import { CaregiverNotificationsCRUDService } from 'src/app/services/caregiver-notifications-crud.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 
 
@@ -80,6 +81,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   private localStorageService = inject(LocalStorageService);
   private formBuilder = inject(FormBuilder);
   private studentCRUDService = inject(StudentCRUDService);
+  private caregiverNotifCRUDService = inject(CaregiverNotificationsCRUDService);
 
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
@@ -99,6 +101,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   spinnerText = '';
   students: Student[] = [];
   toastMessage = '';
+  /** Avisos sin ver por alumno (los cuenta una funcion, no se leen aqui). */
+  unseenCounts: {[sid: string]: number} = {};
 
   searchQuery = '';
   groupFilter = 'todos';
@@ -186,6 +190,10 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     this.loadStudents();
   }
 
+  ionViewWillEnter() {
+    this.loadUnseenCounts();
+  }
+
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
@@ -254,6 +262,11 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.form.patchValue(studentFields);
     this.formSnapshot = {...studentFields};
+  }
+
+  /** Cuantos avisos sin ver tiene un alumno. */
+  unseenCount(student: Student): number {
+    return student.id ? this.unseenCounts[student.id] ?? 0 : 0;
   }
 
   loadStudents() {
@@ -405,6 +418,18 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       .replace(/\p{Diacritic}/gu, '')
       .toLowerCase()
       .trim();
+  }
+
+  private async loadUnseenCounts() {
+    if(!this.cct) {
+      return;
+    }
+
+    try {
+      this.unseenCounts = await this.caregiverNotifCRUDService.getUnseenCounts();
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
+    }
   }
 
   private showToast(message: string) {

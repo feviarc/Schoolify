@@ -38,6 +38,8 @@ const ADMIN = tokenFor('admin9');
 const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
 
 const str = (value) => ({ stringValue: value });
+const bool = (value) => ({ booleanValue: value });
+const timestamp = () => ({ timestampValue: new Date().toISOString() });
 const num = (value) => ({ integerValue: String(value) });
 
 /** Crea una cuenta en el emulador de Auth y devuelve su uid. */
@@ -251,6 +253,28 @@ const scenarioCases = [
       await firestore('PATCH', 'grupos_de_alumnos/gotra', { fields: { cct: str('CCT2'), grado: str('1'), letra: str('B') } });
 
       const response = await callFunction('deleteStudentGroup', { gid: 'gotra' }, TEACHER);
+      return response.status >= 400;
+    },
+  },
+  {
+    name: 'el maestro ve cuantos avisos sin ver tiene cada alumno',
+    run: async () => {
+      // Dos avisos: uno sin ver y otro ya visto.
+      await firestore('PATCH', 'alumnos/apend', { fields: { nombre: str('ALUMNO CON AVISOS'), cct: str('CCT1'), gid: str('g1'), tid: str('tutorpend') } });
+      await firestore('PATCH', 'usuarios/tutorpend', { fields: { rol: str('tutor'), cct: str('CCT1') } });
+      await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p1', { fields: { sid: str('apend'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO CON AVISOS'), createdAt: timestamp() } });
+      await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p2', { fields: { sid: str('apend'), tipo: str('Incumplimiento'), nombreCompleto: str('ALUMNO CON AVISOS'), leido: bool(true), createdAt: timestamp() } });
+
+      const response = await callFunction('getUnseenNotificationCounts', {}, TEACHER);
+      if (response.status >= 400) return false;
+
+      return response.body?.result?.counts?.apend === 1;
+    },
+  },
+  {
+    name: 'un tutor no puede consultar los avisos sin ver de la escuela',
+    run: async () => {
+      const response = await callFunction('getUnseenNotificationCounts', {}, tokenFor('tutorpend'));
       return response.status >= 400;
     },
   },

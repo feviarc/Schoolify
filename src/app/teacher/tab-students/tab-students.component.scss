@@ -41,3 +41,15 @@ ion-note {
     font-weight: 600;
   }
 }
+
+/* Nombre y distintivo alineados al centro vertical, con el mismo aire arriba y abajo. */
+.student-name {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.unseen-badge {
+  margin: 0.15rem 0;
+}
