@@ -25,7 +25,7 @@
           <ion-note color="medium">{{ notification.createdAt | dateFormat:'date' }}</ion-note>
         </div>
       </ion-item>
-      <ion-item lines="none" class="item-background__color--warm-glow">
+      <ion-item lines="none" class="item-background__color--warm-glow" (click)="onSee(notification)">
         <ion-label>
           <strong>
             {{ notification.tipo }}:
@@ -44,6 +44,20 @@
           </div>
         </ion-label>
       </ion-item>
+      @if(!notification.acknowledged && !isAcknowledging(notification)) {
+        <ion-item lines="none" class="item-background__color--warm-glow">
+          <ion-label>
+            <ion-button
+             size="small"
+             fill="outline"
+             color="success"
+             (click)="onAcknowledge(notification)"
+            >
+              Enterado
+            </ion-button>
+          </ion-label>
+        </ion-item>
+      }
     </ion-list>
   }
 </ion-content>

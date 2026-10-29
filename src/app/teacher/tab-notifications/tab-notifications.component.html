@@ -390,6 +390,7 @@
                   <ion-content class="ion-padding">
                     <ion-list [inset]="false">
                       @for(notification of studentNotifications; track notification.id) {
+                        @let state = notificationState(notification);
                         <ion-item lines="full">
                           <ion-label>
                             <strong>{{ notification.tipo }}</strong>
@@ -404,6 +405,11 @@
                               @for(materia of notification.materias; track $index) {
                                 <ion-chip color="primary">{{ materia }}</ion-chip>
                               }
+                            </div>
+                            <div class="state-row">
+                              <ion-chip [color]="state.color" outline>
+                                {{ state.label }}@if(state.at) {<span>: {{ state.at | dateFormat:'full' }}</span>}
+                              </ion-chip>
                             </div>
                           </ion-label>
                           <div class="metadata-end-wrapper" slot="end">

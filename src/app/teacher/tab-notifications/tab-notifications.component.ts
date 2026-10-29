@@ -240,6 +240,22 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Estado del aviso con el momento en que ocurrió: enviado, visto o enterado.
+   * "Enviado" no lleva fecha porque ya se muestra en la columna derecha.
+   */
+  notificationState(notification: CaregiverNotification): {label: string; color: string; at?: Date} {
+    if(notification.acknowledged) {
+      return {label: 'Enterado', color: 'success', at: notification.acknowledgedAt};
+    }
+
+    if(notification.leido) {
+      return {label: 'Visto', color: 'primary', at: notification.leidoAt};
+    }
+
+    return {label: 'Enviado', color: 'medium'};
+  }
+
   loadStudentNotifications(student: Student) {
     if(!student.tid || !student.id) {
       return;

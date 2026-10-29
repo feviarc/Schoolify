@@ -14,6 +14,7 @@ import {
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
   updateDoc,
   where,
 } from '@angular/fire/firestore';
@@ -43,6 +44,12 @@ export interface CaregiverNotification {
   materias?: string[]; // Opcional
   fecha?: string; // Obligatorio para tipo Inasistencia (formato ISO: '2025-12-12T11:21:55')
   nombreCompleto: string; // Nombre del estudiante (requerido)
+  /** El tutor ya abrió el aviso. */
+  leido?: boolean;
+  leidoAt?: Date;
+  /** El tutor confirmó con el botón "Enterado". */
+  acknowledged?: boolean;
+  acknowledgedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -71,11 +78,38 @@ export interface NotificationInput {
 })
 
 export class CaregiverNotificationsCRUDService {
-  private firestore = inject(Firestore);
-
-
   private readonly USERS_COLLECTION = 'usuarios';
   private readonly NOTIFICATIONS_SUBCOLLECTION = 'notificaciones';
+
+  private firestore = inject(Firestore);
+
+  /**
+   * Marca el aviso como visto: lo llama el tutor al abrir la notificación.
+   * Solo escribe los campos de estado (las reglas lo permiten al dueño).
+   */
+  async markAsSeen(tid: string, notificationId: string): Promise<void> {
+    const docRef = doc(this.firestore, this.USERS_COLLECTION, tid, this.NOTIFICATIONS_SUBCOLLECTION, notificationId);
+
+    await updateDoc(docRef, {
+      leido: true,
+      leidoAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * El tutor confirma que recibió el aviso ("Enterado"). Es un acuse de un solo
+   * sentido: no se puede deshacer.
+   */
+  async acknowledge(tid: string, notificationId: string): Promise<void> {
+    const docRef = doc(this.firestore, this.USERS_COLLECTION, tid, this.NOTIFICATIONS_SUBCOLLECTION, notificationId);
+
+    await updateDoc(docRef, {
+      acknowledged: true,
+      acknowledgedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
 
   // ==================== NOTIFICATIONS CRUD (CREATE) ====================
 

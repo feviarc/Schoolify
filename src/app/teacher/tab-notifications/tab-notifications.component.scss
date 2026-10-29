@@ -71,3 +71,9 @@ ion-label ion-note {
 .metadata-end-wrapper ion-note {
   font-size: 0.7rem;
 }
+
+/* El estado del aviso va en el flujo de la etiqueta: en el slot absoluto se
+   encimaba con el tipo y la fecha de la falta. */
+.state-row {
+  margin-top: 0.3rem;
+}

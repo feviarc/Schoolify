@@ -120,7 +120,13 @@ service cloud.firestore {
         && request.resource.data.tipo in ['Inasistencia', 'Incumplimiento', 'Indisciplina']
         && request.resource.data.sid is string;
 
-      allow update, delete: if isAdmin();
+      // El tutor dueño solo puede marcar el aviso: visto al abrirlo y "enterado" al
+      // confirmarlo. Cualquier otro cambio (tipo, materias, etc.) es del administrador.
+      allow update: if isAdmin()
+        || (isOwnProfile(uid)
+            && onlyKeysChanged(['leido', 'leidoAt', 'acknowledged', 'acknowledgedAt', 'updatedAt']));
+
+      allow delete: if isAdmin();
     }
 
     // Mensajes internos del sistema (por ejemplo "se registró un maestro"). Los
