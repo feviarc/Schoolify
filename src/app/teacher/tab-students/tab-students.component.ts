@@ -116,7 +116,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   tutorFilter = 'todos';
 
   tutorFilters = [
-    { value: 'todos', label: 'Todos' },
     { value: 'con', label: 'Con tutor' },
     { value: 'sin', label: 'Sin tutor' },
   ];
@@ -243,14 +242,35 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  setGroupFilter(value: string) {
-    this.groupFilter = value;
+  /**
+   * "Todos" apaga los dos filtros; los demas alternan (tocar el chip activo lo apaga),
+   * asi se puede soltar una dimension sin tocar la otra.
+   */
+  onGroupChip(value: string) {
+    if(value === 'todos') {
+      this.groupFilter = 'todos';
+      this.tutorFilter = 'todos';
+    } else {
+      this.groupFilter = this.groupFilter === value ? 'todos' : value;
+    }
+
     this.applyFilters();
   }
 
-  setTutorFilter(value: string) {
-    this.tutorFilter = value;
+  onTutorChip(value: string) {
+    this.tutorFilter = this.tutorFilter === value ? 'todos' : value;
     this.applyFilters();
+  }
+
+  /** "Todos" solo se ve activo cuando no hay ningun filtro de chips aplicado. */
+  isGroupFilterActive(value: string): boolean {
+    return value === 'todos'
+      ? this.groupFilter === 'todos' && this.tutorFilter === 'todos'
+      : this.groupFilter === value;
+  }
+
+  isTutorFilterActive(value: string): boolean {
+    return this.tutorFilter === value;
   }
 
   loadStudentData(student: Student) {
