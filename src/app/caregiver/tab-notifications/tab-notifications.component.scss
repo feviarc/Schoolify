@@ -42,3 +42,10 @@ div.subjects-container {
 .metadata-end-wrapper ion-note {
   font-size: 0.7rem;
 }
+
+/* Boton "Enterado": verde solido y texto blanco. */
+.ack-button {
+  --background: var(--ion-color-success);
+  --background-activated: var(--ion-color-success-shade);
+  --color: #ffffff;
+}
