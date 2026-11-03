@@ -118,7 +118,10 @@ service cloud.firestore {
       // aqui un mensaje interno (esos van a /mensajes).
       allow create: if isAdminOrTeacher()
         && request.resource.data.tipo in ['Inasistencia', 'Incumplimiento', 'Indisciplina']
-        && request.resource.data.sid is string;
+        && request.resource.data.sid is string
+        // Queda registrado quien lo envia. Se valida la forma, no la igualdad con la
+        // sesion: el autor lo declara el cliente (ver nota de la BD).
+        && request.resource.data.maestroUid is string;
 
       // El tutor dueño solo puede marcar el aviso: visto al abrirlo y "enterado" al
       // confirmarlo. Cualquier otro cambio (tipo, materias, etc.) es del administrador.

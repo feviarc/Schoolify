@@ -46,6 +46,9 @@ export interface CaregiverNotification {
   materias?: string[]; // Opcional
   fecha?: string; // Obligatorio para tipo Inasistencia (formato ISO: '2025-12-12T11:21:55')
   nombreCompleto: string; // Nombre del estudiante (requerido)
+  /** Quién envió el aviso (uid y nombre del maestro, denormalizado). */
+  maestroUid?: string;
+  maestroNombre?: string;
   /** El tutor ya abrió el aviso. */
   leido?: boolean;
   leidoAt?: Date;
@@ -66,6 +69,9 @@ export interface NotificationInput {
   nombreCompleto: string;
   observaciones?: string;
   tipo: 'Inasistencia' | 'Incumplimiento' | 'Indisciplina';
+  /** El maestro que lo envía: la regla exige que coincida con su sesión. */
+  maestroUid: string;
+  maestroNombre?: string;
 }
 
 // ==================== SERVICE ====================

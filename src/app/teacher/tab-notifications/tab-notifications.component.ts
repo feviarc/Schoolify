@@ -32,7 +32,7 @@ import {
 } from "@ionic/angular/standalone";
 
 import { OverlayEventDetail } from '@ionic/core/components';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 
 import {
@@ -45,6 +45,8 @@ import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 import { StudentGroupCRUDService, StudentGroup } from 'src/app/services/student-group-crud.service';
 import { SubjectCRUDService, Subject } from 'src/app/services/subject-crud.service';
+import { UserProfileService } from 'src/app/services/user-profile.service';
+import { AuthService } from 'src/app/services/auth.service';
 
 
 @Component({
@@ -91,6 +93,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   private studentCRUDService = inject(StudentCRUDService);
   private studentGroupCRUDService = inject(StudentGroupCRUDService);
   private subjectCRUDService = inject(SubjectCRUDService);
+  private authService = inject(AuthService);
+  private userProfileService = inject(UserProfileService);
 
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
@@ -107,6 +111,10 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   studentDidntShowUp = true;
   studentGroups: StudentGroup[] = [];
   studentNotifications: CaregiverNotification[] = [];
+  /** Datos del maestro que envia: quedan registrados en cada aviso. */
+  private maestroUid = '';
+  private maestroNombre = '';
+
   studentsWithGroup: Student[] = [];
   subjects: Subject[] = [];
   teacherComments = '';
@@ -165,6 +173,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.loadSchoolGroups();
     this.loadSubjects();
     this.loadStudents();
+    this.loadMaestro();
   }
 
   ngOnDestroy() {
@@ -308,6 +317,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       fecha: this.selectedDate || undefined,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
+      maestroUid: this.maestroUid,
+      maestroNombre: this.maestroNombre,
     };
 
     await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
@@ -327,6 +338,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       nombreCompleto: student.nombreCompleto,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
+      maestroUid: this.maestroUid,
+      maestroNombre: this.maestroNombre,
     };
     await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
     this.showToast('📤 Se ha enviado la notificación de incumplimiento.');
@@ -345,6 +358,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       nombreCompleto: student.nombreCompleto,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
+      maestroUid: this.maestroUid,
+      maestroNombre: this.maestroNombre,
     };
 
     await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
@@ -437,6 +452,23 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     return this.subjects.filter(
       (subject) => subject.grado === grade
     );
+  }
+
+  /** Nombre del maestro para firmar el aviso (el uid ya viene de la sesión). */
+  private async loadMaestro() {
+    try {
+      const user = await firstValueFrom(this.authService.getCurrentUser());
+      this.maestroUid = user?.uid ?? '';
+
+      if(!this.maestroUid) {
+        return;
+      }
+
+      const profile = await firstValueFrom(this.userProfileService.getUserProfile(this.maestroUid));
+      this.maestroNombre = profile?.nombre ?? '';
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
+    }
   }
 
   private showToast(message: string) {

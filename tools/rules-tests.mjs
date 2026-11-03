@@ -165,7 +165,7 @@ const cases = [
   ['maestro1 crea un grupo de alumnos', 'post', 'grupos_de_alumnos?documentId=g9', { token: TEACHER, fields: { cct: str('CCT1'), grado: str('1'), letra: str('A') } }, 'permitido'],
   ['maestro1 crea una escuela', 'post', 'escuelas?documentId=e9', { token: TEACHER, fields: { cct: str('CCT9'), nombre: str('ESCUELA 9') } }, 'denegado'],
   ['maestro1 crea una materia', 'post', 'materias?documentId=m9', { token: TEACHER, fields: { nombre: str('FISICA'), grado: str('1') } }, 'denegado'],
-  ['maestro1 crea un aviso al tutor', 'post', 'usuarios/tutor1/notificaciones?documentId=n1', { token: TEACHER, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') } }, 'permitido'],
+  ['maestro1 crea un aviso al tutor', 'post', 'usuarios/tutor1/notificaciones?documentId=n1', { token: TEACHER, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('maestro9') } }, 'permitido'],
   ['tutor1 crea un aviso para si mismo', 'post', 'usuarios/tutor1/notificaciones?documentId=n2', { token: TUTOR1, fields: { sid: str('a1'), tipo: str('Indisciplina') } }, 'denegado'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
