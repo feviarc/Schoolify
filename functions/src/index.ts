@@ -808,7 +808,8 @@ export const onGroupDeleted = onDocumentDeleted({
 
 
 /**
- * Cuenta los avisos SIN VER de cada alumno de la escuela del maestro.
+ * Cuenta los avisos SIN CONFIRMAR (sin "Enterado") de cada alumno de la escuela del
+ * maestro. Es la senal que importa: si el tutor atendio el aviso, no solo si lo abrio.
  *
  * Las notificaciones viven en `usuarios/{tid}/notificaciones`, asi que leerlas de
  * todos los alumnos desde el cliente serian N consultas (y un collection group
@@ -818,7 +819,7 @@ export const onGroupDeleted = onDocumentDeleted({
  *
  * Solo para maestros: es el distintivo de SU lista de alumnos.
  */
-export const getUnseenNotificationCounts = onCall(
+export const getUnconfirmedNotificationCounts = onCall(
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
@@ -875,7 +876,7 @@ export const getUnseenNotificationCounts = onCall(
           const data = notification.data();
           const sid = data?.sid;
 
-          if (sid && studentIds.has(sid) && data?.leido !== true) {
+          if (sid && studentIds.has(sid) && data?.acknowledged !== true) {
             counts[sid] = (counts[sid] ?? 0) + 1;
           }
         });
@@ -883,7 +884,7 @@ export const getUnseenNotificationCounts = onCall(
 
       return {counts};
     } catch (error) {
-      console.error('❌ Schoolify: [getUnseenNotificationCounts]', error);
+      console.error('❌ Schoolify: [getUnconfirmedNotificationCounts]', error);
       throw new HttpsError('internal', 'No se pudieron contar los avisos.');
     }
   }

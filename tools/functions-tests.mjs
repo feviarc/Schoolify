@@ -257,24 +257,26 @@ const scenarioCases = [
     },
   },
   {
-    name: 'el maestro ve cuantos avisos sin ver tiene cada alumno',
+    name: 'el maestro ve cuantos avisos sin confirmar tiene cada alumno',
     run: async () => {
-      // Dos avisos: uno sin ver y otro ya visto.
+      // Tres avisos: sin abrir, visto sin confirmar y ya confirmado.
       await firestore('PATCH', 'alumnos/apend', { fields: { nombre: str('ALUMNO CON AVISOS'), cct: str('CCT1'), gid: str('g1'), tid: str('tutorpend') } });
       await firestore('PATCH', 'usuarios/tutorpend', { fields: { rol: str('tutor'), cct: str('CCT1') } });
       await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p1', { fields: { sid: str('apend'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO CON AVISOS'), createdAt: timestamp() } });
       await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p2', { fields: { sid: str('apend'), tipo: str('Incumplimiento'), nombreCompleto: str('ALUMNO CON AVISOS'), leido: bool(true), createdAt: timestamp() } });
+      await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p3', { fields: { sid: str('apend'), tipo: str('Indisciplina'), nombreCompleto: str('ALUMNO CON AVISOS'), leido: bool(true), acknowledged: bool(true), createdAt: timestamp() } });
 
-      const response = await callFunction('getUnseenNotificationCounts', {}, TEACHER);
+      const response = await callFunction('getUnconfirmedNotificationCounts', {}, TEACHER);
       if (response.status >= 400) return false;
 
-      return response.body?.result?.counts?.apend === 1;
+      // Cuentan el sin abrir y el visto sin confirmar; el confirmado no.
+      return response.body?.result?.counts?.apend === 2;
     },
   },
   {
-    name: 'un tutor no puede consultar los avisos sin ver de la escuela',
+    name: 'un tutor no puede consultar los avisos sin confirmar de la escuela',
     run: async () => {
-      const response = await callFunction('getUnseenNotificationCounts', {}, tokenFor('tutorpend'));
+      const response = await callFunction('getUnconfirmedNotificationCounts', {}, tokenFor('tutorpend'));
       return response.status >= 400;
     },
   },

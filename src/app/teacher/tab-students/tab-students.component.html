@@ -77,8 +77,14 @@
           <ion-label>
             <h2 class="student-name">
               {{ filteredStudent.nombreCompleto }}
-              @if(unseenCount(filteredStudent) > 0) {
-                <ion-badge class="unseen-badge" color="danger">{{ unseenCount(filteredStudent) }}</ion-badge>
+              @if(unconfirmedCount(filteredStudent) > 0) {
+                <ion-badge
+                 class="unseen-badge"
+                 color="danger"
+                 [attr.aria-label]="unconfirmedCount(filteredStudent) + ' avisos sin confirmar'"
+                >
+                  {{ unconfirmedCount(filteredStudent) }}
+                </ion-badge>
               }
             </h2>
           </ion-label>

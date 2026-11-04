@@ -93,14 +93,14 @@ export class CaregiverNotificationsCRUDService {
   private functions = inject(Functions);
 
   /**
-   * Avisos SIN VER por alumno, de toda la escuela del maestro, en una sola llamada.
+   * Avisos SIN CONFIRMAR por alumno, de toda la escuela del maestro, en una llamada.
    * La cuenta la hace una funcion: las notificaciones viven bajo cada tutor y
    * leerlas desde el cliente serian N consultas.
    */
-  async getUnseenCounts(): Promise<{[sid: string]: number}> {
+  async getUnconfirmedCounts(): Promise<{[sid: string]: number}> {
     const countsFn = httpsCallable<unknown, {counts: {[sid: string]: number}}>(
       this.functions,
-      'getUnseenNotificationCounts'
+      'getUnconfirmedNotificationCounts'
     );
 
     const { data } = await countsFn({});

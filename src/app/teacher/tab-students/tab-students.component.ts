@@ -101,8 +101,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   spinnerText = '';
   students: Student[] = [];
   toastMessage = '';
-  /** Avisos sin ver por alumno (los cuenta una funcion, no se leen aqui). */
-  unseenCounts: {[sid: string]: number} = {};
+  /** Avisos sin confirmar por alumno (los cuenta una funcion, no se leen aqui). */
+  unconfirmedCounts: {[sid: string]: number} = {};
 
   searchQuery = '';
   groupFilter = 'todos';
@@ -190,7 +190,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter() {
-    this.loadUnseenCounts();
+    this.loadUnconfirmedCounts();
   }
 
   ngOnDestroy() {
@@ -284,9 +284,9 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     this.formSnapshot = {...studentFields};
   }
 
-  /** Cuantos avisos sin ver tiene un alumno. */
-  unseenCount(student: Student): number {
-    return student.id ? this.unseenCounts[student.id] ?? 0 : 0;
+  /** Cuantos avisos sin confirmar tiene un alumno. */
+  unconfirmedCount(student: Student): number {
+    return student.id ? this.unconfirmedCounts[student.id] ?? 0 : 0;
   }
 
   loadStudents() {
@@ -440,13 +440,13 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       .trim();
   }
 
-  private async loadUnseenCounts() {
+  private async loadUnconfirmedCounts() {
     if(!this.cct) {
       return;
     }
 
     try {
-      this.unseenCounts = await this.caregiverNotifCRUDService.getUnseenCounts();
+      this.unconfirmedCounts = await this.caregiverNotifCRUDService.getUnconfirmedCounts();
     } catch(error) {
       console.log('❌ Schoolify: [tab-students.component.ts]', error);
     }
