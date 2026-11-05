@@ -77,3 +77,9 @@ ion-label ion-note {
 .state-row {
   margin-top: 0.3rem;
 }
+
+/* Contador de avisos sin confirmar, alineado con el nombre del alumno. */
+.unconfirmed-badge {
+  margin: 0 0 0 0.35rem;
+  vertical-align: middle;
+}

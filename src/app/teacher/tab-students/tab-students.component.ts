@@ -37,7 +37,6 @@ import {
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
-import { CaregiverNotificationsCRUDService } from 'src/app/services/caregiver-notifications-crud.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 
 
@@ -81,7 +80,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   private localStorageService = inject(LocalStorageService);
   private formBuilder = inject(FormBuilder);
   private studentCRUDService = inject(StudentCRUDService);
-  private caregiverNotifCRUDService = inject(CaregiverNotificationsCRUDService);
 
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
@@ -101,8 +99,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   spinnerText = '';
   students: Student[] = [];
   toastMessage = '';
-  /** Avisos sin confirmar por alumno (los cuenta una funcion, no se leen aqui). */
-  unconfirmedCounts: {[sid: string]: number} = {};
 
   searchQuery = '';
   groupFilter = 'todos';
@@ -187,10 +183,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     const shift = this.localStorageService.getKey(this.SHIFT_KEY);
     this.cct = `${cct}${shift}`;
     this.loadStudents();
-  }
-
-  ionViewWillEnter() {
-    this.loadUnconfirmedCounts();
   }
 
   ngOnDestroy() {
@@ -282,11 +274,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.form.patchValue(studentFields);
     this.formSnapshot = {...studentFields};
-  }
-
-  /** Cuantos avisos sin confirmar tiene un alumno. */
-  unconfirmedCount(student: Student): number {
-    return student.id ? this.unconfirmedCounts[student.id] ?? 0 : 0;
   }
 
   loadStudents() {
@@ -438,18 +425,6 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       .replace(/\p{Diacritic}/gu, '')
       .toLowerCase()
       .trim();
-  }
-
-  private async loadUnconfirmedCounts() {
-    if(!this.cct) {
-      return;
-    }
-
-    try {
-      this.unconfirmedCounts = await this.caregiverNotifCRUDService.getUnconfirmedCounts();
-    } catch(error) {
-      console.log('❌ Schoolify: [tab-students.component.ts]', error);
-    }
   }
 
   private showToast(message: string) {

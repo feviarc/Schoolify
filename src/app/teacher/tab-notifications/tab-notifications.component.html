@@ -43,6 +43,15 @@
                         <span>🔴</span>
                       }
                       {{ student.nombreCompleto }}
+                      @if(unconfirmedCount(student) > 0) {
+                        <ion-badge
+                         class="unconfirmed-badge"
+                         color="danger"
+                         [attr.aria-label]="unconfirmedCount(student) + ' avisos sin confirmar'"
+                        >
+                          {{ unconfirmedCount(student) }}
+                        </ion-badge>
+                      }
                     </h2>
                   </ion-label>
                 </ion-item>

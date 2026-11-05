@@ -5,6 +5,7 @@ import {
   IonAccordionGroup,
   IonActionSheet,
   IonButton,
+  IonBadge,
   IonButtons,
   IonCheckbox,
   IonChip,
@@ -60,6 +61,7 @@ import { AuthService } from 'src/app/services/auth.service';
     IonAccordionGroup,
     IonActionSheet,
     IonButton,
+    IonBadge,
     IonButtons,
     IonCheckbox,
     IonChip,
@@ -116,6 +118,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   private maestroNombre = '';
 
   studentsWithGroup: Student[] = [];
+  /** Avisos sin confirmar por alumno (los cuenta una funcion). */
+  unconfirmedCounts: {[sid: string]: number} = {};
   subjects: Subject[] = [];
   teacherComments = '';
   toastMessage = '';
@@ -174,6 +178,10 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.loadSubjects();
     this.loadStudents();
     this.loadMaestro();
+  }
+
+  ionViewWillEnter() {
+    this.loadUnconfirmedCounts();
   }
 
   ngOnDestroy() {
@@ -278,6 +286,11 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
       }
     });
+  }
+
+  /** Cuantos avisos sin confirmar tiene un alumno. */
+  unconfirmedCount(student: Student): number {
+    return student.id ? this.unconfirmedCounts[student.id] ?? 0 : 0;
   }
 
   loadStudents() {
@@ -452,6 +465,19 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     return this.subjects.filter(
       (subject) => subject.grado === grade
     );
+  }
+
+  /** Avisos sin confirmar de la escuela, en una sola llamada a una funcion. */
+  private async loadUnconfirmedCounts() {
+    if(!this.cctShift) {
+      return;
+    }
+
+    try {
+      this.unconfirmedCounts = await this.caregiverNotifCRUDService.getUnconfirmedCounts();
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
+    }
   }
 
   /** Nombre del maestro para firmar el aviso (el uid ya viene de la sesión). */
