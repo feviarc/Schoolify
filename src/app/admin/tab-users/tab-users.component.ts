@@ -102,12 +102,14 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   roleFilters = [
     { value: 'todos', label: 'Todos' },
+    { value: 'prefecto', label: 'Prefectos' },
     { value: 'maestro', label: 'Maestros' },
     { value: 'tutor', label: 'Tutores' },
     { value: 'administrador', label: 'Administradores' },
   ];
 
   roleOptions = [
+    { value: 'prefecto', label: 'Prefecto' },
     { value: 'maestro', label: 'Maestro' },
     { value: 'tutor', label: 'Tutor' },
     { value: 'administrador', label: 'Administrador' },
@@ -180,6 +182,7 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
 
   roleLabel(rol?: string): string {
     switch(rol) {
+      case 'prefecto': return 'Prefecto';
       case 'maestro': return 'Maestro';
       case 'tutor': return 'Tutor';
       case 'administrador': return 'Administrador';

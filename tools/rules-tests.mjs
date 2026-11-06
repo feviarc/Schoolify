@@ -38,7 +38,7 @@ function tokenFor(uid, { emailVerified = true } = {}) {
 
 const OWNER = 'owner';
 const ADMIN = tokenFor('admin1');
-const TEACHER = tokenFor('maestro1');
+const PREFECT = tokenFor('prefecto1');
 const TUTOR1 = tokenFor('tutor1');
 const TUTOR2 = tokenFor('tutor2');
 // Recien registrado: todavia no verifico su correo.
@@ -117,9 +117,10 @@ const HTTP_METHOD = { get: 'GET', list: 'GET', post: 'POST', update: 'PATCH', de
 
 async function seed() {
   const documents = [
-    // Dos escuelas distintas: CCT1 (admin1, maestro1, tutor1) y CCT2 (tutor2).
+    // Dos escuelas distintas: CCT1 (admin1, prefecto1, tutor1) y CCT2 (tutor2).
+    ['usuarios/viejo1', { rol: str('maestro'), cct: str('CCT1') }],
     ['usuarios/admin1', { rol: str('administrador'), email: str('admin1@test.mx'), cct: str('CCT1') }],
-    ['usuarios/maestro1', { rol: str('maestro'), email: str('maestro1@test.mx'), cct: str('CCT1') }],
+    ['usuarios/prefecto1', { rol: str('prefecto'), email: str('prefecto1@test.mx'), cct: str('CCT1') }],
     ['usuarios/tutor1', { rol: str('tutor'), email: str('tutor1@test.mx'), cct: str('CCT1') }],
     ['usuarios/tutor2', { rol: str('tutor'), email: str('tutor2@test.mx'), cct: str('CCT2') }],
     ['alumnos/a1', { nombre: str('ALUMNO LIBRE'), cct: str('CCT1'), validado: bool(false) }],
@@ -128,7 +129,7 @@ async function seed() {
     ['grupos_de_alumnos/g1', { cct: str('CCT1'), grado: str('1'), letra: str('A') }],
     ['grupos_de_alumnos/g2', { cct: str('CCT2'), grado: str('1'), letra: str('B') }],
     ['usuarios/tutor1/notificaciones/n0', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
-    ['usuarios/maestro9/notificaciones/m1', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
+    ['usuarios/prefecto9/notificaciones/m1', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
     ['usuarios/admin1/mensajes/m1', { body: str('Se registró un usuario'), createdAt: timestamp() }],
     ['escuelas/e1', { cct: str('CCT1'), nombre: str('ESCUELA'), pin: num(1921) }],
     ['materias/m1', { nombre: str('MATEMATICAS'), grado: str('1') }],
@@ -158,14 +159,14 @@ const cases = [
   ['tutor1 marca su aviso como visto', 'update', 'usuarios/tutor1/notificaciones/n0', { token: TUTOR1, fields: { leido: bool(true), leidoAt: timestamp(), updatedAt: timestamp() }, mask: ['leido', 'leidoAt', 'updatedAt'] }, 'permitido'],
   ['tutor1 marca su aviso como enterado', 'update', 'usuarios/tutor1/notificaciones/n0', { token: TUTOR1, fields: { acknowledged: bool(true), acknowledgedAt: timestamp(), updatedAt: timestamp() }, mask: ['acknowledged', 'acknowledgedAt', 'updatedAt'] }, 'permitido'],
   ['tutor1 intenta cambiar el tipo de su aviso', 'update', 'usuarios/tutor1/notificaciones/n0', { token: TUTOR1, fields: { tipo: str('Indisciplina') }, mask: ['tipo'] }, 'denegado'],
-  ['tutor1 marca el aviso de un maestro', 'update', 'usuarios/maestro9/notificaciones/m1', { token: TUTOR1, fields: { leido: bool(true) }, mask: ['leido'] }, 'denegado'],
+  ['tutor1 marca el aviso de un maestro', 'update', 'usuarios/prefecto9/notificaciones/m1', { token: TUTOR1, fields: { leido: bool(true) }, mask: ['leido'] }, 'denegado'],
   ['tutor1 marca validado a un alumno', 'update', 'alumnos/a1', { token: TUTOR1, fields: { validado: bool(true) }, mask: ['validado'] }, 'denegado'],
   ['tutor1 borra un alumno', 'delete', 'alumnos/a2', { token: TUTOR1 }, 'denegado'],
-  ['maestro1 crea un alumno', 'post', 'alumnos?documentId=a3', { token: TEACHER, fields: { nombre: str('ALUMNO NUEVO'), cct: str('CCT1') } }, 'permitido'],
-  ['maestro1 crea un grupo de alumnos', 'post', 'grupos_de_alumnos?documentId=g9', { token: TEACHER, fields: { cct: str('CCT1'), grado: str('1'), letra: str('A') } }, 'permitido'],
-  ['maestro1 crea una escuela', 'post', 'escuelas?documentId=e9', { token: TEACHER, fields: { cct: str('CCT9'), nombre: str('ESCUELA 9') } }, 'denegado'],
-  ['maestro1 crea una materia', 'post', 'materias?documentId=m9', { token: TEACHER, fields: { nombre: str('FISICA'), grado: str('1') } }, 'denegado'],
-  ['maestro1 crea un aviso al tutor', 'post', 'usuarios/tutor1/notificaciones?documentId=n1', { token: TEACHER, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('maestro9') } }, 'permitido'],
+  ['prefecto1 crea un alumno', 'post', 'alumnos?documentId=a3', { token: PREFECT, fields: { nombre: str('ALUMNO NUEVO'), cct: str('CCT1') } }, 'permitido'],
+  ['prefecto1 crea un grupo de alumnos', 'post', 'grupos_de_alumnos?documentId=g9', { token: PREFECT, fields: { cct: str('CCT1'), grado: str('1'), letra: str('A') } }, 'permitido'],
+  ['prefecto1 crea una escuela', 'post', 'escuelas?documentId=e9', { token: PREFECT, fields: { cct: str('CCT9'), nombre: str('ESCUELA 9') } }, 'denegado'],
+  ['prefecto1 crea una materia', 'post', 'materias?documentId=m9', { token: PREFECT, fields: { nombre: str('FISICA'), grado: str('1') } }, 'denegado'],
+  ['prefecto1 crea un aviso al tutor', 'post', 'usuarios/tutor1/notificaciones?documentId=n1', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9') } }, 'permitido'],
   ['tutor1 crea un aviso para si mismo', 'post', 'usuarios/tutor1/notificaciones?documentId=n2', { token: TUTOR1, fields: { sid: str('a1'), tipo: str('Indisciplina') } }, 'denegado'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
@@ -173,17 +174,19 @@ const cases = [
 
   // ==================== escuelas (solo administrador) ====================
   ['sin sesion: leer una escuela', 'get', 'escuelas/e1', {}, 'denegado'],
-  ['maestro1 lee una escuela', 'get', 'escuelas/e1', { token: TEACHER }, 'denegado'],
+  ['prefecto1 lee una escuela', 'get', 'escuelas/e1', { token: PREFECT }, 'denegado'],
   ['admin1 lee una escuela', 'get', 'escuelas/e1', { token: ADMIN }, 'permitido'],
 
   // ==================== alumnos: por escuela o por dueño ====================
   ['sin sesion: leer un alumno', 'get', 'alumnos/a1', {}, 'denegado'],
   ['sin sesion: listar alumnos', 'list', 'alumnos', {}, 'denegado'],
-  ['maestro1 lee un alumno de su escuela', 'get', 'alumnos/a1', { token: TEACHER }, 'permitido'],
-  ['maestro1 lee un alumno de otra escuela', 'get', 'alumnos/a4', { token: TEACHER }, 'denegado'],
-  ['maestro1 lista los alumnos de su escuela', 'query', 'alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
-  ['maestro1 lista los alumnos de otra escuela', 'query', 'alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['nombre'] }, 'denegado'],
-  ['maestro1 lista alumnos sin filtrar por escuela', 'query', 'alumnos', { token: TEACHER, orderBy: ['nombre'] }, 'denegado'],
+  ['prefecto1 lee un alumno de su escuela', 'get', 'alumnos/a1', { token: PREFECT }, 'permitido'],
+  // El rol `maestro` ya no es prefecto: no crea grupos (eso es del prefecto).
+  ['el rol maestro no crea grupos', 'post', 'grupos_de_alumnos?documentId=gm1', { token: tokenFor('viejo1'), fields: { cct: str('CCT1'), grado: str('1'), letra: str('M') } }, 'denegado'],
+  ['prefecto1 lee un alumno de otra escuela', 'get', 'alumnos/a4', { token: PREFECT }, 'denegado'],
+  ['prefecto1 lista los alumnos de su escuela', 'query', 'alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
+  ['prefecto1 lista los alumnos de otra escuela', 'query', 'alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['nombre'] }, 'denegado'],
+  ['prefecto1 lista alumnos sin filtrar por escuela', 'query', 'alumnos', { token: PREFECT, orderBy: ['nombre'] }, 'denegado'],
   ['tutor1 lista a sus alumnos', 'query', 'alumnos', { token: TUTOR1, where: [{ field: 'tid', value: 'tutor1' }], orderBy: ['nombre'] }, 'permitido'],
   ['tutor1 lista a los alumnos sin tutor de su escuela', 'query', 'alumnos', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
   ['tutor1 lee un alumno de su escuela', 'get', 'alumnos/a2', { token: TUTOR1 }, 'permitido'],
@@ -193,49 +196,49 @@ const cases = [
   ['admin1 lista todos los alumnos', 'query', 'alumnos', { token: ADMIN, orderBy: ['nombre'] }, 'permitido'],
 
   // ==================== grupos de alumnos: por escuela ====================
-  ['maestro1 lista los grupos de su escuela', 'query', 'grupos_de_alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['grado', 'letra'] }, 'permitido'],
-  ['maestro1 lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: TEACHER, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
+  ['prefecto1 lista los grupos de su escuela', 'query', 'grupos_de_alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['grado', 'letra'] }, 'permitido'],
+  ['prefecto1 lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
   ['sin sesion: listar grupos de alumnos', 'list', 'grupos_de_alumnos', {}, 'denegado'],
 
   // ==================== usuarios: solo el dueño y el administrador ====================
   ['tutor1 lee su propio perfil', 'get', 'usuarios/tutor1', { token: TUTOR1 }, 'permitido'],
-  ['maestro1 lee su propio perfil', 'get', 'usuarios/maestro1', { token: TEACHER }, 'permitido'],
-  ['tutor1 lee el perfil de un maestro de su escuela', 'get', 'usuarios/maestro1', { token: TUTOR1 }, 'denegado'],
-  ['maestro1 lee el perfil de un tutor de su escuela', 'get', 'usuarios/tutor1', { token: TEACHER }, 'denegado'],
+  ['prefecto1 lee su propio perfil', 'get', 'usuarios/prefecto1', { token: PREFECT }, 'permitido'],
+  ['tutor1 lee el perfil de un maestro de su escuela', 'get', 'usuarios/prefecto1', { token: TUTOR1 }, 'denegado'],
+  ['prefecto1 lee el perfil de un tutor de su escuela', 'get', 'usuarios/tutor1', { token: PREFECT }, 'denegado'],
   ['tutor1 lee a un usuario de otra escuela', 'get', 'usuarios/tutor2', { token: TUTOR1 }, 'denegado'],
   ['tutor1 lista los usuarios de su escuela', 'query', 'usuarios', { token: TUTOR1, where: [{ field: 'cct', value: 'CCT1' }] }, 'denegado'],
   ['tutor1 lista usuarios sin filtrar por escuela', 'query', 'usuarios', { token: TUTOR1 }, 'denegado'],
-  ['maestro1 lista los usuarios de su escuela', 'query', 'usuarios', { token: TEACHER, where: [{ field: 'cct', value: 'CCT1' }] }, 'denegado'],
+  ['prefecto1 lista los usuarios de su escuela', 'query', 'usuarios', { token: PREFECT, where: [{ field: 'cct', value: 'CCT1' }] }, 'denegado'],
   ['admin1 lista todos los usuarios', 'query', 'usuarios', { token: ADMIN }, 'permitido'],
-  ['admin1 lee el perfil de un maestro', 'get', 'usuarios/maestro1', { token: ADMIN }, 'permitido'],
+  ['admin1 lee el perfil de un maestro', 'get', 'usuarios/prefecto1', { token: ADMIN }, 'permitido'],
 
   // ==================== notificaciones: dueño o maestro de su escuela ====================
   ['tutor1 lista sus propias notificaciones', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'permitido'],
   ['tutor1 lista sus notificaciones de un alumno', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
   ['tutor1 lista las notificaciones de otro tutor', 'query', 'usuarios/tutor2/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'denegado'],
-  ['maestro1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
-  ['maestro1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: TEACHER, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
+  ['prefecto1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
+  ['prefecto1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
   ['admin1 lista las notificaciones de un tutor', 'query', 'usuarios/tutor1/notificaciones', { token: ADMIN, orderBy: ['createdAt'] }, 'permitido'],
 
   // Avisos y mensajes internos ya no comparten subcoleccion (y no se mezclan).
-  ['maestro1 escribe un mensaje interno en notificaciones', 'post', 'usuarios/tutor1/notificaciones?documentId=mezcla', { token: TEACHER, fields: { body: str('texto suelto') } }, 'denegado'],
+  ['prefecto1 escribe un mensaje interno en notificaciones', 'post', 'usuarios/tutor1/notificaciones?documentId=mezcla', { token: PREFECT, fields: { body: str('texto suelto') } }, 'denegado'],
   ['el administrador lee sus mensajes internos', 'get', 'usuarios/admin1/mensajes/m1', { token: ADMIN }, 'permitido'],
   ['nadie crea mensajes internos desde el cliente', 'post', 'usuarios/admin1/mensajes?documentId=m2', { token: ADMIN, fields: { body: str('texto') } }, 'denegado'],
-  ['un maestro no lee los mensajes de un administrador', 'get', 'usuarios/admin1/mensajes/m1', { token: TEACHER }, 'denegado'],
+  ['un maestro no lee los mensajes de un administrador', 'get', 'usuarios/admin1/mensajes/m1', { token: PREFECT }, 'denegado'],
 
   // La app comprueba si el grupo existe antes de crearlo (get de un id que aun no
   // existe): en ese documento no hay `cct` que comparar.
-  ['maestro1 comprueba si existe un grupo (id inexistente)', 'get', 'grupos_de_alumnos/nuevo', { token: TEACHER }, 'permitido'],
-  ['maestro1 lee un grupo de su escuela', 'get', 'grupos_de_alumnos/g1', { token: TEACHER }, 'permitido'],
-  ['maestro1 lee un grupo de otra escuela', 'get', 'grupos_de_alumnos/g2', { token: TEACHER }, 'denegado'],
+  ['prefecto1 comprueba si existe un grupo (id inexistente)', 'get', 'grupos_de_alumnos/nuevo', { token: PREFECT }, 'permitido'],
+  ['prefecto1 lee un grupo de su escuela', 'get', 'grupos_de_alumnos/g1', { token: PREFECT }, 'permitido'],
+  ['prefecto1 lee un grupo de otra escuela', 'get', 'grupos_de_alumnos/g2', { token: PREFECT }, 'denegado'],
 
   // ==================== catalogos generales ====================
-  ['maestro1 lee una materia', 'get', 'materias/m1', { token: TEACHER }, 'permitido'],
-  ['maestro1 lista los grupos escolares', 'list', 'grupos', { token: TEACHER }, 'permitido'],
+  ['prefecto1 lee una materia', 'get', 'materias/m1', { token: PREFECT }, 'permitido'],
+  ['prefecto1 lista los grupos escolares', 'list', 'grupos', { token: PREFECT }, 'permitido'],
   ['tutor1 lee una materia', 'get', 'materias/m1', { token: TUTOR1 }, 'denegado'],
   ['sin sesion: listar materias', 'list', 'materias', {}, 'denegado'],
   // Borrar un grupo solo lo puede hacer la funcion deleteStudentGroup (Admin SDK).
-  ['maestro1 borra un grupo directamente', 'delete', 'grupos_de_alumnos/g1', { token: TEACHER }, 'denegado'],
+  ['prefecto1 borra un grupo directamente', 'delete', 'grupos_de_alumnos/g1', { token: PREFECT }, 'denegado'],
   ['admin1 borra un grupo directamente', 'delete', 'grupos_de_alumnos/g2', { token: ADMIN }, 'denegado'],
 ];
 
@@ -271,7 +274,7 @@ async function waitForEmulator(maxMs = 240000) {
   }
 
   await seed();
-  console.log('Sembrado: 2 escuelas (CCT1 y CCT2), admin1, maestro1, tutor1, tutor2, alumnos a1/a2/a4, grupos g1/g2, escuela e1, materia m1\n');
+  console.log('Sembrado: 2 escuelas (CCT1 y CCT2), admin1, prefecto1, tutor1, tutor2, alumnos a1/a2/a4, grupos g1/g2, escuela e1, materia m1\n');
 
   let failures = 0;
   const rows = [];

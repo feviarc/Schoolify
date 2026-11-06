@@ -41,8 +41,8 @@ import {
 
   @Component({
   selector: 'app-maestro',
-  templateUrl: './teacher.page.html',
-  styleUrls: ['./teacher.page.scss'],
+  templateUrl: './prefect.page.html',
+  styleUrls: ['./prefect.page.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -66,7 +66,7 @@ import {
   ]
 })
 
-export class TeacherPage implements OnInit {
+export class PrefectPage implements OnInit {
   private formBuilder = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
@@ -147,7 +147,7 @@ export class TeacherPage implements OnInit {
         this.router.navigateByUrl('/auth');
       },
       error: error => {
-        console.log('❌ Schoolify: [teacher.page.ts]', error);
+        console.log('❌ Schoolify: [prefect.page.ts]', error);
       }
     });
   }
@@ -157,7 +157,7 @@ export class TeacherPage implements OnInit {
       this.user = await firstValueFrom(this.authService.getCurrentUser());
       this.uid = this.user?.uid;
     } catch(error) {
-      console.log('❌ Schoolify: [teacher.page.ts]', error);
+      console.log('❌ Schoolify: [prefect.page.ts]', error);
     }
   }
 
@@ -170,7 +170,7 @@ export class TeacherPage implements OnInit {
       this.profile = await firstValueFrom(this.userProfileService.getUserProfile(this.uid!));
       this.isUserActive = this.profile?.activo ?? false;
     } catch(error) {
-      console.log('❌ Schoolify: [teacher.page.ts]', error);
+      console.log('❌ Schoolify: [prefect.page.ts]', error);
     }
   }
 

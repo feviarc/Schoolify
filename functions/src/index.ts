@@ -553,7 +553,17 @@ export const onUserDeleted = onDocumentDeleted({
 
 
 /** Roles validos de la app. */
-const VALID_ROLES = ['administrador', 'maestro', 'tutor'];
+const VALID_ROLES = ['administrador', 'prefecto', 'maestro', 'tutor'];
+
+/** Rol de prefecto: administra alumnos, grupos y avisos de dia completo. */
+function isPrefectRole(rol?: string): boolean {
+  return rol === 'prefecto';
+}
+
+/** Docente de la escuela: prefecto o maestro. */
+function isStaffRole(rol?: string): boolean {
+  return rol === 'prefecto' || rol === 'maestro';
+}
 
 
 /**
@@ -721,9 +731,9 @@ export const deleteStudentGroup = onCall(
       const caller = await db.collection('usuarios').doc(request.auth.uid).get();
       const callerData = caller.data();
       const isAdmin = callerData?.rol === 'administrador';
-      const isTeacher = callerData?.rol === 'maestro';
+      const isPrefect = isPrefectRole(callerData?.rol);
 
-      if (!caller.exists || (!isAdmin && !isTeacher)) {
+      if (!caller.exists || (!isAdmin && !isPrefect)) {
         throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede borrar grupos.');
       }
 
@@ -833,8 +843,8 @@ export const getUnconfirmedNotificationCounts = onCall(
     const caller = await db.collection('usuarios').doc(request.auth.uid).get();
     const callerData = caller.data();
 
-    if (!caller.exists || callerData?.rol !== 'maestro') {
-      throw new HttpsError('permission-denied', 'Solo un maestro puede consultar esta lista.');
+    if (!caller.exists || !isStaffRole(callerData?.rol)) {
+      throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede consultar esta lista.');
     }
 
     const cct = callerData?.cct;

@@ -50,6 +50,8 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   private checkAccess(route: ActivatedRouteSnapshot): Observable<boolean | UrlTree> {
 
     const expectedRole = route.data['expectedRole'];
+    // Acepta un rol o una lista (ventana de compatibilidad del renombre a prefecto).
+    const allowedRoles: string[] = Array.isArray(expectedRole) ? expectedRole : [expectedRole];
 
     return this.authService.getCurrentUser().pipe(
       switchMap(user => {
@@ -64,7 +66,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
 
         return this.userProfileService.getUserProfile(user.uid).pipe(
           map(profile => {
-            if(profile && profile.rol === expectedRole) {
+            if(profile && allowedRoles.includes(profile.rol)) {
               return true;
             } else {
               return this.router.createUrlTree(['/portal']);

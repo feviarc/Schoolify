@@ -44,27 +44,29 @@ export const routes: Routes = [
     ]
   },
   {
-    path: 'teacher-dashboard',
-    loadComponent: () => import('./teacher/teacher.page').then( m => m.TeacherPage),
+    path: 'prefect-dashboard',
+    loadComponent: () => import('./prefect/prefect.page').then( m => m.PrefectPage),
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
-    data: {expectedRole: 'maestro'},
+    // VENTANA DE COMPATIBILIDAD (fase 1): mientras los datos no se migren, el rol
+    // viejo `maestro` entra al mismo tablero. En la fase 4 se separan.
+    data: {expectedRole: ['prefecto', 'maestro']},
     children: [
       {
         path: 'tab-notifications',
-        loadComponent: () => import('./teacher/tab-notifications/tab-notifications.component').then((m) => m.TabNotificationsComponent)
+        loadComponent: () => import('./prefect/tab-notifications/tab-notifications.component').then((m) => m.TabNotificationsComponent)
       },
       {
         path: 'tab-students',
-        loadComponent: () => import('./teacher/tab-students/tab-students.component').then((m) => m.TabStudentsComponent)
+        loadComponent: () => import('./prefect/tab-students/tab-students.component').then((m) => m.TabStudentsComponent)
       },
       {
         path: 'tab-groups',
-        loadComponent: () => import('./teacher/tab-groups/tab-groups.component').then((m) => m.TabGroupsComponent)
+        loadComponent: () => import('./prefect/tab-groups/tab-groups.component').then((m) => m.TabGroupsComponent)
       },
       {
         path: '',
-        redirectTo: '/teacher-dashboard/tab-notifications',
+        redirectTo: '/prefect-dashboard/tab-notifications',
         pathMatch: 'full'
       }
     ]

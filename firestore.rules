@@ -47,12 +47,12 @@ service cloud.firestore {
       return hasVerifiedEmail() && profile().rol == 'administrador';
     }
 
-    function isTeacher() {
-      return hasVerifiedEmail() && profile().rol == 'maestro';
+    function isPrefect() {
+      return hasVerifiedEmail() && profile().rol == 'prefecto';
     }
 
-    function isAdminOrTeacher() {
-      return isAdmin() || isTeacher();
+    function isAdminOrPrefect() {
+      return isAdmin() || isPrefect();
     }
 
     function isOwnProfile(uid) {
@@ -112,11 +112,11 @@ service cloud.firestore {
     match /usuarios/{uid}/notificaciones/{notificationId} {
       allow read: if isOwnProfile(uid)
         || isAdmin()
-        || (isTeacher() && sameSchoolAs(uid));
+        || (isPrefect() && sameSchoolAs(uid));
 
       // Un aviso siempre es de un alumno: se valida la forma para que nadie escriba
       // aqui un mensaje interno (esos van a /mensajes).
-      allow create: if isAdminOrTeacher()
+      allow create: if isAdminOrPrefect()
         && request.resource.data.tipo in ['Inasistencia', 'Incumplimiento', 'Indisciplina']
         && request.resource.data.sid is string
         // Queda registrado quien lo envia. Se valida la forma, no la igualdad con la
@@ -163,12 +163,12 @@ service cloud.firestore {
         || (hasVerifiedEmail() && resource.data.cct == ownCct())
         || (hasVerifiedEmail() && resource.data.tid == request.auth.uid);
 
-      allow create, delete: if isAdminOrTeacher();
+      allow create, delete: if isAdminOrPrefect();
 
       // El maestro (y el administrador) editan todo. El tutor solo puede
       // reclamar al alumno para si mismo: `tid` debe ser su propio uid, y el
       // alumno no puede estar ya reclamado por otro tutor.
-      allow update: if isAdminOrTeacher()
+      allow update: if isAdminOrPrefect()
         || (hasVerifiedEmail()
             && request.resource.data.tid == request.auth.uid
             && resource.data.get('tid', '') in ['', request.auth.uid]
@@ -179,13 +179,13 @@ service cloud.firestore {
 
     // Catalogos generales: los lee el personal de la escuela para armar los avisos.
     match /grupos/{groupId} {
-      allow read: if isAdminOrTeacher();
+      allow read: if isAdminOrPrefect();
 
       allow write: if isAdmin();
     }
 
     match /materias/{subjectId} {
-      allow read: if isAdminOrTeacher();
+      allow read: if isAdminOrPrefect();
 
       allow write: if isAdmin();
     }
@@ -196,9 +196,9 @@ service cloud.firestore {
       // crear un grupo: en un documento que aun no existe no hay `cct` que comparar
       // y la lectura se denegaba.
       allow read: if isAdmin()
-        || (isTeacher() && (resource == null || resource.data.cct == ownCct()));
+        || (isPrefect() && (resource == null || resource.data.cct == ownCct()));
 
-      allow create, update: if isAdminOrTeacher();
+      allow create, update: if isAdminOrPrefect();
 
       // Borrar un grupo pasa SOLO por la funcion `deleteStudentGroup`, que exige
       // que el grupo este vacio. Un borrado directo desde el cliente saltaria esa

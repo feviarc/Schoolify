@@ -31,8 +31,8 @@ function tokenFor(uid, { emailVerified = true } = {}) {
   return `${header}.${payload}.`;
 }
 
-const TEACHER = tokenFor('maestro9');
-const TEACHER_UNVERIFIED = tokenFor('maestro9', { emailVerified: false });
+const PREFECT = tokenFor('prefecto9');
+const PREFECT_UNVERIFIED = tokenFor('prefecto9', { emailVerified: false });
 const ADMIN = tokenFor('admin9');
 
 const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
@@ -60,7 +60,7 @@ async function createAuthUser(email) {
 async function seed() {
   const documents = [
     ['escuelas/e1', { cct: str('CCT1'), nombre: str('ESCUELA DE PRUEBA'), turno: str('TM'), pin: num(1921), telefono: str('3531008338') }],
-    ['usuarios/maestro9', { rol: str('maestro'), cct: str('CCT1') }],
+    ['usuarios/prefecto9', { rol: str('prefecto'), cct: str('CCT1') }],
     ['usuarios/admin9', { rol: str('administrador'), cct: str('CCT1') }],
   ];
 
@@ -100,9 +100,9 @@ const cases = [
   ['CCT inexistente', 'validateSchoolAccess', { cct: 'NOEXISTE', pin: 1921 }, undefined, (r) => r.body?.result?.valid === false, 'valid: false'],
   ['CCT vacio', 'validateSchoolAccess', { cct: '', pin: 1921 }, undefined, (r) => r.body?.result?.valid === false, 'valid: false'],
   ['getMySchool sin sesion', 'getMySchool', {}, undefined, (r) => r.status >= 400, 'error de autenticacion'],
-  ['getMySchool con sesion de maestro', 'getMySchool', {}, TEACHER, (r) => r.body?.result?.school?.nombre === 'ESCUELA DE PRUEBA' && r.body.result.school.pin === undefined, 'escuela sin pin'],
-  ['getMySchool devuelve el telefono de la escuela', 'getMySchool', {}, TEACHER, (r) => r.body?.result?.school?.telefono === '3531008338', 'telefono'],
-  ['getMySchool con correo sin verificar', 'getMySchool', {}, TEACHER_UNVERIFIED, (r) => r.status >= 400, 'error de correo no verificado'],
+  ['getMySchool con sesion de maestro', 'getMySchool', {}, PREFECT, (r) => r.body?.result?.school?.nombre === 'ESCUELA DE PRUEBA' && r.body.result.school.pin === undefined, 'escuela sin pin'],
+  ['getMySchool devuelve el telefono de la escuela', 'getMySchool', {}, PREFECT, (r) => r.body?.result?.school?.telefono === '3531008338', 'telefono'],
+  ['getMySchool con correo sin verificar', 'getMySchool', {}, PREFECT_UNVERIFIED, (r) => r.status >= 400, 'error de correo no verificado'],
 ];
 
 // ==================== triggers ====================
@@ -178,7 +178,7 @@ const scenarioCases = [
       const uid = await createAuthUser('gestion@test.mx');
       await firestore('PATCH', `usuarios/${uid}`, { fields: { rol: str('tutor'), cct: str('CCT1') } });
 
-      const asTeacher = await callFunction('updateUserByAdmin', { uid, rol: 'maestro' }, TEACHER);
+      const asTeacher = await callFunction('updateUserByAdmin', { uid, rol: 'maestro' }, PREFECT);
       if (asTeacher.status < 400) return false;
 
       const asAdmin = await callFunction('updateUserByAdmin', { uid, rol: 'maestro' }, ADMIN);
@@ -216,7 +216,7 @@ const scenarioCases = [
   {
     name: 'un maestro no puede leer el estado de las cuentas',
     run: async () => {
-      const response = await callFunction('getUsersAuthStatus', {}, TEACHER);
+      const response = await callFunction('getUsersAuthStatus', {}, PREFECT);
       return response.status >= 400;
     },
   },
@@ -227,7 +227,7 @@ const scenarioCases = [
       await firestore('PATCH', 'grupos_de_alumnos/gcon', { fields: { cct: str('CCT1'), grado: str('1'), letra: str('Z') } });
       await firestore('PATCH', 'alumnos/acon', { fields: { nombre: str('ALUMNO DEL GRUPO'), cct: str('CCT1'), gid: str('gcon') } });
 
-      const response = await callFunction('deleteStudentGroup', { gid: 'gcon' }, TEACHER);
+      const response = await callFunction('deleteStudentGroup', { gid: 'gcon' }, PREFECT);
       if (response.status < 400) return false;
 
       // El grupo sigue existiendo.
@@ -240,7 +240,7 @@ const scenarioCases = [
     run: async () => {
       await firestore('PATCH', 'grupos_de_alumnos/gvacio', { fields: { cct: str('CCT1'), grado: str('2'), letra: str('Z') } });
 
-      const response = await callFunction('deleteStudentGroup', { gid: 'gvacio' }, TEACHER);
+      const response = await callFunction('deleteStudentGroup', { gid: 'gvacio' }, PREFECT);
       if (response.status >= 400) return false;
 
       const gone = await firestore('GET', 'grupos_de_alumnos/gvacio');
@@ -252,7 +252,7 @@ const scenarioCases = [
     run: async () => {
       await firestore('PATCH', 'grupos_de_alumnos/gotra', { fields: { cct: str('CCT2'), grado: str('1'), letra: str('B') } });
 
-      const response = await callFunction('deleteStudentGroup', { gid: 'gotra' }, TEACHER);
+      const response = await callFunction('deleteStudentGroup', { gid: 'gotra' }, PREFECT);
       return response.status >= 400;
     },
   },
@@ -266,7 +266,7 @@ const scenarioCases = [
       await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p2', { fields: { sid: str('apend'), tipo: str('Incumplimiento'), nombreCompleto: str('ALUMNO CON AVISOS'), leido: bool(true), createdAt: timestamp() } });
       await firestore('PATCH', 'usuarios/tutorpend/notificaciones/p3', { fields: { sid: str('apend'), tipo: str('Indisciplina'), nombreCompleto: str('ALUMNO CON AVISOS'), leido: bool(true), acknowledged: bool(true), createdAt: timestamp() } });
 
-      const response = await callFunction('getUnconfirmedNotificationCounts', {}, TEACHER);
+      const response = await callFunction('getUnconfirmedNotificationCounts', {}, PREFECT);
       if (response.status >= 400) return false;
 
       // Cuentan el sin abrir y el visto sin confirmar; el confirmado no.
@@ -309,7 +309,7 @@ const scenarioCases = [
 
 (async () => {
   await seed();
-  console.log('Sembrado: escuelas/e1 (cct CCT1, pin 1921) y usuarios/maestro9 (cct CCT1)\n');
+  console.log('Sembrado: escuelas/e1 (cct CCT1, pin 1921) y usuarios/prefecto9 (cct CCT1)\n');
 
   let failures = 0;
   let total = cases.length + scenarioCases.length;

@@ -204,8 +204,9 @@ export class PortalPage implements OnInit {
             case 'administrador':
               this.router.navigateByUrl('/admin-dashboard');
               break;
+            case 'prefecto':
             case 'maestro':
-              this.router.navigateByUrl('/teacher-dashboard');
+              this.router.navigateByUrl('/prefect-dashboard');
               break;
             case 'tutor':
               this.router.navigateByUrl('/caregiver-dashboard');
