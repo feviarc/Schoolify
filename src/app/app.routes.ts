@@ -58,7 +58,10 @@ export const routes: Routes = [
       },
       {
         path: 'tab-students',
-        loadComponent: () => import('./prefect/tab-students/tab-students.component').then((m) => m.TabStudentsComponent)
+        loadComponent: () => import('./prefect/tab-students/tab-students.component').then((m) => m.TabStudentsComponent),
+        // Solo el prefecto administra alumnos: el rol maestro no puede entrar ni por URL.
+        canActivate: [AuthGuard],
+        data: {expectedRole: 'prefecto'}
       },
       {
         path: 'tab-groups',

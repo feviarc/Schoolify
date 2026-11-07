@@ -5,10 +5,12 @@
         <ion-icon name="notifications"></ion-icon>
         Notificaciones
       </ion-tab-button>
-      <ion-tab-button tab="tab-students">
-        <ion-icon name="person"></ion-icon>
-        Alumnos
-      </ion-tab-button>
+      @if(rol === 'prefecto') {
+        <ion-tab-button tab="tab-students">
+          <ion-icon name="person"></ion-icon>
+          Alumnos
+        </ion-tab-button>
+      }
       <ion-tab-button tab="tab-groups">
         <ion-icon name="people"></ion-icon>
         Grupos

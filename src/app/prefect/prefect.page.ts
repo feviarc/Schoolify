@@ -85,6 +85,8 @@ export class PrefectPage implements OnInit {
 
   profile: UserProfile | null = null ;
   user: User | null = null;
+  /** `prefecto` o `maestro`: decide qué pestañas se muestran. */
+  rol = '';
 
   private readonly CCT_KEY = this.localStorageService.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
@@ -168,6 +170,7 @@ export class PrefectPage implements OnInit {
 
     try {
       this.profile = await firstValueFrom(this.userProfileService.getUserProfile(this.uid!));
+      this.rol = this.profile?.rol ?? '';
       this.isUserActive = this.profile?.activo ?? false;
     } catch(error) {
       console.log('❌ Schoolify: [prefect.page.ts]', error);
