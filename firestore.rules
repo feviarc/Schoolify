@@ -113,13 +113,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Avisos de un alumno: los escribe el maestro que los genera y los gestiona el
-    // administrador. Los lee el tutor dueño y el maestro de su escuela (el historial
-    // que abre desde la lista de alumnos).
+    // Avisos de un alumno: los escribe el docente que los genera y los gestiona el
+    // administrador. Los lee el tutor dueño y el personal docente de su escuela (el
+    // historial que abre desde la lista de alumnos). El maestro ve en la interfaz
+    // solo a los alumnos de sus grupos; la regla no puede recortar mas la lectura.
     match /usuarios/{uid}/notificaciones/{notificationId} {
       allow read: if isOwnProfile(uid)
         || isAdmin()
-        || (isPrefect() && sameSchoolAs(uid));
+        || (isTeacher() && sameSchoolAs(uid));
 
       // Un aviso siempre es de un alumno: se valida la forma para que nadie escriba
       // aqui un mensaje interno (esos van a /mensajes).

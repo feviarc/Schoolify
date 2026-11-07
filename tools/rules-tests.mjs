@@ -230,6 +230,8 @@ const cases = [
   ['tutor1 lista las notificaciones de otro tutor', 'query', 'usuarios/tutor2/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'denegado'],
   ['prefecto1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
   ['prefecto1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
+  ['el maestro abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: MAESTRO, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
+  ['el maestro abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: MAESTRO, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
   ['admin1 lista las notificaciones de un tutor', 'query', 'usuarios/tutor1/notificaciones', { token: ADMIN, orderBy: ['createdAt'] }, 'permitido'],
 
   // Avisos y mensajes internos ya no comparten subcoleccion (y no se mezclan).

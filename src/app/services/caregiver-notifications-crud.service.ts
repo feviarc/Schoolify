@@ -23,8 +23,8 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import {
   from,
-  of,
   Observable,
+  throwError,
 } from 'rxjs';
 
 import {
@@ -214,8 +214,10 @@ export class CaregiverNotificationsCRUDService {
         return notifications;
       }),
       catchError(error => {
+        // No se devuelve `[]`: un historial vacio y una lectura denegada se veian
+        // igual en la interfaz, y el problema pasaba inadvertido.
         console.error('❌ Schoolify: [caregiver-notifications-crud.service.ts]', error);
-        return of([]);
+        return throwError(() => error);
       })
     );
   }

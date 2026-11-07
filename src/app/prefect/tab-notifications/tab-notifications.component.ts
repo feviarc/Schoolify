@@ -183,11 +183,16 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.loadSchoolGroups();
     this.loadSubjects();
     this.loadStudents();
-    this.loadMaestro();
   }
 
+  /**
+   * La pestana se queda viva entre visitas: el perfil se relee aqui (no solo en
+   * `ngOnInit`) para que los grupos que el maestro vinculo o quito en la pestana
+   * Grupos se reflejen al volver, sin reiniciar la app.
+   */
   ionViewWillEnter() {
     this.loadUnconfirmedCounts();
+    this.loadMaestro();
   }
 
   ngOnDestroy() {
@@ -285,12 +290,17 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       return;
     }
 
+    // Se limpia antes de consultar: asi no se ve el historial del alumno anterior
+    // mientras llega la respuesta.
+    this.studentNotifications = [];
+
     this.caregiverNotifCRUDService.getNotificationsByStudentIdSnapshot(student.tid, student.id).subscribe({
       next: (notifications) => {
         this.studentNotifications = notifications;
       },
       error: (error) => {
         console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
+        this.showToast('🛑 No se pudo cargar el historial.');
       }
     });
   }
@@ -500,7 +510,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
         return;
       }
 
-      const profile = await firstValueFrom(this.userProfileService.getUserProfile(this.maestroUid));
+      // `forceRefresh`: el perfil cacheado puede traer grupos viejos.
+      const profile = await firstValueFrom(this.userProfileService.getUserProfile(this.maestroUid, true));
       this.maestroNombre = profile?.nombre ?? '';
       this.esMaestro = profile?.rol === 'maestro';
       this.misGrupos = profile?.grupos ?? [];
