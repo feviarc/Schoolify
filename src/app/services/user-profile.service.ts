@@ -42,14 +42,23 @@ export class UserProfileService {
     );
   }
 
-  async updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
+  /**
+   * Guarda campos del perfil y devuelve si la escritura se aplico. El resultado
+   * booleano es a proposito: quien llama necesita distinguir un guardado real de
+   * uno rechazado por las reglas (por ejemplo, al vincular grupos) para avisar en
+   * la interfaz, sin tener que atrapar la excepcion de Firestore.
+   */
+  async updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<boolean> {
     const userDocRef = doc(this.firestore, `usuarios/${uid}`);
     try {
-     await updateDoc(userDocRef, data);
+      await updateDoc(userDocRef, data);
+      return true;
     } catch(error) {
-      console.log('❌ Schoolify: [user-profile.service.ts]', error)
+      console.log('❌ Schoolify: [user-profile.service.ts]', error);
+      return false;
+    } finally {
+      this.invalidateProfile(uid);
     }
-    this.invalidateProfile(uid);
   }
 
   /**

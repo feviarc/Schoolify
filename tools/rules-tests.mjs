@@ -39,6 +39,8 @@ function tokenFor(uid, { emailVerified = true } = {}) {
 const OWNER = 'owner';
 const ADMIN = tokenFor('admin1');
 const PREFECT = tokenFor('prefecto1');
+// `viejo1` es el perfil con `rol: 'maestro'` sembrado abajo.
+const MAESTRO = tokenFor('viejo1');
 const TUTOR1 = tokenFor('tutor1');
 const TUTOR2 = tokenFor('tutor2');
 // Recien registrado: todavia no verifico su correo.
@@ -50,6 +52,7 @@ const str = (value) => ({ stringValue: value });
 const bool = (value) => ({ booleanValue: value });
 const timestamp = () => ({ timestampValue: new Date().toISOString() });
 const num = (value) => ({ integerValue: String(value) });
+const arr = (values) => ({ arrayValue: { values: values.map(str) } });
 
 // `Connection: close` evita reutilizar un socket que el emulador cerro al responder
 // un 403: Node lo reusaba y la peticion siguiente se quedaba esperando sin fin.
@@ -147,6 +150,9 @@ const cases = [
   ['tutor1 se asciende a administrador en su propio perfil', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { rol: str('administrador') }, mask: ['rol'] }, 'denegado'],
   ['tutor1 cambia otro usuario (tutor2)', 'update', 'usuarios/tutor2', { token: TUTOR1, fields: { activo: bool(false) }, mask: ['activo'] }, 'denegado'],
   ['tutor1 edita su propio nombre', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { nombre: str('TUTOR UNO') }, mask: ['nombre'] }, 'permitido'],
+  // Fase 5: el maestro guarda en su perfil los `gid` que sigue.
+  ['el maestro vincula grupos en su propio perfil', 'update', 'usuarios/viejo1', { token: MAESTRO, fields: { grupos: arr(['CCT1_1-A']) }, mask: ['grupos'] }, 'permitido'],
+  ['el maestro no se cambia el rol al editar sus grupos', 'update', 'usuarios/viejo1', { token: MAESTRO, fields: { rol: str('administrador'), grupos: arr([]) }, mask: ['rol', 'grupos'] }, 'denegado'],
   ['registro nuevo con rol administrador', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('administrador'), email: str('n@test.mx') } }, 'denegado'],
   ['registro nuevo sin correo verificado (rol tutor)', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('tutor'), email: str('n2@test.mx') } }, 'permitido'],
   // El correo sin verificar no da acceso a nada mas: ni al propio perfil.
@@ -182,7 +188,7 @@ const cases = [
   ['sin sesion: listar alumnos', 'list', 'alumnos', {}, 'denegado'],
   ['prefecto1 lee un alumno de su escuela', 'get', 'alumnos/a1', { token: PREFECT }, 'permitido'],
   // El rol `maestro` ya no es prefecto: no crea grupos (eso es del prefecto).
-  ['el rol maestro no crea grupos', 'post', 'grupos_de_alumnos?documentId=gm1', { token: tokenFor('viejo1'), fields: { cct: str('CCT1'), grado: str('1'), letra: str('M') } }, 'denegado'],
+  ['el rol maestro no crea grupos', 'post', 'grupos_de_alumnos?documentId=gm1', { token: MAESTRO, fields: { cct: str('CCT1'), grado: str('1'), letra: str('M') } }, 'denegado'],
   ['prefecto1 lee un alumno de otra escuela', 'get', 'alumnos/a4', { token: PREFECT }, 'denegado'],
   ['prefecto1 lista los alumnos de su escuela', 'query', 'alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['nombre'] }, 'permitido'],
   ['prefecto1 lista los alumnos de otra escuela', 'query', 'alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['nombre'] }, 'denegado'],
@@ -198,6 +204,12 @@ const cases = [
   // ==================== grupos de alumnos: por escuela ====================
   ['prefecto1 lista los grupos de su escuela', 'query', 'grupos_de_alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['grado', 'letra'] }, 'permitido'],
   ['prefecto1 lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: PREFECT, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
+  // Fase 5: el maestro necesita leer los grupos de su escuela para vincularlos.
+  ['el maestro lista los grupos de su escuela', 'query', 'grupos_de_alumnos', { token: MAESTRO, where: [{ field: 'cct', value: 'CCT1' }], orderBy: ['grado', 'letra'] }, 'permitido'],
+  ['el maestro lee un grupo de su escuela', 'get', 'grupos_de_alumnos/g1', { token: MAESTRO }, 'permitido'],
+  ['el maestro lee un grupo de otra escuela', 'get', 'grupos_de_alumnos/g2', { token: MAESTRO }, 'denegado'],
+  ['el maestro lista los grupos de otra escuela', 'query', 'grupos_de_alumnos', { token: MAESTRO, where: [{ field: 'cct', value: 'CCT2' }], orderBy: ['grado'] }, 'denegado'],
+  ['el maestro lista los grupos escolares', 'list', 'grupos', { token: MAESTRO }, 'permitido'],
   ['sin sesion: listar grupos de alumnos', 'list', 'grupos_de_alumnos', {}, 'denegado'],
 
   // ==================== usuarios: solo el dueño y el administrador ====================

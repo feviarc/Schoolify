@@ -10,7 +10,11 @@
 <ion-content>
   @if(studentGroups.length === 0 && !isLoading) {
     <div class="center-box">
-      <p>Para crear notificaciones primero debes registrar a los alumnos y grupos de tu Centro de Trabajo.</p>
+      <p>
+        {{ esMaestro
+           ? 'Aún no tienes grupos vinculados. Ve a la pestaña Grupos y elige los que impartes.'
+           : 'Para crear notificaciones primero debes registrar a los alumnos y grupos de tu Centro de Trabajo.' }}
+      </p>
     </div>
   }
   <ion-accordion-group expand="inset">

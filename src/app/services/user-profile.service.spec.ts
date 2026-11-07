@@ -123,4 +123,12 @@ describe('UserProfileService: cache de perfil', () => {
     expect(service.fetchCount).toBe(2);
   });
 
+  it('updateUserProfile informa cuando la escritura no se aplico', async () => {
+    // Con el Firestore de prueba la escritura falla: el mutador debe devolver
+    // `false` para que la interfaz pueda avisar en vez de dar por hecho el cambio.
+    const saved = await service.updateUserProfile('u1', { nombre: 'Ana' });
+
+    expect(saved).toBeFalse();
+  });
+
 });

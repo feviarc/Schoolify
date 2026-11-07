@@ -35,8 +35,8 @@ import {
   IonToolbar,
 } from "@ionic/angular/standalone";
 
-  import { OverlayEventDetail } from '@ionic/core/components';
-  import { Subscription } from 'rxjs';
+  import { ActionSheetButton, OverlayEventDetail } from '@ionic/core/components';
+  import { Subscription, firstValueFrom } from 'rxjs';
   import { AuthService } from 'src/app/services/auth.service';
   import { GroupCRUDService, Group } from 'src/app/services/group-crud.service';
   import { LocalStorageService } from 'src/app/services/local-storage.service';
@@ -44,6 +44,7 @@ import {
   import { SchoolStateService } from 'src/app/services/school-state-service';
   import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
   import { StudentGroupCRUDService, StudentGroup } from 'src/app/services/student-group-crud.service';
+  import { UserProfileService } from 'src/app/services/user-profile.service';
 
 
 @Component({
@@ -93,6 +94,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   private schoolStateService = inject(SchoolStateService);
   private studentCRUDService = inject(StudentCRUDService);
   private studentGroupCRUDService = inject(StudentGroupCRUDService);
+  private userProfileService = inject(UserProfileService);
 
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
@@ -117,17 +119,25 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   filteredStudentsWithGroup: Student[] = [];
   filteredStudentsWithoutGroup: Student[] = [];
   groupsInfo: Group[] = [];
+  /** Grupos de la escuela completa; `studentGroups` es lo que se pinta. */
+  private allStudentGroups: StudentGroup[] = [];
   studentGroups: StudentGroup[] = [];
   studentsListByGroup: Student[] = [];
   studentsWithGroup: Student[] = [];
   studentsWithoutGroup: Student[] = [];
+
+  /** Perfil del usuario: el `maestro` solo ve sus grupos; el `prefecto` los administra. */
+  rol = '';
+  uid = '';
+  /** `gid` de los grupos que este maestro decidio seguir. */
+  misGrupos: string[] = [];
 
   private subscriptions: Subscription[] = [];
 
   private readonly CCT_KEY = this.localStorageService.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
-  public actionSheetButtons = [
+  public actionSheetButtons: ActionSheetButton[] = [
     {
       text: 'Eliminar',
       role: 'destructive',
@@ -143,6 +153,9 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       },
     },
   ];
+
+  /** Botones del action sheet con el que el maestro vincula un grupo. */
+  public linkGroupButtons: ActionSheetButton[] = [];
 
   public logoutActionSheetButtons = [
     {
@@ -161,13 +174,23 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     },
   ];
 
+  get isMaestro(): boolean {
+    return this.rol === 'maestro';
+  }
+
+  get deleteGroupHeader(): string {
+    return this.isMaestro
+      ? 'Presiona "Quitar de mi lista" para dejar de ver este grupo'
+      : 'Presiona el botón Eliminar para borrar';
+  }
+
   ngOnInit() {
     const cct = this.localStorageService.getKey(this.CCT_KEY);
     const shift = this.localStorageService.getKey(this.SHIFT_KEY);
     const cctShift = `${cct}${shift}`;
 
     this.loadSchoolInfo();
-    this.loadGroupsInfo();
+    this.loadCurrentUser();
     this.loadStudentsGroups(cctShift);
     this.loadStudents(cctShift);
   }
@@ -289,7 +312,8 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
 
     const sub = this.studentGroupCRUDService.getStudentGroupsByCCT(cct).subscribe({
       next: groups => {
-        this.studentGroups = groups;
+        this.allStudentGroups = groups;
+        this.applyGroupFilter();
         this.isLoading = false;
       },
       error: (error) => {
@@ -316,7 +340,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     this.subscriptions.push(sub);
   }
 
-  onDeleteGroup(event: CustomEvent<OverlayEventDetail>, group: StudentGroup) {
+  async onDeleteGroup(event: CustomEvent<OverlayEventDetail>, group: StudentGroup) {
 
     if(!event.detail.data) {
       return;
@@ -325,6 +349,15 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     const action = event.detail.data.action;
 
     if(action === 'cancel') {
+      return;
+    }
+
+    // El maestro no borra el grupo de la escuela: solo lo saca de su lista.
+    if(this.isMaestro) {
+      await this.saveGroups(
+        this.misGrupos.filter(gid => gid !== group.gid),
+        `✅ Se quitó el Grupo ${group.grado}° "${group.letra}" de tu lista.`
+      );
       return;
     }
 
@@ -345,6 +378,23 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(sub);
+  }
+
+  /** Vincula al maestro con el grupo que eligio en el action sheet. */
+  async onLinkGroup(event: CustomEvent<OverlayEventDetail>) {
+    const gid = event.detail.data?.gid;
+
+    if(!gid || this.misGrupos.includes(gid)) {
+      return;
+    }
+
+    const group = this.allStudentGroups.find(g => g.gid === gid);
+    const nombre = group ? `Grupo ${group.grado}° "${group.letra}"` : 'el grupo';
+
+    await this.saveGroups(
+      [...this.misGrupos, gid],
+      `✅ Se agregó el ${nombre} a tus grupos.`
+    );
   }
 
   onDidDismiss(event: CustomEvent) {
@@ -433,6 +483,121 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     await this.studentCRUDService.removeGroup(this.selectedStudent.id);
     this.loadStudentsListByGroup(group);
     this.selectedStudent = null;
+  }
+
+  /**
+   * Perfil del docente. El `maestro` ve solo los grupos que vinculo; el `prefecto`
+   * sigue administrando todos los de la escuela. El catalogo de grupos se carga
+   * solo para el prefecto: el maestro no da de alta grupos.
+   */
+  private async loadCurrentUser() {
+    try {
+      const user = await firstValueFrom(this.authService.getCurrentUser());
+      this.uid = user?.uid ?? '';
+
+      if(!this.uid) {
+        return;
+      }
+
+      const profile = await firstValueFrom(this.userProfileService.getUserProfile(this.uid));
+      this.rol = profile?.rol ?? '';
+      this.misGrupos = profile?.grupos ?? [];
+
+      this.actionSheetButtons = [
+        {
+          text: this.isMaestro ? 'Quitar de mi lista' : 'Eliminar',
+          role: 'destructive',
+          data: {
+            action: 'delete',
+          }
+        },
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          data: {
+            action: 'cancel',
+          },
+        },
+      ];
+
+      this.applyGroupFilter();
+
+      if(!this.isMaestro) {
+        this.loadGroupsInfo();
+      }
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-groups.component.ts]', error);
+    }
+  }
+
+  /** Aplica la lista del maestro sobre los grupos de la escuela. */
+  private applyGroupFilter() {
+    this.studentGroups = this.isMaestro
+      ? this.allStudentGroups.filter(group => this.misGrupos.includes(group.gid))
+      : [...this.allStudentGroups];
+
+    this.buildLinkButtons();
+  }
+
+  /** Botones para vincular: solo los grupos que el maestro aun no sigue. */
+  private buildLinkButtons() {
+    if(!this.isMaestro) {
+      this.linkGroupButtons = [];
+      return;
+    }
+
+    const available = this.allStudentGroups.filter(
+      group => !this.misGrupos.includes(group.gid)
+    );
+
+    this.linkGroupButtons = available.length > 0
+      ? [
+          ...available.map(group => ({
+            text: `Grupo ${group.grado}° "${group.letra}"`,
+            data: {
+              gid: group.gid,
+            }
+          })),
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            data: {
+              action: 'cancel',
+            },
+          },
+        ]
+      : [
+          {
+            text: 'No hay grupos por vincular',
+            role: 'cancel',
+            disabled: true,
+          },
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            data: {
+              action: 'cancel',
+            },
+          },
+        ];
+  }
+
+  /** Guarda la lista de grupos del maestro y avisa el resultado. */
+  private async saveGroups(grupos: string[], successMessage: string) {
+    if(!this.uid) {
+      return;
+    }
+
+    const saved = await this.userProfileService.updateUserProfile(this.uid, { grupos });
+
+    if(!saved) {
+      this.showToast('🛑 No se pudieron guardar tus grupos. Intenta de nuevo.');
+      return;
+    }
+
+    this.misGrupos = grupos;
+    this.applyGroupFilter();
+    this.showToast(successMessage);
   }
 
   private showToast(message: string) {

@@ -111,7 +111,13 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   selectedDate!: string | null;
   selectedSubjects: string[] = [];
   studentDidntShowUp = true;
+  /** Grupos que se pintan: todos para el prefecto, los vinculados para el maestro. */
   studentGroups: StudentGroup[] = [];
+  /** Grupos de la escuela completa, antes de aplicar la lista del maestro. */
+  private allStudentGroups: StudentGroup[] = [];
+  /** `true` cuando el que envia avisos es un maestro (solo ve sus grupos). */
+  esMaestro = false;
+  private misGrupos: string[] = [];
   studentNotifications: CaregiverNotification[] = [];
   /** Datos del maestro que envia: quedan registrados en cada aviso. */
   private maestroUid = '';
@@ -229,7 +235,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   loadSchoolGroups() {
     const sub = this.studentGroupCRUDService.getStudentGroupsByCCT(this.cctShift).subscribe({
       next: groups => {
-        this.studentGroups = groups;
+        this.allStudentGroups = groups;
+        this.applyGroupFilter();
       },
       error: (error) => {
         console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
@@ -480,7 +487,10 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     }
   }
 
-  /** Nombre del maestro para firmar el aviso (el uid ya viene de la sesión). */
+  /**
+   * Nombre con el que se firma el aviso (el uid ya viene de la sesión) y rol del
+   * que envia: el maestro solo trabaja con los grupos que vinculo.
+   */
   private async loadMaestro() {
     try {
       const user = await firstValueFrom(this.authService.getCurrentUser());
@@ -492,9 +502,20 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
 
       const profile = await firstValueFrom(this.userProfileService.getUserProfile(this.maestroUid));
       this.maestroNombre = profile?.nombre ?? '';
+      this.esMaestro = profile?.rol === 'maestro';
+      this.misGrupos = profile?.grupos ?? [];
+
+      this.applyGroupFilter();
     } catch(error) {
       console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
     }
+  }
+
+  /** El maestro solo ve los grupos de su lista; el prefecto, todos los de la escuela. */
+  private applyGroupFilter() {
+    this.studentGroups = this.esMaestro
+      ? this.allStudentGroups.filter(group => this.misGrupos.includes(group.gid))
+      : this.allStudentGroups;
   }
 
   private showToast(message: string) {

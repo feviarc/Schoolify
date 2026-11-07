@@ -55,6 +55,13 @@ service cloud.firestore {
       return isAdmin() || isPrefect();
     }
 
+    // Personal docente. El maestro comparte con el prefecto la lectura de los
+    // grupos de su escuela; lo que ve en la pestana Grupos son los que vinculo
+    // en su propio perfil (`usuarios/{uid}.grupos`).
+    function isTeacher() {
+      return hasVerifiedEmail() && profile().rol in ['prefecto', 'maestro'];
+    }
+
     function isOwnProfile(uid) {
       return hasVerifiedEmail() && request.auth.uid == uid;
     }
@@ -178,8 +185,10 @@ service cloud.firestore {
     // ==================== grupos y materias ====================
 
     // Catalogos generales: los lee el personal de la escuela para armar los avisos.
+    // El maestro los necesita porque la pestana Grupos instancia el servicio que
+    // carga el catalogo, aunque su lista salga de su propio perfil.
     match /grupos/{groupId} {
-      allow read: if isAdminOrPrefect();
+      allow read: if isAdmin() || isTeacher();
 
       allow write: if isAdmin();
     }
@@ -191,12 +200,13 @@ service cloud.firestore {
     }
 
     match /grupos_de_alumnos/{gid} {
-      // El maestro, los de su escuela (`where('cct', '==', ...)`).
+      // El personal docente, los de su escuela (`where('cct', '==', ...)`). El
+      // maestro solo necesita leerlos: su pestana Grupos muestra los que vinculo.
       // `resource == null` cubre la comprobacion de existencia que hace la app al
       // crear un grupo: en un documento que aun no existe no hay `cct` que comparar
       // y la lectura se denegaba.
       allow read: if isAdmin()
-        || (isPrefect() && (resource == null || resource.data.cct == ownCct()));
+        || (isTeacher() && (resource == null || resource.data.cct == ownCct()));
 
       allow create, update: if isAdminOrPrefect();
 
