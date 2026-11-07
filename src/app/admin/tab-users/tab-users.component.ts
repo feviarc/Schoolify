@@ -109,9 +109,9 @@ export class TabUsersComponent  implements OnInit, OnDestroy {
   ];
 
   roleOptions = [
-    { value: 'prefecto', label: 'Prefecto' },
-    { value: 'maestro', label: 'Maestro' },
     { value: 'tutor', label: 'Tutor' },
+    { value: 'maestro', label: 'Maestro' },
+    { value: 'prefecto', label: 'Prefecto' },
     { value: 'administrador', label: 'Administrador' },
   ];
 
