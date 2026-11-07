@@ -34,12 +34,22 @@
       @for(group of studentGroups; track group.gid) {
         <ion-item-sliding class="sliding-item-card" #groupSlidingItem>
           <ion-item-options side="start">
-            <ion-item-option
-             color="danger"
-             id="delete-{{ group.gid }}"
-            >
-              <ion-icon slot="icon-only" [name]="isMaestro ? 'remove-circle' : 'trash'"></ion-icon>
-            </ion-item-option>
+            @if(isMaestro) {
+              <ion-item-option
+               color="danger"
+               id="delete-{{ group.gid }}"
+              >
+                <ion-icon slot="icon-only" name="remove-circle"></ion-icon>
+              </ion-item-option>
+            }
+            @else {
+              <ion-item-option
+               color="danger"
+               id="delete-{{ group.gid }}"
+              >
+                <ion-icon slot="icon-only" name="trash"></ion-icon>
+              </ion-item-option>
+            }
           </ion-item-options>
           <ion-item class="item-background__color--surface-light">
             <ion-label>

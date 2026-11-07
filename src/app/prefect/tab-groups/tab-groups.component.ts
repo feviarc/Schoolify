@@ -137,22 +137,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   private readonly CCT_KEY = this.localStorageService.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorageService.SHIFT_KEY;
 
-  public actionSheetButtons: ActionSheetButton[] = [
-    {
-      text: 'Eliminar',
-      role: 'destructive',
-      data: {
-        action: 'delete',
-      }
-    },
-    {
-      text: 'Cancelar',
-      role: 'cancel',
-      data: {
-        action: 'cancel',
-      },
-    },
-  ];
+  public actionSheetButtons: ActionSheetButton[] = this.buildDeleteButtons(false);
 
   /** Botones del action sheet con el que el maestro vincula un grupo. */
   public linkGroupButtons: ActionSheetButton[] = [];
@@ -503,22 +488,7 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       this.rol = profile?.rol ?? '';
       this.misGrupos = profile?.grupos ?? [];
 
-      this.actionSheetButtons = [
-        {
-          text: this.isMaestro ? 'Quitar de mi lista' : 'Eliminar',
-          role: 'destructive',
-          data: {
-            action: 'delete',
-          }
-        },
-        {
-          text: 'Cancelar',
-          role: 'cancel',
-          data: {
-            action: 'cancel',
-          },
-        },
-      ];
+      this.actionSheetButtons = this.buildDeleteButtons(this.isMaestro);
 
       this.applyGroupFilter();
 
@@ -580,6 +550,28 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
             },
           },
         ];
+  }
+
+  /** Botones del action sheet de la izquierda: borrar o quitar de la lista. */
+  private buildDeleteButtons(maestro: boolean): ActionSheetButton[] {
+    return [
+      {
+        text: maestro ? 'Quitar de mi lista' : 'Eliminar',
+        icon: maestro ? 'remove-circle-outline' : 'trash-outline',
+        role: 'destructive',
+        data: {
+          action: 'delete',
+        },
+      },
+      {
+        text: 'Cancelar',
+        icon: 'close-outline',
+        role: 'cancel',
+        data: {
+          action: 'cancel',
+        },
+      },
+    ];
   }
 
   /** Guarda la lista de grupos del maestro y avisa el resultado. */

@@ -17,6 +17,7 @@ import {
   calendarNumber,
   call,
   checkmarkCircle,
+  closeOutline,
   create,
   laptopOutline,
   logoAndroid,
@@ -31,10 +32,13 @@ import {
   personRemove,
   power,
   refreshCircle,
+  removeCircle,
+  removeCircleOutline,
   sad,
   school,
   send,
   trash,
+  trashOutline,
 } from 'ionicons/icons';
 
 import { AppUpdateService } from './services/app-update.service';
@@ -82,6 +86,7 @@ export class AppComponent implements OnInit{
       calendarNumber,
       call,
       checkmarkCircle,
+      closeOutline,
       create,
       laptopOutline,
       logoAndroid,
@@ -96,10 +101,13 @@ export class AppComponent implements OnInit{
       personRemove,
       power,
       refreshCircle,
+      removeCircle,
+      removeCircleOutline,
       sad,
       school,
       send,
       trash,
+      trashOutline,
     });
   }
 
