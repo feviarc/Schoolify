@@ -1,0 +1,48 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Mis materias</ion-title>
+    @if(isLoading) {
+      <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
+    }
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list [inset]="true">
+    <!-- <ion-list-header>Materias que impartes</ion-list-header>
+    <ion-note>Elige del catálogo; son las que aparecen en el selector de tus avisos.</ion-note> -->
+
+    @if(catalogo.length === 0 && !isLoading) {
+      <div class="center-box">
+        <p>El administrador aún no ha cargado materias en el catálogo.</p>
+      </div>
+    }
+
+    @for(grupo of gruposCatalogo; track grupo.grado) {
+      <ion-list-header color="light">
+        <ion-label>{{ gradoLabel(grupo.grado) }}</ion-label>
+      </ion-list-header>
+      @for(materia of grupo.materias; track materia.id) {
+        <ion-item lines="full">
+          <ion-checkbox
+           justify="space-between"
+           [checked]="isSelected(materia.nombre)"
+           [disabled]="isLoading || isSaving"
+           (ionChange)="onToggleMateria(materia.nombre, $event.detail.checked)"
+          >
+            {{ materia.nombre }}
+          </ion-checkbox>
+        </ion-item>
+      }
+    }
+  </ion-list>
+</ion-content>
+
+<ion-toast
+ cssClass="page__toast"
+ [message]="toastMessage"
+ [isOpen]="isToastOpen"
+ [duration]="3000"
+ (didDismiss)="isToastOpen = false"
+>
+</ion-toast>

@@ -112,6 +112,7 @@
                 trigger="absence-{{ student.id }}"
                 [initialBreakpoint]="initialBreakpoint"
                 [breakpoints]="breakpoints"
+                (willPresent)="onAbsenceModalWillPresent()"
                 (willDismiss)="onModalDismiss(studentSlidingItem)"
                 #addAbsenseModal
                 >
@@ -169,16 +170,20 @@
                           </ion-modal>
                         </ion-item>
                       </ion-list>
-                      <ion-list [inset]="true">
-                        <ion-item>
-                          <ion-toggle
-                          [checked]="studentDidntShowUp"
-                          (ionChange)="onStudentDidntShowUpChange()"
-                          >
-                            <ion-label>No asistió a la escuela</ion-label>
-                          </ion-toggle>
-                        </ion-item>
-                      </ion-list>
+                      <!-- El maestro no puede declarar la falta de todo el dia: solo
+                           reporta las materias a las que el alumno no asistio. -->
+                      @if(!esMaestro) {
+                        <ion-list [inset]="true">
+                          <ion-item>
+                            <ion-toggle
+                            [checked]="studentDidntShowUp"
+                            (ionChange)="onStudentDidntShowUpChange()"
+                            >
+                              <ion-label>No asistió a la escuela</ion-label>
+                            </ion-toggle>
+                          </ion-item>
+                        </ion-list>
+                      }
                       <ion-list [inset]="true">
                         <ion-item>
                           <ion-textarea
@@ -211,6 +216,9 @@
                           </ion-item>
                         }
                       </ion-list>
+                      @if(esMaestro && subjectsByGrade(group.grado).length === 0) {
+                        <ion-note>No tienes materias de este grado. Elígelas en la pestaña Materias.</ion-note>
+                      }
                     </ion-content>
                   </ng-template>
                 </ion-modal>
@@ -287,6 +295,9 @@
                           </ion-item>
                         }
                       </ion-list>
+                      @if(esMaestro && subjectsByGrade(group.grado).length === 0) {
+                        <ion-note>No tienes materias de este grado. Elígelas en la pestaña Materias.</ion-note>
+                      }
                     </ion-content>
                   </ng-template>
                 </ion-modal>
@@ -365,6 +376,9 @@
                           </ion-item>
                         }
                       </ion-list>
+                      @if(esMaestro && subjectsByGrade(group.grado).length === 0) {
+                        <ion-note>No tienes materias de este grado. Elígelas en la pestaña Materias.</ion-note>
+                      }
                     </ion-content>
                   </ng-template>
                 </ion-modal>

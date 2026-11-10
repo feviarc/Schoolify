@@ -55,11 +55,30 @@ service cloud.firestore {
       return isAdmin() || isPrefect();
     }
 
+    function isMaestro() {
+      return hasVerifiedEmail() && profile().rol == 'maestro';
+    }
+
     // Personal docente. El maestro comparte con el prefecto la lectura de los
     // grupos de su escuela; lo que ve en la pestana Grupos son los que vinculo
     // en su propio perfil (`usuarios/{uid}.grupos`).
     function isTeacher() {
       return hasVerifiedEmail() && profile().rol in ['prefecto', 'maestro'];
+    }
+
+    /** Avisos que el maestro puede crear: los de su escuela (las materias, en la UI). */
+    function maestroCanCreateNotification(uid) {
+      return isMaestro() && sameSchoolAs(uid);
+    }
+
+    // El maestro no puede emitir la inasistencia de dia completo: tiene que decir
+    // en que materias no se presento. Es barato de validar y evita afirmar la
+    // ausencia de clases que no le corresponden.
+    function maestroInasistenciaHasSubjects() {
+      return !isMaestro()
+        || request.resource.data.tipo != 'Inasistencia'
+        || (request.resource.data.materias is list
+            && request.resource.data.materias.size() > 0);
     }
 
     function isOwnProfile(uid) {
@@ -123,13 +142,15 @@ service cloud.firestore {
         || (isTeacher() && sameSchoolAs(uid));
 
       // Un aviso siempre es de un alumno: se valida la forma para que nadie escriba
-      // aqui un mensaje interno (esos van a /mensajes).
-      allow create: if isAdminOrPrefect()
+      // aqui un mensaje interno (esos van a /mensajes). El maestro solo escribe a
+      // tutores de su escuela y nunca firma una inasistencia sin materias.
+      allow create: if (isAdminOrPrefect() || maestroCanCreateNotification(uid))
         && request.resource.data.tipo in ['Inasistencia', 'Incumplimiento', 'Indisciplina']
         && request.resource.data.sid is string
         // Queda registrado quien lo envia. Se valida la forma, no la igualdad con la
         // sesion: el autor lo declara el cliente (ver nota de la BD).
-        && request.resource.data.maestroUid is string;
+        && request.resource.data.maestroUid is string
+        && maestroInasistenciaHasSubjects();
 
       // El tutor dueño solo puede marcar el aviso: visto al abrirlo y "enterado" al
       // confirmarlo. Cualquier otro cambio (tipo, materias, etc.) es del administrador.
@@ -194,8 +215,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // El maestro tambien lee el catalogo: el servicio de materias se instancia al
+    // abrir la pestana de avisos, aunque su selector salga de su propia lista.
     match /materias/{subjectId} {
-      allow read: if isAdminOrPrefect();
+      allow read: if isAdmin() || isTeacher();
 
       allow write: if isAdmin();
     }

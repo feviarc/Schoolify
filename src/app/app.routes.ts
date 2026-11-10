@@ -48,8 +48,7 @@ export const routes: Routes = [
     loadComponent: () => import('./prefect/prefect.page').then( m => m.PrefectPage),
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
-    // VENTANA DE COMPATIBILIDAD (fase 1): mientras los datos no se migren, el rol
-    // viejo `maestro` entra al mismo tablero. En la fase 4 se separan.
+    // Un solo tablero para el personal docente: cada rol ve sus propias pestanas.
     data: {expectedRole: ['prefecto', 'maestro']},
     children: [
       {
@@ -66,6 +65,13 @@ export const routes: Routes = [
       {
         path: 'tab-groups',
         loadComponent: () => import('./prefect/tab-groups/tab-groups.component').then((m) => m.TabGroupsComponent)
+      },
+      {
+        path: 'tab-materias',
+        loadComponent: () => import('./prefect/tab-materias/tab-materias.component').then((m) => m.TabMateriasComponent),
+        // Las materias propias son del maestro; el prefecto usa el catalogo global.
+        canActivate: [AuthGuard],
+        data: {expectedRole: 'maestro'}
       },
       {
         path: '',

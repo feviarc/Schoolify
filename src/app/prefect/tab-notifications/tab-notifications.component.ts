@@ -47,6 +47,7 @@ import { StudentCRUDService, Student } from 'src/app/services/student-crud.servi
 import { StudentGroupCRUDService, StudentGroup } from 'src/app/services/student-group-crud.service';
 import { SubjectCRUDService, Subject } from 'src/app/services/subject-crud.service';
 import { UserProfileService } from 'src/app/services/user-profile.service';
+import { UserProfile } from 'src/app/models/user-profile.model';
 import { AuthService } from 'src/app/services/auth.service';
 
 
@@ -126,7 +127,12 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   studentsWithGroup: Student[] = [];
   /** Avisos sin confirmar por alumno (los cuenta una funcion). */
   unconfirmedCounts: {[sid: string]: number} = {};
+  /** Materias que se ofrecen en el aviso: el catalogo o el subconjunto del maestro. */
   subjects: Subject[] = [];
+  /** Catalogo completo de `materias`; para el maestro se filtra por su lista. */
+  private catalogoMaterias: Subject[] = [];
+  /** Nombres de las materias que eligio el maestro. */
+  private misMaterias: string[] = [];
   teacherComments = '';
   toastMessage = '';
   cctShift!: string;
@@ -181,7 +187,6 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.isLoading = true;
     this.resetDate();
     this.loadSchoolGroups();
-    this.loadSubjects();
     this.loadStudents();
   }
 
@@ -254,14 +259,14 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   loadSubjects() {
     this.subjectCRUDService.getSubjectsSnapshot().subscribe({
       next: (subjects) => {
-        this.subjects = subjects.map(
+        this.catalogoMaterias = subjects.map(
           (subject) => ({
             grado: subject.grado,
             id: subject.id,
             nombre: subject.nombre,
-            selected: false
           })
         );
+        this.buildSubjects();
       },
       error: (error) => {
         console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
@@ -351,8 +356,11 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       maestroNombre: this.maestroNombre,
     };
 
-    await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
-    this.showToast('📤 Se ha enviado la notificación de inasistencia.');
+    await this.sendNotification(
+      student.tid,
+      notification,
+      '📤 Se ha enviado la notificación de inasistencia.'
+    );
   }
 
   async onAddNoncompliance(student: Student) {
@@ -371,8 +379,11 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       maestroUid: this.maestroUid,
       maestroNombre: this.maestroNombre,
     };
-    await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
-    this.showToast('📤 Se ha enviado la notificación de incumplimiento.');
+    await this.sendNotification(
+      student.tid,
+      notification,
+      '📤 Se ha enviado la notificación de incumplimiento.'
+    );
   }
 
   async onAddMisconduct(student: Student) {
@@ -392,12 +403,28 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       maestroNombre: this.maestroNombre,
     };
 
-    await this.caregiverNotifCRUDService.addNotification(student.tid, notification);
-    this.showToast('📤 Se ha enviado la notificación de indisciplina.');
+    await this.sendNotification(
+      student.tid,
+      notification,
+      '📤 Se ha enviado la notificación de indisciplina.'
+    );
   }
 
   onCommentsChange(event: CustomEvent) {
     this.teacherComments = event.detail.value;
+  }
+
+  /**
+   * El maestro solo reporta inasistencia parcial: al abrir el modal se apaga el
+   * modo "No asistió a la escuela" y el envío queda bloqueado hasta elegir materias.
+   */
+  onAbsenceModalWillPresent() {
+    if(!this.esMaestro) {
+      return;
+    }
+
+    this.studentDidntShowUp = false;
+    this.isAbsenceButtonDisabled = true;
   }
 
   async onModalDismiss(slidingItem: IonItemSliding) {
@@ -498,8 +525,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   }
 
   /**
-   * Nombre con el que se firma el aviso (el uid ya viene de la sesión) y rol del
-   * que envia: el maestro solo trabaja con los grupos que vinculo.
+   * Nombre con el que se firma el aviso (el uid ya viene de la sesión), rol del
+   * que envia (el maestro solo trabaja con lo que vinculo) y sus materias.
    */
   private async loadMaestro() {
     try {
@@ -517,6 +544,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       this.misGrupos = profile?.grupos ?? [];
 
       this.applyGroupFilter();
+      this.applySubjects(profile);
     } catch(error) {
       console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
     }
@@ -527,6 +555,50 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.studentGroups = this.esMaestro
       ? this.allStudentGroups.filter(group => this.misGrupos.includes(group.gid))
       : this.allStudentGroups;
+  }
+
+  /**
+   * Materias del selector: el prefecto usa el catalogo completo; el maestro, el
+   * subconjunto que eligio en su perfil (`usuarios/{uid}.materias`). En ambos
+   * casos se filtra por el grado del grupo.
+   */
+  private applySubjects(profile: UserProfile | null) {
+    this.misMaterias = profile?.materias ?? [];
+
+    if(this.catalogoMaterias.length === 0) {
+      this.loadSubjects();
+      return;
+    }
+
+    this.buildSubjects();
+  }
+
+  private buildSubjects() {
+    const source = this.esMaestro
+      ? this.catalogoMaterias.filter(materia => this.misMaterias.includes(materia.nombre))
+      : this.catalogoMaterias;
+
+    this.subjects = source.map(materia => ({
+      grado: materia.grado,
+      id: materia.id,
+      nombre: materia.nombre,
+      selected: false,
+    }));
+  }
+
+  /** Envía el aviso y avisa del resultado; el modal ya se cerró antes de escribir. */
+  private async sendNotification(
+    tid: string,
+    notification: NotificationInput,
+    successMessage: string
+  ) {
+    try {
+      await this.caregiverNotifCRUDService.addNotification(tid, notification);
+      this.showToast(successMessage);
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-notifications.component.ts]', error);
+      this.showToast('🛑 No se pudo enviar la notificación.');
+    }
   }
 
   private showToast(message: string) {

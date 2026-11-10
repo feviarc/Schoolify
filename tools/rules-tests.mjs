@@ -120,12 +120,15 @@ const HTTP_METHOD = { get: 'GET', list: 'GET', post: 'POST', update: 'PATCH', de
 
 async function seed() {
   const documents = [
-    // Dos escuelas distintas: CCT1 (admin1, prefecto1, tutor1) y CCT2 (tutor2).
+    // Dos escuelas distintas: CCT1 (admin1, prefecto1, tutor1, viejo1) y CCT2 (tutor2, tutor3).
+    // `tutor3` no se borra en ningun caso: sirve para probar el cruce de escuelas despues
+    // del caso que elimina a tutor2.
     ['usuarios/viejo1', { rol: str('maestro'), cct: str('CCT1') }],
     ['usuarios/admin1', { rol: str('administrador'), email: str('admin1@test.mx'), cct: str('CCT1') }],
     ['usuarios/prefecto1', { rol: str('prefecto'), email: str('prefecto1@test.mx'), cct: str('CCT1') }],
     ['usuarios/tutor1', { rol: str('tutor'), email: str('tutor1@test.mx'), cct: str('CCT1') }],
     ['usuarios/tutor2', { rol: str('tutor'), email: str('tutor2@test.mx'), cct: str('CCT2') }],
+    ['usuarios/tutor3', { rol: str('tutor'), email: str('tutor3@test.mx'), cct: str('CCT2') }],
     ['alumnos/a1', { nombre: str('ALUMNO LIBRE'), cct: str('CCT1'), validado: bool(false) }],
     ['alumnos/a2', { nombre: str('ALUMNO DE TUTOR2'), cct: str('CCT1'), tid: str('tutor2') }],
     ['alumnos/a4', { nombre: str('ALUMNO DE OTRA ESCUELA'), cct: str('CCT2') }],
@@ -152,6 +155,7 @@ const cases = [
   ['tutor1 edita su propio nombre', 'update', 'usuarios/tutor1', { token: TUTOR1, fields: { nombre: str('TUTOR UNO') }, mask: ['nombre'] }, 'permitido'],
   // Fase 5: el maestro guarda en su perfil los `gid` que sigue.
   ['el maestro vincula grupos en su propio perfil', 'update', 'usuarios/viejo1', { token: MAESTRO, fields: { grupos: arr(['CCT1_1-A']) }, mask: ['grupos'] }, 'permitido'],
+  ['el maestro agrega materias en su propio perfil', 'update', 'usuarios/viejo1', { token: MAESTRO, fields: { materias: arr(['MATEMATICAS']) }, mask: ['materias'] }, 'permitido'],
   ['el maestro no se cambia el rol al editar sus grupos', 'update', 'usuarios/viejo1', { token: MAESTRO, fields: { rol: str('administrador'), grupos: arr([]) }, mask: ['rol', 'grupos'] }, 'denegado'],
   ['registro nuevo con rol administrador', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('administrador'), email: str('n@test.mx') } }, 'denegado'],
   ['registro nuevo sin correo verificado (rol tutor)', 'post', 'usuarios?documentId=newuser', { token: NEW_USER, fields: { rol: str('tutor'), email: str('n2@test.mx') } }, 'permitido'],
@@ -228,6 +232,12 @@ const cases = [
   ['tutor1 lista sus propias notificaciones', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'permitido'],
   ['tutor1 lista sus notificaciones de un alumno', 'query', 'usuarios/tutor1/notificaciones', { token: TUTOR1, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
   ['tutor1 lista las notificaciones de otro tutor', 'query', 'usuarios/tutor2/notificaciones', { token: TUTOR1, orderBy: ['createdAt'] }, 'denegado'],
+  // Fase 7: el maestro crea avisos solo en su escuela y nunca la inasistencia de dia completo.
+  ['el maestro crea un incumplimiento a un tutor de su escuela', 'post', 'usuarios/tutor1/notificaciones?documentId=n4', { token: MAESTRO, fields: { sid: str('a1'), tipo: str('Incumplimiento'), materias: arr(['MATEMATICAS']), maestroUid: str('viejo1') } }, 'permitido'],
+  ['el maestro crea una inasistencia con materias', 'post', 'usuarios/tutor1/notificaciones?documentId=n5', { token: MAESTRO, fields: { sid: str('a1'), tipo: str('Inasistencia'), materias: arr(['MATEMATICAS']), maestroUid: str('viejo1') } }, 'permitido'],
+  ['el maestro no crea la inasistencia de dia completo', 'post', 'usuarios/tutor1/notificaciones?documentId=n6', { token: MAESTRO, fields: { sid: str('a1'), tipo: str('Inasistencia'), materias: arr([]), maestroUid: str('viejo1') } }, 'denegado'],
+  ['el maestro no crea una inasistencia sin materias', 'post', 'usuarios/tutor1/notificaciones?documentId=n7', { token: MAESTRO, fields: { sid: str('a1'), tipo: str('Inasistencia'), maestroUid: str('viejo1') } }, 'denegado'],
+  ['el maestro no crea avisos a un tutor de otra escuela', 'post', 'usuarios/tutor3/notificaciones?documentId=n9', { token: MAESTRO, fields: { sid: str('a4'), tipo: str('Incumplimiento'), materias: arr(['MATEMATICAS']), maestroUid: str('viejo1') } }, 'denegado'],
   ['prefecto1 abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
   ['prefecto1 abre el historial de un tutor de otra escuela', 'query', 'usuarios/tutor2/notificaciones', { token: PREFECT, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'denegado'],
   ['el maestro abre el historial de un tutor de su escuela', 'query', 'usuarios/tutor1/notificaciones', { token: MAESTRO, where: [{ field: 'sid', value: 'a1' }], orderBy: ['createdAt'] }, 'permitido'],
@@ -248,6 +258,7 @@ const cases = [
 
   // ==================== catalogos generales ====================
   ['prefecto1 lee una materia', 'get', 'materias/m1', { token: PREFECT }, 'permitido'],
+  ['el maestro lista el catalogo de materias', 'list', 'materias', { token: MAESTRO }, 'permitido'],
   ['prefecto1 lista los grupos escolares', 'list', 'grupos', { token: PREFECT }, 'permitido'],
   ['tutor1 lee una materia', 'get', 'materias/m1', { token: TUTOR1 }, 'denegado'],
   ['sin sesion: listar materias', 'list', 'materias', {}, 'denegado'],
@@ -283,7 +294,10 @@ async function waitForEmulator(maxMs = 240000) {
   // Los casos de creacion usan ids fijos: se limpian para poder repetir la corrida.
   for (const path of ['alumnos/a3', 'grupos_de_alumnos/g9', 'escuelas/e8', 'escuelas/e9',
                       'materias/m9', 'usuarios/newuser', 'usuarios/tutor1/notificaciones/n1',
-                      'usuarios/tutor1/notificaciones/n2', 'usuarios/tutor1/notificaciones/n3']) {
+                      'usuarios/tutor1/notificaciones/n2', 'usuarios/tutor1/notificaciones/n3',
+                      'usuarios/tutor1/notificaciones/n4', 'usuarios/tutor1/notificaciones/n5',
+                      'usuarios/tutor1/notificaciones/n6', 'usuarios/tutor1/notificaciones/n7',
+                      'usuarios/tutor3/notificaciones/n9']) {
     await sendRequest('DELETE', path, { token: OWNER });
   }
 
