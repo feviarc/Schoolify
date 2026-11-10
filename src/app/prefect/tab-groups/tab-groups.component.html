@@ -237,15 +237,57 @@
 </ion-fab>
 
 @if(isMaestro) {
-  <!-- Action Sheet (Vincular grupo) -->
-  <ion-action-sheet
+  <!-- Modal (Vincular grupo) -->
+  <ion-modal
    trigger="add-group-btn"
-   header="Vincular un grupo"
-   subHeader="Elige uno de los grupos de tu escuela"
-   [buttons]="linkGroupButtons"
-   (didDismiss)="onLinkGroup($event)"
+   [initialBreakpoint]="0.4"
+   [breakpoints]="[0, 0.4]"
+   (didDismiss)="onLinkGroupDismiss($event)"
+   #linkGroupModal
   >
-  </ion-action-sheet>
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="secondary">
+          <ion-buttons slot="start">
+            <ion-button (click)="linkGroupModal.dismiss(null, 'cancel')">
+              Cancelar
+            </ion-button>
+          </ion-buttons>
+          <ion-buttons slot="end">
+            <ion-button
+             [strong]="true"
+             [disabled]="!linkPickerValue"
+             (click)="linkGroupModal.dismiss(linkPickerValue, 'confirm')"
+            >
+              Agregar
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        @if(linkableGroups.length === 0) {
+          <div class="center-box">
+            <p>No hay grupos por vincular.</p>
+          </div>
+        }
+        @else {
+          <ion-picker>
+            <ion-picker-column
+             [value]="linkPickerValue"
+             (ionChange)="onLinkPickerChange($event)"
+            >
+              <ion-picker-column-option value=""></ion-picker-column-option>
+              @for(group of linkableGroups; track group.gid) {
+                <ion-picker-column-option value="{{ group.gid }}">
+                  Grupo {{ group.grado }}° "{{ group.letra }}"
+                </ion-picker-column-option>
+              }
+            </ion-picker-column>
+          </ion-picker>
+        }
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 }
 
 @if(!isMaestro) {

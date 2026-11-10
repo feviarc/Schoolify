@@ -139,8 +139,10 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
 
   public actionSheetButtons: ActionSheetButton[] = this.buildDeleteButtons(false);
 
-  /** Botones del action sheet con el que el maestro vincula un grupo. */
-  public linkGroupButtons: ActionSheetButton[] = [];
+  /** Grupos de la escuela que el maestro aun no sigue (los del picker). */
+  public linkableGroups: StudentGroup[] = [];
+  /** Grupo elegido en el picker de vinculacion. */
+  public linkPickerValue = '';
 
   public logoutActionSheetButtons = [
     {
@@ -365,21 +367,24 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     this.subscriptions.push(sub);
   }
 
-  /** Vincula al maestro con el grupo que eligio en el action sheet. */
-  async onLinkGroup(event: CustomEvent<OverlayEventDetail>) {
-    const gid = event.detail.data?.gid;
+  /** Vincula al maestro con el grupo que eligio en el picker. */
+  async onLinkGroupDismiss(event: CustomEvent<OverlayEventDetail>) {
+    const gid = event.detail.data;
 
     if(!gid || this.misGrupos.includes(gid)) {
+      this.linkPickerValue = '';
       return;
     }
 
-    const group = this.allStudentGroups.find(g => g.gid === gid);
+    const group = this.allStudentGroups.find(item => item.gid === gid);
     const nombre = group ? `Grupo ${group.grado}° "${group.letra}"` : 'el grupo';
 
     await this.saveGroups(
       [...this.misGrupos, gid],
       `✅ Se agregó el ${nombre} a tus grupos.`
     );
+
+    this.linkPickerValue = '';
   }
 
   onDidDismiss(event: CustomEvent) {
@@ -429,6 +434,10 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
 
   onIonChange(event: CustomEvent) {
     this.pickerValue = event.detail.value;
+  }
+
+  onLinkPickerChange(event: CustomEvent) {
+    this.linkPickerValue = event.detail.value;
   }
 
   onLogout(event: CustomEvent<OverlayEventDetail>) {
@@ -506,50 +515,14 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       ? this.allStudentGroups.filter(group => this.misGrupos.includes(group.gid))
       : [...this.allStudentGroups];
 
-    this.buildLinkButtons();
+    this.updateLinkableGroups();
   }
 
-  /** Botones para vincular: solo los grupos que el maestro aun no sigue. */
-  private buildLinkButtons() {
-    if(!this.isMaestro) {
-      this.linkGroupButtons = [];
-      return;
-    }
-
-    const available = this.allStudentGroups.filter(
-      group => !this.misGrupos.includes(group.gid)
-    );
-
-    this.linkGroupButtons = available.length > 0
-      ? [
-          ...available.map(group => ({
-            text: `Grupo ${group.grado}° "${group.letra}"`,
-            data: {
-              gid: group.gid,
-            }
-          })),
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            data: {
-              action: 'cancel',
-            },
-          },
-        ]
-      : [
-          {
-            text: 'No hay grupos por vincular',
-            role: 'cancel',
-            disabled: true,
-          },
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            data: {
-              action: 'cancel',
-            },
-          },
-        ];
+  /** Grupos que el maestro puede vincular: los que aun no estan en su lista. */
+  private updateLinkableGroups() {
+    this.linkableGroups = this.isMaestro
+      ? this.allStudentGroups.filter(group => !this.misGrupos.includes(group.gid))
+      : [];
   }
 
   /** Botones del action sheet de la izquierda: borrar o quitar de la lista. */
@@ -557,7 +530,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
     return [
       {
         text: maestro ? 'Quitar de mi lista' : 'Eliminar',
-        icon: maestro ? 'remove-circle-outline' : 'trash-outline',
         role: 'destructive',
         data: {
           action: 'delete',
@@ -565,7 +537,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
       },
       {
         text: 'Cancelar',
-        icon: 'close-outline',
         role: 'cancel',
         data: {
           action: 'cancel',

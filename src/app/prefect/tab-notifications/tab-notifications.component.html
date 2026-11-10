@@ -59,7 +59,9 @@
                     </h2>
                   </ion-label>
                 </ion-item>
-                @if(student.tid) {
+                <!-- Solo se pinta la franja si hay alguna accion: el maestro no
+                     autoriza tutores, y sin opciones el alumno no debe deslizarse. -->
+                @if(student.tid && (student.validado || !esMaestro)) {
                   <ion-item-options side="start">
                     @if(!student.validado) {
                       <ion-item-option
@@ -453,7 +455,7 @@
                 </ng-template>
                 </ion-modal>
               }
-              @if(student.tid && !student.validado) {
+              @if(student.tid && !student.validado && !esMaestro) {
                 <!-- Action Sheet (Validar tutor) -->
                 <ion-action-sheet
                  trigger="validated-{{student.id}}"
