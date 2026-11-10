@@ -30,6 +30,7 @@ import {
 } from '@ionic/angular/standalone';
 
 import { firstValueFrom } from 'rxjs';
+import { APP_BUILD, APP_VERSION } from '../app-info';
 import { AuthService } from '../services/auth.service';
 import { LocalStorageService } from '../services/local-storage.service';
 import { InstallAppService } from '../services/install-app-service';
@@ -90,6 +91,10 @@ export class PortalPage implements OnInit {
    * No es un string: `validateCredentials(cct, pin: number)` depende de eso.
    */
   pin: number | null = null;
+
+  /** Version y build visibles al pie; se editan en `app-info.ts`. */
+  readonly version = APP_VERSION;
+  readonly build = APP_BUILD;
 
   selectedShift = 'TM';
   toastMessage = '🛑 Los datos de validación son incorrectos.';

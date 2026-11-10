@@ -41,6 +41,7 @@ import {
   trashOutline,
 } from 'ionicons/icons';
 
+import { APP_BUILD, APP_VERSION } from './app-info';
 import { AppUpdateService } from './services/app-update.service';
 import { AuthService } from './services/auth.service';
 import { NotificationService } from './services/notification.service';
@@ -112,7 +113,8 @@ export class AppComponent implements OnInit{
   }
 
   ngOnInit() {
-    console.log('Versión Actual: [v0.1.0]');
+    console.log(`Versión Actual: [v${APP_VERSION}]`);
+    console.log(`Build: [${APP_BUILD}]`);
     console.log('🔍 Buscando actualizaciones...');
 
     this.validateSession();
