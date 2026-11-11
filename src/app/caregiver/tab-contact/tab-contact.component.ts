@@ -6,9 +6,6 @@ import {
   IonButtons,
   IonCard,
   IonCardContent,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
   IonContent,
   IonHeader,
   IonIcon,
@@ -31,9 +28,6 @@ import { SchoolCRUDService } from 'src/app/services/school-crud.service';
     IonButtons,
     IonCard,
     IonCardContent,
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
     IonContent,
     IonHeader,
     IonIcon,
@@ -50,13 +44,28 @@ export class TabContactComponent implements OnInit {
 
 
   cctShift = '';
-  escuela = '';
   telefono = '';
 
   isLoading = true;
 
   private readonly CCT_KEY = this.localStorage.CCT_KEY;
   private readonly SHIFT_KEY = this.localStorage.SHIFT_KEY;
+
+  /** Telefono en formato (000) 000-0000; si no son 10 digitos, se deja tal cual. */
+  get telefonoFormateado(): string {
+    const digitos = this.telefonoDigitos;
+
+    if(digitos.length !== 10) {
+      return this.telefono;
+    }
+
+    return `(${digitos.slice(0, 3)}) ${digitos.slice(3, 6)}-${digitos.slice(6)}`;
+  }
+
+  /** Solo digitos, para el enlace `tel:` (marcar con parentesis y guiones falla). */
+  get telefonoDigitos(): string {
+    return this.telefono.replace(/\D/g, '');
+  }
 
   ngOnInit() {
     const cct = this.localStorage.getKey(this.CCT_KEY);
@@ -74,7 +83,6 @@ export class TabContactComponent implements OnInit {
   private async loadSchoolContact() {
     const school = await this.schoolCRUDService.getMySchool(this.cctShift);
 
-    this.escuela = school?.nombre ?? '';
     this.telefono = school?.telefono ?? '';
     this.isLoading = false;
   }
