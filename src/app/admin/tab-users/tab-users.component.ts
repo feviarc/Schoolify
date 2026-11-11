@@ -30,6 +30,7 @@ import {
   IonTitle,
   IonToast,
   IonToolbar,
+  IonMenuButton,
 } from "@ionic/angular/standalone";
 
 import type { OverlayEventDetail } from '@ionic/core/components';
@@ -78,6 +79,7 @@ interface AuthStatus {
     IonTitle,
     IonToast,
     IonToolbar,
+    IonMenuButton,
   ]
 })
 

@@ -1,7 +1,5 @@
 import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 
-import { Router } from '@angular/router';
-
 import {
   IonActionSheet,
   IonButton,
@@ -33,6 +31,7 @@ import {
   IonTitle,
   IonToast,
   IonToolbar,
+  IonMenuButton,
 } from "@ionic/angular/standalone";
 
   import { ActionSheetButton, OverlayEventDetail } from '@ionic/core/components';
@@ -83,11 +82,11 @@ import {
     IonTitle,
     IonToast,
     IonToolbar,
+    IonMenuButton,
   ]
 })
 
 export class TabGroupsComponent  implements OnInit, OnDestroy {
-  private router = inject(Router);
   private authService = inject(AuthService);
   private groupCRUDService = inject(GroupCRUDService);
   private localStorageService = inject(LocalStorageService);
@@ -143,23 +142,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
   public linkableGroups: StudentGroup[] = [];
   /** Grupo elegido en el picker de vinculacion. */
   public linkPickerValue = '';
-
-  public logoutActionSheetButtons = [
-    {
-      text: 'Aceptar',
-      role: 'accept',
-      data: {
-        action: 'accept',
-      }
-    },
-    {
-      text: 'Cancelar',
-      role: 'cancel',
-      data: {
-        action: 'cancel',
-      },
-    },
-  ];
 
   get isMaestro(): boolean {
     return this.rol === 'maestro';
@@ -438,23 +420,6 @@ export class TabGroupsComponent  implements OnInit, OnDestroy {
 
   onLinkPickerChange(event: CustomEvent) {
     this.linkPickerValue = event.detail.value;
-  }
-
-  onLogout(event: CustomEvent<OverlayEventDetail>) {
-    const eventButton = event.detail.data;
-
-    if(!eventButton || eventButton.action === 'cancel') {
-      return;
-    }
-
-    this.authService.logout().subscribe({
-      next: () => {
-        this.router.navigateByUrl('/auth');
-      },
-      error: error => {
-        console.log('❌ Schoolify: [tab-groups.component.ts]', error);
-      }
-    });
   }
 
   selectStudentCompareWith(s1: Student, s2: Student): boolean {

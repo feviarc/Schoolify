@@ -47,6 +47,7 @@ import {
   IonTitle,
   IonToast,
   IonToolbar,
+  IonMenuButton,
 } from "@ionic/angular/standalone";
 
 import type { OverlayEventDetail } from '@ionic/core/components';
@@ -99,6 +100,7 @@ import { Subject, SubjectCRUDService } from 'src/app/services/subject-crud.servi
     IonToast,
     IonToolbar,
     ReactiveFormsModule,
+    IonMenuButton,
   ]
 })
 

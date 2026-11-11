@@ -10,8 +10,6 @@ import {
   Validators
 } from '@angular/forms';
 
-import { Router } from '@angular/router';
-
 import {
   IonButton,
   IonContent,
@@ -28,6 +26,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonMenuButton,
+  IonButtons,
 } from '@ionic/angular/standalone';
 
 import { User } from 'firebase/auth';
@@ -64,12 +64,13 @@ import { UserProfileService } from '../services/user-profile.service';
     IonTitle,
     IonToolbar,
     ReactiveFormsModule,
+    IonMenuButton,
+    IonButtons,
   ]
 })
 
 export class CaregiverPage implements OnInit {
   private formBuilder = inject(FormBuilder);
-  private router = inject(Router);
   private authService = inject(AuthService);
   private localStorage = inject(LocalStorageService);
   private schoolCRUDService = inject(SchoolCRUDService);
@@ -141,17 +142,6 @@ export class CaregiverPage implements OnInit {
 
     this.schoolStateService.setSchool(school);
     this.form.get('escuela')?.setValue(school.nombre);
-  }
-
-  onLogout() {
-    this.authService.logout().subscribe({
-      next: ()=>{
-        this.router.navigateByUrl('/auth');
-      },
-      error: error => {
-        console.log('❌ Schoolify: [caregiver.page.ts]', error);
-      }
-    });
   }
 
   async getCurrentUser() {

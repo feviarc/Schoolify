@@ -32,7 +32,9 @@ import {
   IonSpinner,
   IonTitle,
   IonToast,
-  IonToolbar, IonBadge } from "@ionic/angular/standalone";
+  IonToolbar, IonBadge,
+  IonMenuButton,
+} from "@ionic/angular/standalone";
 
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
@@ -73,6 +75,7 @@ import { StudentCRUDService, Student } from 'src/app/services/student-crud.servi
     IonToast,
     IonToolbar,
     ReactiveFormsModule,
+    IonMenuButton,
   ]
 })
 

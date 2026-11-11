@@ -39,6 +39,7 @@ import {
 } from 'ionicons/icons';
 
 import { APP_BUILD, APP_VERSION } from './app-info';
+import { MainMenuComponent } from './menu/main-menu.component';
 import { AppUpdateService } from './services/app-update.service';
 import { AuthService } from './services/auth.service';
 import { NotificationService } from './services/notification.service';
@@ -55,6 +56,7 @@ import { firstValueFrom } from 'rxjs';
     IonApp,
     IonRouterOutlet,
     IonToast,
+    MainMenuComponent,
   ],
 })
 

@@ -23,6 +23,7 @@ import {
   IonSearchbar,
   IonTitle,
   IonToolbar,
+  IonMenuButton,
 } from "@ionic/angular/standalone";
 
 import { User } from 'firebase/auth'
@@ -60,6 +61,7 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
     IonSearchbar,
     IonTitle,
     IonToolbar,
+    IonMenuButton,
   ]
 })
 

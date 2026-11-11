@@ -16,6 +16,8 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonMenuButton,
+  IonButtons,
 } from "@ionic/angular/standalone";
 
 import { User } from 'firebase/auth';
@@ -44,6 +46,8 @@ import { CaregiverNotificationsCRUDService, CaregiverNotification } from 'src/ap
     IonText,
     IonTitle,
     IonToolbar,
+    IonMenuButton,
+    IonButtons,
   ]
 })
 

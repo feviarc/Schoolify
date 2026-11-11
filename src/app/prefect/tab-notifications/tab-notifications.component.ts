@@ -30,6 +30,7 @@ import {
   IonToast,
   IonToggle,
   IonToolbar,
+  IonMenuButton,
 } from "@ionic/angular/standalone";
 
 import { OverlayEventDetail } from '@ionic/core/components';
@@ -87,6 +88,7 @@ import { AuthService } from 'src/app/services/auth.service';
     IonToast,
     IonToggle,
     IonToolbar,
+    IonMenuButton,
   ]
 })
 

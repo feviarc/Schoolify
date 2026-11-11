@@ -12,6 +12,8 @@ import {
   IonTitle,
   IonToast,
   IonToolbar,
+  IonMenuButton,
+  IonButtons,
 } from '@ionic/angular/standalone';
 
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -43,6 +45,8 @@ interface GradeGroup {
     IonTitle,
     IonToast,
     IonToolbar,
+    IonMenuButton,
+    IonButtons,
   ],
 })
 

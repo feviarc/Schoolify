@@ -1,14 +1,12 @@
 <ion-header>
   <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
     <ion-title>Contacto</ion-title>
     @if(isLoading) {
       <ion-progress-bar type="indeterminate" color="warning"></ion-progress-bar>
     }
-    <ion-buttons slot="end">
-      <ion-button id="open-action-sheet">
-        <ion-icon name="log-out-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 <ion-content>
@@ -38,12 +36,4 @@
   </div>
 </ion-content>
 
-<ion-action-sheet
- trigger="open-action-sheet"
- header="Estás a punto de cerrar sesión"
- subHeader="¿Deseas continuar?"
- [buttons]="logoutActionSheetButtons"
- (didDismiss)="onLogout($event)"
->
-</ion-action-sheet>
 

@@ -1,0 +1,64 @@
+<ion-menu
+ contentId="main-content"
+ type="overlay"
+ [swipeGesture]="swipeEnabled"
+ (ionWillOpen)="refresh()"
+>
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>Schoolify</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content class="menu-content">
+    @if(isLoggedIn) {
+      <div class="menu-profile">
+        <ion-avatar class="menu-avatar">
+          <span>{{ iniciales }}</span>
+        </ion-avatar>
+        <h2>{{ nombre }}</h2>
+        <ion-note>{{ rolLabel }}</ion-note>
+      </div>
+
+      <ion-list lines="none" class="menu-data">
+        <ion-item>
+          <ion-icon slot="start" name="mail"></ion-icon>
+          <ion-label class="ion-text-wrap">{{ email }}</ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="school"></ion-icon>
+          <ion-label class="ion-text-wrap">
+            {{ escuela || 'Sin escuela registrada' }}
+            @if(turno) {
+              <p class="menu-turno">{{ turno }}</p>
+            }
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    }
+  </ion-content>
+
+  <ion-footer>
+    <ion-toolbar>
+      <div class="menu-logout-wrapper">
+        <ion-button
+         expand="block"
+         color="danger"
+         id="menu-logout-btn"
+        >
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          Cerrar sesión
+        </ion-button>
+      </div>
+    </ion-toolbar>
+  </ion-footer>
+
+  <ion-action-sheet
+   trigger="menu-logout-btn"
+   header="Estás a punto de cerrar sesión"
+   subHeader="¿Deseas continuar?"
+   [buttons]="logoutActionSheetButtons"
+   (didDismiss)="onLogout($event)"
+  >
+  </ion-action-sheet>
+</ion-menu>
