@@ -3,6 +3,7 @@
 import { Component, OnInit, ViewChild, OnDestroy, inject } from '@angular/core';
 
 import {
+  IonActionSheet,
   IonButton,
   IonButtons,
   IonContent,
@@ -12,6 +13,8 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemOption,
+  IonItemOptions,
   IonItemSliding,
   IonLabel,
   IonList,
@@ -22,10 +25,12 @@ import {
   IonRadioGroup,
   IonSearchbar,
   IonTitle,
+  IonToast,
   IonToolbar,
   IonMenuButton,
 } from "@ionic/angular/standalone";
 
+import type { OverlayEventDetail } from '@ionic/core/components';
 import { User } from 'firebase/auth'
 import { firstValueFrom, Subscription } from 'rxjs';
 import { UserProfile } from 'src/app/models/user-profile.model';
@@ -41,6 +46,7 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
   styleUrls: ['./tab-students.component.scss'],
   standalone: true,
   imports: [
+    IonActionSheet,
     IonButton,
     IonButtons,
     IonContent,
@@ -50,6 +56,8 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemOption,
+    IonItemOptions,
     IonItemSliding,
     IonLabel,
     IonList,
@@ -60,6 +68,7 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
     IonRadioGroup,
     IonSearchbar,
     IonTitle,
+    IonToast,
     IonToolbar,
     IonMenuButton,
   ]
@@ -80,7 +89,26 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   uid?: string;
   tabMessage = '';
 
+  releaseButtons = [
+    {
+      text: 'Quitar de mi lista',
+      role: 'destructive',
+      data: {
+        action: 'release',
+      },
+    },
+    {
+      text: 'Cancelar',
+      role: 'cancel',
+      data: {
+        action: 'cancel',
+      },
+    },
+  ];
+
   isLoading = true;
+  isToastOpen = false;
+  toastMessage = '';
 
   filteredStudentsWithoutTutor: Student[] = [];
   profile: UserProfile | null = null;
@@ -189,6 +217,21 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     await this.studentCRUDService.assignTutor(studenId, tutorId, tutorName);
   }
 
+  /** Devuelve el alumno a "sin tutor"; solo aplica a los pendientes de validar. */
+  async onReleaseStudent(event: CustomEvent<OverlayEventDetail>, student: Student) {
+    if(event.detail.data?.action !== 'release' || !student.id) {
+      return;
+    }
+
+    try {
+      await this.studentCRUDService.removeTutor(student.id);
+      this.showToast(`✅ Se quitó a ${student.nombreCompleto} de tu lista.`);
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-students.component.ts]', error);
+      this.showToast('🛑 No se pudo quitar al alumno. Intenta de nuevo.');
+    }
+  }
+
   selectStudentCompareWith(s1: Student, s2: Student): boolean {
     return s1.id === s2.id;
   }
@@ -196,5 +239,10 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   selectStudentHandleChange(event: Event) {
     const target = event.target as HTMLInputElement;
     this.selectedStudent = target.value;
+  }
+
+  private showToast(message: string) {
+    this.toastMessage = message;
+    this.isToastOpen = true;
   }
 }

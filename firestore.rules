@@ -201,6 +201,16 @@ service cloud.firestore {
         || (hasVerifiedEmail()
             && request.resource.data.tid == request.auth.uid
             && resource.data.get('tid', '') in ['', request.auth.uid]
+            && onlyKeysChanged(['tid', 'nombreTutor', 'updatedAt']))
+        // Y solo puede devolver a la lista de "sin tutor" a un alumno PENDIENTE de
+        // validar. Si el prefecto ya lo valido, el vinculo se queda y solo el
+        // prefecto puede deshacerlo con su mecanismo de rechazo. No se permite
+        // tocar `validado` en esta operacion.
+        || (hasVerifiedEmail()
+            && resource.data.get('tid', '') == request.auth.uid
+            && resource.data.get('validado', false) == false
+            && request.resource.data.tid == ''
+            && request.resource.data.get('nombreTutor', '') == ''
             && onlyKeysChanged(['tid', 'nombreTutor', 'updatedAt']));
     }
 

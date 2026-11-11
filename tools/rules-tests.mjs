@@ -132,6 +132,9 @@ async function seed() {
     ['alumnos/a1', { nombre: str('ALUMNO LIBRE'), cct: str('CCT1'), validado: bool(false) }],
     ['alumnos/a2', { nombre: str('ALUMNO DE TUTOR2'), cct: str('CCT1'), tid: str('tutor2') }],
     ['alumnos/a4', { nombre: str('ALUMNO DE OTRA ESCUELA'), cct: str('CCT2') }],
+    // a5: pendiente de validar (el tutor puede quitarlo). a6: ya validado (no puede).
+    ['alumnos/a5', { nombre: str('ALUMNO POR VALIDAR'), cct: str('CCT1'), tid: str('tutor1'), nombreTutor: str('TUTOR UNO'), validado: bool(false) }],
+    ['alumnos/a6', { nombre: str('ALUMNO VALIDADO'), cct: str('CCT1'), tid: str('tutor1'), nombreTutor: str('TUTOR UNO'), validado: bool(true) }],
     ['grupos_de_alumnos/g1', { cct: str('CCT1'), grado: str('1'), letra: str('A') }],
     ['grupos_de_alumnos/g2', { cct: str('CCT2'), grado: str('1'), letra: str('B') }],
     ['usuarios/tutor1/notificaciones/n0', { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE') }],
@@ -165,6 +168,11 @@ const cases = [
   ['correo sin verificar: crea un aviso', 'post', 'usuarios/tutor1/notificaciones?documentId=n3', { token: TUTOR1_UNVERIFIED, fields: { sid: str('a1'), tipo: str('Inasistencia') } }, 'denegado'],
   ['tutor1 reclama un alumno libre (sin tid)', 'update', 'alumnos/a1', { token: TUTOR1, fields: { tid: str('tutor1'), nombreTutor: str('TUTOR UNO'), updatedAt: timestamp() }, mask: ['tid', 'nombreTutor', 'updatedAt'] }, 'permitido'],
   ['tutor1 roba el alumno de tutor2', 'update', 'alumnos/a2', { token: TUTOR1, fields: { tid: str('tutor1') }, mask: ['tid'] }, 'denegado'],
+  // Quitar de la lista: solo su propio alumno y solo si sigue pendiente de validar.
+  ['tutor1 no cambia otros campos al quitar al alumno', 'update', 'alumnos/a5', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str(''), gid: str('g1') }, mask: ['tid', 'nombreTutor', 'gid'] }, 'denegado'],
+  ['tutor1 quita de su lista a un alumno pendiente', 'update', 'alumnos/a5', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'permitido'],
+  ['tutor1 no quita a un alumno ya validado', 'update', 'alumnos/a6', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'denegado'],
+  ['tutor1 no quita al alumno de otro tutor', 'update', 'alumnos/a2', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'denegado'],
   // El tutor solo puede marcar su aviso: visto y enterado.
   ['tutor1 marca su aviso como visto', 'update', 'usuarios/tutor1/notificaciones/n0', { token: TUTOR1, fields: { leido: bool(true), leidoAt: timestamp(), updatedAt: timestamp() }, mask: ['leido', 'leidoAt', 'updatedAt'] }, 'permitido'],
   ['tutor1 marca su aviso como enterado', 'update', 'usuarios/tutor1/notificaciones/n0', { token: TUTOR1, fields: { acknowledged: bool(true), acknowledgedAt: timestamp(), updatedAt: timestamp() }, mask: ['acknowledged', 'acknowledgedAt', 'updatedAt'] }, 'permitido'],
