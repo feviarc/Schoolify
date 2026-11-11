@@ -51,7 +51,21 @@
   font-size: 0.8rem;
 }
 
+/* El cuerpo ocupa el alto del sidebar para poder empujar el boton al fondo. */
+.menu-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.menu-version {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+}
+
 .menu-logout-wrapper {
   width: 85%;
-  margin: 0 auto;
+  margin: auto auto 1rem;
 }

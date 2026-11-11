@@ -11,35 +11,33 @@
   </ion-header>
 
   <ion-content class="menu-content">
-    @if(isLoggedIn) {
-      <div class="menu-profile">
-        <ion-avatar class="menu-avatar">
-          <span>{{ iniciales }}</span>
-        </ion-avatar>
-        <h2>{{ nombre }}</h2>
-        <ion-note>{{ rolLabel }}</ion-note>
-      </div>
+    <div class="menu-body">
+      @if(isLoggedIn) {
+        <div class="menu-profile">
+          <ion-avatar class="menu-avatar">
+            <span>{{ iniciales }}</span>
+          </ion-avatar>
+          <h2>{{ nombre }}</h2>
+          <ion-note>{{ rolLabel }}</ion-note>
+        </div>
 
-      <ion-list lines="none" class="menu-data">
-        <ion-item>
-          <ion-icon slot="start" name="mail"></ion-icon>
-          <ion-label class="ion-text-wrap">{{ email }}</ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-icon slot="start" name="school"></ion-icon>
-          <ion-label class="ion-text-wrap">
-            {{ escuela || 'Sin escuela registrada' }}
-            @if(turno) {
-              <p class="menu-turno">{{ turno }}</p>
-            }
-          </ion-label>
-        </ion-item>
-      </ion-list>
-    }
-  </ion-content>
+        <ion-list lines="none" class="menu-data">
+          <ion-item>
+            <ion-icon slot="start" name="mail"></ion-icon>
+            <ion-label class="ion-text-wrap">{{ email }}</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon slot="start" name="school"></ion-icon>
+            <ion-label class="ion-text-wrap">
+              {{ escuela || 'Sin escuela registrada' }}
+              @if(turno) {
+                <p class="menu-turno">{{ turno }}</p>
+              }
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      }
 
-  <ion-footer>
-    <ion-toolbar>
       <div class="menu-logout-wrapper">
         <ion-button
          expand="block"
@@ -50,6 +48,12 @@
           Cerrar sesión
         </ion-button>
       </div>
+    </div>
+  </ion-content>
+
+  <ion-footer>
+    <ion-toolbar>
+      <p class="menu-version">v{{ version }} · Build {{ build }}</p>
     </ion-toolbar>
   </ion-footer>
 

@@ -22,6 +22,7 @@ import {
 import type { OverlayEventDetail } from '@ionic/core/components';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { APP_BUILD, APP_VERSION } from '../app-info';
 import { UserProfile } from '../models/user-profile.model';
 import { AuthService } from '../services/auth.service';
 import { SchoolCRUDService } from '../services/school-crud.service';
@@ -58,6 +59,9 @@ export class MainMenuComponent implements OnInit, OnDestroy {
   private schoolCRUDService = inject(SchoolCRUDService);
   private userProfileService = inject(UserProfileService);
 
+
+  readonly version = APP_VERSION;
+  readonly build = APP_BUILD;
 
   nombre = '';
   email = '';
