@@ -150,6 +150,12 @@ service cloud.firestore {
         // Queda registrado quien lo envia. Se valida la forma, no la igualdad con la
         // sesion: el autor lo declara el cliente (ver nota de la BD).
         && request.resource.data.maestroUid is string
+        // Avisos nuevos: gravedad valida. Se permite omitirla para no romper a los
+        // clientes viejos; el trigger la completa con 'leve'.
+        && (!('gravedad' in request.resource.data)
+            || request.resource.data.gravedad in ['leve', 'media', 'grave'])
+        && (!('plantillaId' in request.resource.data)
+            || request.resource.data.plantillaId is string)
         && maestroInasistenciaHasSubjects();
 
       // El tutor dueño solo puede marcar el aviso: visto al abrirlo y "enterado" al

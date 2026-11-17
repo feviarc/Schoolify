@@ -186,6 +186,12 @@ const cases = [
   ['prefecto1 crea una materia', 'post', 'materias?documentId=m9', { token: PREFECT, fields: { nombre: str('FISICA'), grado: str('1') } }, 'denegado'],
   ['prefecto1 crea un aviso al tutor', 'post', 'usuarios/tutor1/notificaciones?documentId=n1', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9') } }, 'permitido'],
   ['tutor1 crea un aviso para si mismo', 'post', 'usuarios/tutor1/notificaciones?documentId=n2', { token: TUTOR1, fields: { sid: str('a1'), tipo: str('Indisciplina') } }, 'denegado'],
+  // Gravedad y plantilla del aviso.
+  ['prefecto1 crea un aviso con gravedad media', 'post', 'usuarios/tutor1/notificaciones?documentId=n10', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), gravedad: str('media') } }, 'permitido'],
+  ['prefecto1 crea un aviso sin gravedad (cliente viejo)', 'post', 'usuarios/tutor1/notificaciones?documentId=n11', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Incumplimiento'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9') } }, 'permitido'],
+  ['prefecto1 no crea un aviso con gravedad invalida', 'post', 'usuarios/tutor1/notificaciones?documentId=n12', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), gravedad: str('critica') } }, 'denegado'],
+  ['prefecto1 crea un aviso con plantilla', 'post', 'usuarios/tutor1/notificaciones?documentId=n13', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), gravedad: str('leve'), plantillaId: str('inasistencia-1') } }, 'permitido'],
+  ['prefecto1 no crea un aviso con plantilla no textual', 'post', 'usuarios/tutor1/notificaciones?documentId=n14', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), plantillaId: num(1) } }, 'denegado'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
   ['admin1 borra un usuario', 'delete', 'usuarios/tutor2', { token: ADMIN }, 'permitido'],
@@ -305,6 +311,9 @@ async function waitForEmulator(maxMs = 240000) {
                       'usuarios/tutor1/notificaciones/n2', 'usuarios/tutor1/notificaciones/n3',
                       'usuarios/tutor1/notificaciones/n4', 'usuarios/tutor1/notificaciones/n5',
                       'usuarios/tutor1/notificaciones/n6', 'usuarios/tutor1/notificaciones/n7',
+                      'usuarios/tutor1/notificaciones/n10', 'usuarios/tutor1/notificaciones/n11',
+                      'usuarios/tutor1/notificaciones/n12', 'usuarios/tutor1/notificaciones/n13',
+                      'usuarios/tutor1/notificaciones/n14',
                       'usuarios/tutor3/notificaciones/n9']) {
     await sendRequest('DELETE', path, { token: OWNER });
   }

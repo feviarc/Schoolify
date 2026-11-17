@@ -83,3 +83,12 @@ ion-label ion-note {
   margin: 0 0 0 0.35rem;
   vertical-align: middle;
 }
+
+
+/* "Usar plantilla" a la izquierda y limpiar a la derecha, en la misma fila. */
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}

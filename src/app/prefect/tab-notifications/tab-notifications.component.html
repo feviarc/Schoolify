@@ -117,7 +117,7 @@
                 trigger="absence-{{ student.id }}"
                 [initialBreakpoint]="initialBreakpoint"
                 [breakpoints]="breakpoints"
-                (willPresent)="onAbsenceModalWillPresent()"
+                (willPresent)="onNotificationModalWillPresent('Inasistencia')"
                 (willDismiss)="onModalDismiss(studentSlidingItem)"
                 #addAbsenseModal
                 >
@@ -197,17 +197,53 @@
                           placeholder="Escribe aquí..."
                           rows="5"
                           [autoGrow]="true"
-                          [clearOnEdit]="true"
                           [maxlength]="200"
-                          (ionChange)="onCommentsChange($event)"
+                          [(ngModel)]="teacherComments"
                           >
                           </ion-textarea>
                         </ion-item>
+                        <ion-item lines="none">
+                          <div class="composer-actions">
+                            <ion-button fill="clear" size="small" (click)="openTemplates()">
+                              <ion-icon slot="start" name="book"></ion-icon>
+                              Usar plantilla
+                            </ion-button>
+                            @if(teacherComments.trim()) {
+                              <ion-button
+                               fill="clear"
+                               size="small"
+                               color="medium"
+                               aria-label="Limpiar observaciones"
+                               (click)="clearComments()"
+                              >
+                                <ion-icon slot="icon-only" name="trash"></ion-icon>
+                              </ion-button>
+                            }
+                          </div>
+                        </ion-item>
+                      </ion-list>
+                      <ion-list [inset]="true">
+                        <ion-list-header>
+                          <ion-note>Gravedad:</ion-note>
+                        </ion-list-header>
+                        <ion-item lines="none">
+                          <ion-segment [value]="gravedad" (ionChange)="onGravedadChange($event)">
+                            <ion-segment-button value="leve">
+                              <ion-label>Leve</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="media">
+                              <ion-label>Media</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="grave">
+                              <ion-label>Grave</ion-label>
+                            </ion-segment-button>
+                          </ion-segment>
+                        </ion-item>
                       </ion-list>
                       <ion-list-header>
-                        <ion-label class="margin-top--none">Inasistencia Parcial</ion-label>
+                        <ion-label class="margin-top--none">Materias a las que no asistió.</ion-label>
                       </ion-list-header>
-                      <ion-note>No se presento a una o más materias:</ion-note>
+                      <ion-note>Selecciona una o más materias:</ion-note>
                       <ion-list [inset]="true">
                         @for(subject of subjectsByGrade(group.grado); track subject.id) {
                           <ion-item lines="full">
@@ -233,6 +269,7 @@
                 trigger="noncompliance-{{ student.id }}"
                 [initialBreakpoint]="initialBreakpoint"
                 [breakpoints]="breakpoints"
+                (willPresent)="onNotificationModalWillPresent('Incumplimiento')"
                 (willDismiss)="onModalDismiss(studentSlidingItem)"
                 #addNoncomplianceModal
                 >
@@ -278,11 +315,47 @@
                           placeholder="Escribe aquí..."
                           rows="5"
                           [autoGrow]="true"
-                          [clearOnEdit]="true"
                           [maxlength]="200"
-                          (ionInput)="onCommentsChange($event)"
+                          [(ngModel)]="teacherComments"
                           >
                           </ion-textarea>
+                        </ion-item>
+                        <ion-item lines="none">
+                          <div class="composer-actions">
+                            <ion-button fill="clear" size="small" (click)="openTemplates()">
+                              <ion-icon slot="start" name="book"></ion-icon>
+                              Usar plantilla
+                            </ion-button>
+                            @if(teacherComments.trim()) {
+                              <ion-button
+                               fill="clear"
+                               size="small"
+                               color="medium"
+                               aria-label="Limpiar observaciones"
+                               (click)="clearComments()"
+                              >
+                                <ion-icon slot="icon-only" name="trash"></ion-icon>
+                              </ion-button>
+                            }
+                          </div>
+                        </ion-item>
+                      </ion-list>
+                      <ion-list [inset]="true">
+                        <ion-list-header>
+                          <ion-note>Gravedad:</ion-note>
+                        </ion-list-header>
+                        <ion-item lines="none">
+                          <ion-segment [value]="gravedad" (ionChange)="onGravedadChange($event)">
+                            <ion-segment-button value="leve">
+                              <ion-label>Leve</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="media">
+                              <ion-label>Media</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="grave">
+                              <ion-label>Grave</ion-label>
+                            </ion-segment-button>
+                          </ion-segment>
                         </ion-item>
                       </ion-list>
                       <ion-note>Selecciona las materias en las cuales el</ion-note>
@@ -312,6 +385,7 @@
                 trigger="misconduct-{{ student.id }}"
                 [initialBreakpoint]="initialBreakpoint"
                 [breakpoints]="breakpoints"
+                (willPresent)="onNotificationModalWillPresent('Indisciplina')"
                 (willDismiss)="onModalDismiss(studentSlidingItem)"
                 #addMisconductModal
                 >
@@ -357,11 +431,47 @@
                           placeholder="Escribe aquí..."
                           rows="5"
                           [autoGrow]="true"
-                          [clearOnEdit]="true"
                           [maxlength]="200"
-                          (ionInput)="onCommentsChange($event)"
+                          [(ngModel)]="teacherComments"
                           >
                           </ion-textarea>
+                        </ion-item>
+                        <ion-item lines="none">
+                          <div class="composer-actions">
+                            <ion-button fill="clear" size="small" (click)="openTemplates()">
+                              <ion-icon slot="start" name="book"></ion-icon>
+                              Usar plantilla
+                            </ion-button>
+                            @if(teacherComments.trim()) {
+                              <ion-button
+                               fill="clear"
+                               size="small"
+                               color="medium"
+                               aria-label="Limpiar observaciones"
+                               (click)="clearComments()"
+                              >
+                                <ion-icon slot="icon-only" name="trash"></ion-icon>
+                              </ion-button>
+                            }
+                          </div>
+                        </ion-item>
+                      </ion-list>
+                      <ion-list [inset]="true">
+                        <ion-list-header>
+                          <ion-note>Gravedad:</ion-note>
+                        </ion-list-header>
+                        <ion-item lines="none">
+                          <ion-segment [value]="gravedad" (ionChange)="onGravedadChange($event)">
+                            <ion-segment-button value="leve">
+                              <ion-label>Leve</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="media">
+                              <ion-label>Media</ion-label>
+                            </ion-segment-button>
+                            <ion-segment-button value="grave">
+                              <ion-label>Grave</ion-label>
+                            </ion-segment-button>
+                          </ion-segment>
                         </ion-item>
                       </ion-list>
                       <ion-note>Selecciona las materias en las cuales el</ion-note>
@@ -477,6 +587,36 @@
     }
   </ion-accordion-group>
 </ion-content>
+
+<!-- Modal (Plantillas del tipo de aviso) -->
+<ion-modal
+ [isOpen]="templatesOpen"
+ [initialBreakpoint]="1"
+ [breakpoints]="[0, 1]"
+ (didDismiss)="templatesOpen = false"
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="secondary">
+        <ion-buttons slot="end">
+          <ion-button (click)="templatesOpen = false">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        @for(template of templatesDisponibles; track template.id) {
+          <ion-item [button]="true" (click)="onSelectTemplate(template)">
+            <ion-label class="ion-text-wrap">
+              <h3>{{ template.titulo }}</h3>
+              <p>{{ template.texto }}</p>
+            </ion-label>
+          </ion-item>
+        }
+      </ion-list>
+    </ion-content>
+  </ng-template>
+</ion-modal>
 
 <ion-toast
  cssClass="page__toast"

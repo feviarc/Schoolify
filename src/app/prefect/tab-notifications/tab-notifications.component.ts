@@ -1,6 +1,8 @@
 import { Component, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import {
+  AlertController,
   IonAccordion,
   IonAccordionGroup,
   IonActionSheet,
@@ -24,6 +26,8 @@ import {
   IonModal,
   IonNote,
   IonProgressBar,
+  IonSegment,
+  IonSegmentButton,
   IonText,
   IonTextarea,
   IonTitle,
@@ -35,6 +39,7 @@ import {
 
 import { OverlayEventDetail } from '@ionic/core/components';
 import { Subscription, firstValueFrom } from 'rxjs';
+import { NotificationTemplate, NotificationType, templatesByType } from 'src/app/data/notification-templates';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
 
 import {
@@ -59,6 +64,7 @@ import { AuthService } from 'src/app/services/auth.service';
   standalone: true,
   imports: [
     DateFormatPipe,
+    FormsModule,
     IonAccordion,
     IonAccordionGroup,
     IonActionSheet,
@@ -82,6 +88,8 @@ import { AuthService } from 'src/app/services/auth.service';
     IonModal,
     IonNote,
     IonProgressBar,
+    IonSegment,
+    IonSegmentButton,
     IonText,
     IonTextarea,
     IonTitle,
@@ -100,6 +108,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   private subjectCRUDService = inject(SubjectCRUDService);
   private authService = inject(AuthService);
   private userProfileService = inject(UserProfileService);
+  private alertController = inject(AlertController);
 
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
@@ -136,6 +145,14 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   /** Nombres de las materias que eligio el maestro. */
   private misMaterias: string[] = [];
   teacherComments = '';
+  /** Gravedad del aviso en curso; vuelve a "leve" al cerrar el modal. */
+  gravedad: 'leve' | 'media' | 'grave' = 'leve';
+  /** Plantilla usada en el aviso en curso, si se eligio una. */
+  plantillaId?: string;
+  /** Tipo del modal abierto: decide la ayuda de gravedad y las plantillas. */
+  currentTipo: NotificationType = 'Inasistencia';
+  templatesOpen = false;
+  templatesDisponibles: NotificationTemplate[] = [];
   toastMessage = '';
   cctShift!: string;
   private subscriptions: Subscription[] = [];
@@ -351,6 +368,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       sid: student.id,
       nombreCompleto: student.nombreCompleto,
       tipo: 'Inasistencia',
+      gravedad: this.gravedad,
+      ...(this.plantillaId ? { plantillaId: this.plantillaId } : {}),
       fecha: this.selectedDate || undefined,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
@@ -375,6 +394,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     const notification: NotificationInput = {
       sid: student.id,
       tipo: 'Incumplimiento',
+      gravedad: this.gravedad,
+      ...(this.plantillaId ? { plantillaId: this.plantillaId } : {}),
       nombreCompleto: student.nombreCompleto,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
@@ -398,6 +419,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     const notification: NotificationInput = {
       sid: student.id,
       tipo: 'Indisciplina',
+      gravedad: this.gravedad,
+      ...(this.plantillaId ? { plantillaId: this.plantillaId } : {}),
       nombreCompleto: student.nombreCompleto,
       observaciones: this.teacherComments,
       materias: this.selectedSubjects,
@@ -412,21 +435,58 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     );
   }
 
-  onCommentsChange(event: CustomEvent) {
-    this.teacherComments = event.detail.value;
+  /**
+   * Al abrir cualquier modal de aviso: fija el tipo, reinicia gravedad y
+   * plantilla, y en Inasistencia del maestro fuerza el modo parcial.
+   */
+  onNotificationModalWillPresent(tipo: NotificationType) {
+    this.currentTipo = tipo;
+    this.gravedad = 'leve';
+    this.plantillaId = undefined;
+
+    if(tipo === 'Inasistencia' && this.esMaestro) {
+      this.studentDidntShowUp = false;
+      this.isAbsenceButtonDisabled = true;
+    }
   }
 
-  /**
-   * El maestro solo reporta inasistencia parcial: al abrir el modal se apaga el
-   * modo "No asistió a la escuela" y el envío queda bloqueado hasta elegir materias.
-   */
-  onAbsenceModalWillPresent() {
-    if(!this.esMaestro) {
+  onGravedadChange(event: CustomEvent) {
+    this.gravedad = event.detail.value;
+  }
+
+  openTemplates() {
+    this.templatesDisponibles = templatesByType(this.currentTipo);
+    this.templatesOpen = true;
+  }
+
+  clearComments() {
+    this.teacherComments = '';
+    this.plantillaId = undefined;
+  }
+
+  async onSelectTemplate(template: NotificationTemplate) {
+    if(!this.teacherComments.trim()) {
+      this.applyTemplate(template);
       return;
     }
 
-    this.studentDidntShowUp = false;
-    this.isAbsenceButtonDisabled = true;
+    const alert = await this.alertController.create({
+      header: 'Reemplazar el texto',
+      message: 'Ya escribiste observaciones. ¿Quieres reemplazarlas por la plantilla?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        },
+        {
+          text: 'Reemplazar',
+          role: 'destructive',
+          handler: () => this.applyTemplate(template),
+        },
+      ],
+    });
+
+    await alert.present();
   }
 
   async onModalDismiss(slidingItem: IonItemSliding) {
@@ -438,6 +498,9 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
 
     this.teacherComments = '';
     this.selectedSubjects = [];
+    this.gravedad = 'leve';
+    this.plantillaId = undefined;
+    this.templatesOpen = false;
 
     this.subjects.forEach(s => s.selected = false);
   }
@@ -586,6 +649,12 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       nombre: materia.nombre,
       selected: false,
     }));
+  }
+
+  private applyTemplate(template: NotificationTemplate) {
+    this.teacherComments = template.texto;
+    this.plantillaId = template.id;
+    this.templatesOpen = false;
   }
 
   /** Envía el aviso y avisa del resultado; el modal ya se cerró antes de escribir. */

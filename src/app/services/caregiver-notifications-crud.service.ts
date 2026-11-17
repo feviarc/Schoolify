@@ -42,6 +42,10 @@ export interface CaregiverNotification {
   id?: string; // Autogenerado por Firestore
   sid: string;
   tipo: 'Inasistencia' | 'Incumplimiento' | 'Indisciplina'; // Tipos permitidos
+  /** Gravedad del incidente; los avisos viejos pueden no tenerla. */
+  gravedad?: 'leve' | 'media' | 'grave';
+  /** Plantilla que origino el texto, si se uso alguna. */
+  plantillaId?: string;
   observaciones?: string; // Opcional
   materias?: string[]; // Opcional
   fecha?: string; // Obligatorio para tipo Inasistencia (formato ISO: '2025-12-12T11:21:55')
@@ -69,6 +73,8 @@ export interface NotificationInput {
   nombreCompleto: string;
   observaciones?: string;
   tipo: 'Inasistencia' | 'Incumplimiento' | 'Indisciplina';
+  gravedad: 'leve' | 'media' | 'grave';
+  plantillaId?: string;
   /** El maestro que lo envía: la regla exige que coincida con su sesión. */
   maestroUid: string;
   maestroNombre?: string;
