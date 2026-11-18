@@ -78,14 +78,7 @@
         </ion-item-options>
         <ion-item class="item-background__color--surface-light">
           <ion-label>
-            <h2>
-              {{ filteredStudent.nombreCompleto }}
-              <app-recurrence-chip
-               [sid]="filteredStudent.id ?? ''"
-               [nombre]="filteredStudent.nombreCompleto"
-               [counts]="filteredStudent.id ? recurrenceCounts[filteredStudent.id] : undefined"
-              ></app-recurrence-chip>
-            </h2>
+            <h2>{{ filteredStudent.nombreCompleto }}</h2>
             @if(filteredStudent.desenlace) {
               <ion-badge color="warning" class="desenlace-badge">
                 {{ desenlaceLabel(filteredStudent.desenlace.tipo) }}
