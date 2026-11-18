@@ -78,7 +78,14 @@
         </ion-item-options>
         <ion-item class="item-background__color--surface-light">
           <ion-label>
-            <h2>{{ filteredStudent.nombreCompleto }}</h2>
+            <h2>
+              {{ filteredStudent.nombreCompleto }}
+              <app-recurrence-chip
+               [sid]="filteredStudent.id ?? ''"
+               [nombre]="filteredStudent.nombreCompleto"
+               [counts]="filteredStudent.id ? recurrenceCounts[filteredStudent.id] : undefined"
+              ></app-recurrence-chip>
+            </h2>
           </ion-label>
           @if(filteredStudent.gid) {
             <ion-chip>{{ getGroupFromSID(filteredStudent.gid) }}</ion-chip>

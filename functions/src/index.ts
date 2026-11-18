@@ -69,6 +69,188 @@ function isTokenGone(code: string | undefined, message: string | undefined): boo
  */
 const TRIGGER_REGION = 'us-central1';
 
+type Firestore = ReturnType<typeof getFirestore>;
+
+/** Mes del aviso (`YYYY-MM`) en la zona de la escuela, no en UTC. */
+const PERIODO_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Mexico_City',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function periodoFromDate(date: Date): string {
+  return PERIODO_FORMATTER.format(date).slice(0, 7);
+}
+
+function isPeriodo(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
+/** Campo del resumen que corresponde a cada tipo de aviso. */
+const SUMMARY_TYPE_FIELDS: {[key: string]: string} = {
+  Inasistencia: 'inasistencias',
+  Incumplimiento: 'incumplimientos',
+  Indisciplina: 'indisciplinas',
+};
+
+/** Campo del resumen que corresponde a cada gravedad. */
+const SUMMARY_SEVERITY_FIELDS: {[key: string]: string} = {
+  leve: 'leves',
+  media: 'medias',
+  grave: 'graves',
+};
+
+interface MonthlySummaryInput {
+  cct: string;
+  sid: string;
+  tid: string;
+  periodo: string;
+  tipo: string;
+  gravedad?: string;
+  gid?: string;
+  grado?: string;
+  letra?: string;
+}
+
+function summaryDocId(input: MonthlySummaryInput): string {
+  return `${input.cct}_${input.sid}_${input.periodo}`;
+}
+
+/** Suma el aviso al resumen mensual del alumno (crea el documento si falta). */
+async function addToMonthlySummary(
+  db: Firestore,
+  input: MonthlySummaryInput
+): Promise<void> {
+  const typeField = SUMMARY_TYPE_FIELDS[input.tipo];
+  if (!typeField) return;
+
+  const gravedad = input.gravedad && SUMMARY_SEVERITY_FIELDS[input.gravedad] ? input.gravedad : 'leve';
+  const severityField = SUMMARY_SEVERITY_FIELDS[gravedad];
+  const ref = db.collection('resumen_alumno').doc(summaryDocId(input));
+
+  const increments: any = {
+    total: FieldValue.increment(1),
+    [typeField]: FieldValue.increment(1),
+    [severityField]: FieldValue.increment(1),
+    actualizadoEn: FieldValue.serverTimestamp(),
+  };
+
+  await ref.set({
+    cct: input.cct,
+    sid: input.sid,
+    tid: input.tid,
+    periodo: input.periodo,
+    gid: input.gid ?? '',
+    grado: input.grado ?? '',
+    letra: input.letra ?? '',
+    ...increments,
+  }, {merge: true});
+}
+
+/** Resta el aviso del resumen; borra el documento cuando ya no queda ninguno. */
+async function removeFromMonthlySummary(
+  db: Firestore,
+  input: MonthlySummaryInput
+): Promise<void> {
+  const typeField = SUMMARY_TYPE_FIELDS[input.tipo];
+  if (!typeField) return;
+
+  const gravedad = input.gravedad && SUMMARY_SEVERITY_FIELDS[input.gravedad] ? input.gravedad : 'leve';
+  const severityField = SUMMARY_SEVERITY_FIELDS[gravedad];
+  const ref = db.collection('resumen_alumno').doc(summaryDocId(input));
+
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    if (!snapshot.exists) return;
+
+    const total = snapshot.get('total') ?? 0;
+    if (total <= 1) {
+      transaction.delete(ref);
+      return;
+    }
+
+    transaction.set(ref, {
+      total: FieldValue.increment(-1),
+      [typeField]: FieldValue.increment(-1),
+      [severityField]: FieldValue.increment(-1),
+      actualizadoEn: FieldValue.serverTimestamp(),
+    }, {merge: true});
+  });
+}
+
+/**
+ * Completa el aviso con los datos que necesitan la reincidencia y el futuro
+ * modelo: escuela, grupo, grado, autor, periodo y gravedad (si el cliente es
+ * viejo y no la manda, se asume leve).
+ */
+async function enrichNotification(
+  db: Firestore,
+  tutorId: string,
+  notificationId: string,
+  data: any,
+  createTime?: {toDate(): Date}
+): Promise<void> {
+  const {sid, tipo, gravedad, maestroUid} = data;
+
+  if (!sid || !tipo) {
+    return;
+  }
+
+  const studentSnapshot = await db.collection('alumnos').doc(sid).get();
+  if (!studentSnapshot.exists) {
+    return;
+  }
+
+  const student = studentSnapshot.data() ?? {};
+  const cct = student.cct ?? '';
+  const gid = student.gid ?? '';
+  let grado = '';
+  let letra = '';
+
+  if (gid) {
+    const groupSnapshot = await db.collection('grupos_de_alumnos').doc(gid).get();
+    grado = groupSnapshot.data()?.grado ?? '';
+    letra = groupSnapshot.data()?.letra ?? '';
+  }
+
+  let autorRol = '';
+  if (maestroUid) {
+    const authorSnapshot = await db.collection('usuarios').doc(maestroUid).get();
+    autorRol = authorSnapshot.data()?.rol ?? '';
+  }
+
+  const gravedadFinal = ['leve', 'media', 'grave'].includes(gravedad) ? gravedad : 'leve';
+  const periodo = periodoFromDate(createTime ? createTime.toDate() : new Date());
+
+  await db.collection('usuarios').doc(tutorId).collection('notificaciones').doc(notificationId).update({
+    cct,
+    gid,
+    grado,
+    letra,
+    autorRol,
+    periodo,
+    gravedad: gravedadFinal,
+    schemaVersion: 1,
+  });
+
+  if (!cct) {
+    return;
+  }
+
+  await addToMonthlySummary(db, {
+    cct,
+    sid,
+    tid: tutorId,
+    periodo,
+    tipo,
+    gravedad: gravedadFinal,
+    gid,
+    grado,
+    letra,
+  });
+}
+
 export const onNewUserNotification = onDocumentCreated({
   document: 'usuarios/{userId}/notificaciones/{notificationId}',
   region: TRIGGER_REGION,
@@ -93,6 +275,13 @@ export const onNewUserNotification = onDocumentCreated({
       return {success: false, message: 'Notificación sin datos'};
     }
 
+    // Datos estructurados para reincidencia y ML. Si falla, el push sigue.
+    try {
+      await enrichNotification(db, userId, notificationId, notificationData, snapshot.createTime);
+    } catch (error) {
+      console.error(`❌ No se pudo enriquecer el aviso ${notificationId}:`, error);
+    }
+
     try {
       const userDoc = await db.collection('usuarios').doc(userId).get();
 
@@ -111,6 +300,41 @@ export const onNewUserNotification = onDocumentCreated({
     } catch (error) {
       console.error('❌ Error procesando notificación:', error);
       throw error;
+    }
+  }
+);
+
+export const onDeletedUserNotification = onDocumentDeleted({
+  document: 'usuarios/{userId}/notificaciones/{notificationId}',
+  region: TRIGGER_REGION,
+},
+  async (event) => {
+    const snapshot = event.data;
+
+    if (!snapshot) {
+      return;
+    }
+
+    const data = snapshot.data();
+
+    if (!data?.cct || !data?.sid || !data?.periodo || !data?.tipo) {
+      return;
+    }
+
+    try {
+      await removeFromMonthlySummary(getFirestore(), {
+        cct: data.cct,
+        sid: data.sid,
+        tid: event.params.userId,
+        periodo: data.periodo,
+        tipo: data.tipo,
+        gravedad: data.gravedad,
+        gid: data.gid,
+        grado: data.grado,
+        letra: data.letra,
+      });
+    } catch (error) {
+      console.error('❌ No se pudo actualizar el resumen al borrar el aviso:', error);
     }
   }
 );
@@ -896,6 +1120,72 @@ export const getUnconfirmedNotificationCounts = onCall(
     } catch (error) {
       console.error('❌ Schoolify: [getUnconfirmedNotificationCounts]', error);
       throw new HttpsError('internal', 'No se pudieron contar los avisos.');
+    }
+  }
+);
+
+/**
+ * Reincidencia mensual por alumno. La coleccion `resumen_alumno` no se lee
+ * directo: esta funcion filtra por el rol de quien llama (prefecto: escuela;
+ * maestro: sus grupos; tutor: sus hijos).
+ */
+export const getMonthlyRecurrence = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const callerData = caller.data();
+    const rol = callerData?.rol;
+
+    if (!caller.exists || !(isStaffRole(rol) || rol === 'tutor')) {
+      throw new HttpsError('permission-denied', 'Solo el personal y los tutores pueden consultar la reincidencia.');
+    }
+
+    const cct = callerData?.cct;
+    const periodo = isPeriodo(request.data?.periodo) ? request.data.periodo : periodoFromDate(new Date());
+
+    if (!cct) {
+      return {periodo, counts: {}};
+    }
+
+    try {
+      const snapshot = await db.collection('resumen_alumno')
+        .where('cct', '==', cct)
+        .where('periodo', '==', periodo)
+        .get();
+
+      const grupos = new Set<string>(Array.isArray(callerData?.grupos) ? callerData.grupos : []);
+      const counts: Record<string, any> = {};
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        if (rol === 'tutor' && data.tid !== request.auth!.uid) return;
+        if (rol === 'maestro' && !grupos.has(data.gid)) return;
+
+        counts[data.sid] = {
+          inasistencias: data.inasistencias ?? 0,
+          incumplimientos: data.incumplimientos ?? 0,
+          indisciplinas: data.indisciplinas ?? 0,
+          leves: data.leves ?? 0,
+          medias: data.medias ?? 0,
+          graves: data.graves ?? 0,
+          total: data.total ?? 0,
+        };
+      });
+
+      return {periodo, counts};
+    } catch (error) {
+      console.error('❌ Schoolify: [getMonthlyRecurrence]', error);
+      throw new HttpsError('internal', 'No se pudo consultar la reincidencia.');
     }
   }
 );

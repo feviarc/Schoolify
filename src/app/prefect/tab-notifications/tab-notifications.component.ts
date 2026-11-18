@@ -39,8 +39,10 @@ import {
 
 import { OverlayEventDetail } from '@ionic/core/components';
 import { Subscription, firstValueFrom } from 'rxjs';
+import { RecurrenceChipComponent } from 'src/app/components/recurrence-chip/recurrence-chip.component';
 import { NotificationTemplate, NotificationType, templatesByType } from 'src/app/data/notification-templates';
 import { DateFormatPipe } from 'src/app/pipes/date-format.pipe';
+import { RecurrenceCounts, RecurrenceService } from 'src/app/services/recurrence.service';
 
 import {
   CaregiverNotification,
@@ -65,6 +67,7 @@ import { AuthService } from 'src/app/services/auth.service';
   imports: [
     DateFormatPipe,
     FormsModule,
+    RecurrenceChipComponent,
     IonAccordion,
     IonAccordionGroup,
     IonActionSheet,
@@ -109,6 +112,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private userProfileService = inject(UserProfileService);
   private alertController = inject(AlertController);
+  private recurrenceService = inject(RecurrenceService);
 
 
   @ViewChildren(IonModal) modals!: QueryList<IonModal>;
@@ -138,6 +142,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   studentsWithGroup: Student[] = [];
   /** Avisos sin confirmar por alumno (los cuenta una funcion). */
   unconfirmedCounts: {[sid: string]: number} = {};
+  /** Avisos del alumno en el mes, para el chip de reincidencia. */
+  recurrenceCounts: {[sid: string]: RecurrenceCounts} = {};
   /** Materias que se ofrecen en el aviso: el catalogo o el subconjunto del maestro. */
   subjects: Subject[] = [];
   /** Catalogo completo de `materias`; para el maestro se filtra por su lista. */
@@ -216,6 +222,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
    */
   ionViewWillEnter() {
     this.loadUnconfirmedCounts();
+    this.loadRecurrence();
     this.loadMaestro();
   }
 
@@ -657,6 +664,15 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     this.templatesOpen = false;
   }
 
+  private async loadRecurrence() {
+    try {
+      const {counts} = await this.recurrenceService.getMonth();
+      this.recurrenceCounts = counts;
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-notifications] reincidencia', error);
+    }
+  }
+
   /** Envía el aviso y avisa del resultado; el modal ya se cerró antes de escribir. */
   private async sendNotification(
     tid: string,
@@ -665,6 +681,11 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   ) {
     try {
       await this.caregiverNotifCRUDService.addNotification(tid, notification);
+
+      // El trigger actualiza el resumen del mes; se relee para que el chip lo refleje.
+      this.recurrenceService.clear();
+      setTimeout(() => { void this.loadRecurrence(); }, 1500);
+
       this.showToast(successMessage);
     } catch(error) {
       console.log('❌ Schoolify: [tab-notifications.component.ts]', error);

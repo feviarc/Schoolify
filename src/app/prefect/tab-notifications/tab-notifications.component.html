@@ -59,6 +59,11 @@
                           {{ unconfirmedCount(student) }}
                         </ion-badge>
                       }
+                      <app-recurrence-chip
+                       [sid]="student.id ?? ''"
+                       [nombre]="student.nombreCompleto"
+                       [counts]="student.id ? recurrenceCounts[student.id] : undefined"
+                      ></app-recurrence-chip>
                     </h2>
                   </ion-label>
                 </ion-item>
@@ -598,7 +603,7 @@
   <ng-template>
     <ion-header>
       <ion-toolbar color="secondary">
-        <ion-buttons slot="end">
+        <ion-buttons slot="start">
           <ion-button (click)="templatesOpen = false">Cerrar</ion-button>
         </ion-buttons>
       </ion-toolbar>

@@ -33,9 +33,11 @@ import {
 import type { OverlayEventDetail } from '@ionic/core/components';
 import { User } from 'firebase/auth'
 import { firstValueFrom, Subscription } from 'rxjs';
+import { RecurrenceChipComponent } from 'src/app/components/recurrence-chip/recurrence-chip.component';
 import { UserProfile } from 'src/app/models/user-profile.model';
 import { AuthService } from 'src/app/services/auth.service';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
+import { RecurrenceCounts, RecurrenceService } from 'src/app/services/recurrence.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 import { UserProfileService } from 'src/app/services/user-profile.service';
 
@@ -46,6 +48,7 @@ import { UserProfileService } from 'src/app/services/user-profile.service';
   styleUrls: ['./tab-students.component.scss'],
   standalone: true,
   imports: [
+    RecurrenceChipComponent,
     IonActionSheet,
     IonButton,
     IonButtons,
@@ -79,6 +82,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   private localStorage = inject(LocalStorageService);
   private studentCRUDService = inject(StudentCRUDService);
   private userProfileService = inject(UserProfileService);
+  private recurrenceService = inject(RecurrenceService);
 
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
@@ -111,6 +115,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   toastMessage = '';
 
   filteredStudentsWithoutTutor: Student[] = [];
+  /** Avisos del alumno en el mes, para el chip de reincidencia. */
+  recurrenceCounts: {[sid: string]: RecurrenceCounts} = {};
   profile: UserProfile | null = null;
   studentsByTutor: Student[] = [];
   studentsWithoutTutor: Student[] = [];
@@ -124,8 +130,13 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     const cct = this.localStorage.getKey(this.CCT_KEY);
     const shift = this.localStorage.getKey(this.SHIFT_KEY);
     this.cctShift = `${cct}${shift}`;
+    this.loadRecurrence();
     await this.getCurrentUser();
     await this.getUserProfile();
+  }
+
+  ionViewWillEnter() {
+    this.loadRecurrence();
   }
 
   ngOnDestroy() {
@@ -239,6 +250,15 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   selectStudentHandleChange(event: Event) {
     const target = event.target as HTMLInputElement;
     this.selectedStudent = target.value;
+  }
+
+  private async loadRecurrence() {
+    try {
+      const {counts} = await this.recurrenceService.getMonth();
+      this.recurrenceCounts = counts;
+    } catch(error) {
+      console.log('❌ Schoolify: [caregiver tab-students] reincidencia', error);
+    }
   }
 
   private showToast(message: string) {

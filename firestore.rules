@@ -255,5 +255,11 @@ service cloud.firestore {
       // comprobacion, asi que aqui se niega (el Admin SDK no pasa por estas reglas).
       allow delete: if false;
     }
+
+    // Reincidencia mensual por alumno: la escribe el trigger y la lee la callable
+    // `getMonthlyRecurrence` (Admin SDK). El cliente no tiene acceso directo.
+    match /resumen_alumno/{summaryId} {
+      allow read, write: if false;
+    }
   }
 }

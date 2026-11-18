@@ -192,6 +192,9 @@ const cases = [
   ['prefecto1 no crea un aviso con gravedad invalida', 'post', 'usuarios/tutor1/notificaciones?documentId=n12', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), gravedad: str('critica') } }, 'denegado'],
   ['prefecto1 crea un aviso con plantilla', 'post', 'usuarios/tutor1/notificaciones?documentId=n13', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), gravedad: str('leve'), plantillaId: str('inasistencia-1') } }, 'permitido'],
   ['prefecto1 no crea un aviso con plantilla no textual', 'post', 'usuarios/tutor1/notificaciones?documentId=n14', { token: PREFECT, fields: { sid: str('a1'), tipo: str('Inasistencia'), nombreCompleto: str('ALUMNO LIBRE'), maestroUid: str('prefecto9'), plantillaId: num(1) } }, 'denegado'],
+  // Reincidencia: el resumen mensual solo lo toca el servidor.
+  ['nadie lee el resumen mensual directo', 'list', 'resumen_alumno', { token: ADMIN }, 'denegado'],
+  ['nadie escribe el resumen mensual directo', 'post', 'resumen_alumno?documentId=r1', { token: ADMIN, fields: { cct: str('CCT1'), sid: str('a1'), total: num(1) } }, 'denegado'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
   ['admin1 borra un usuario', 'delete', 'usuarios/tutor2', { token: ADMIN }, 'permitido'],

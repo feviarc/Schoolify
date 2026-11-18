@@ -35,6 +35,11 @@
                 🟡
               }
               {{ student.nombreCompleto }}
+              <app-recurrence-chip
+               [sid]="student.id ?? ''"
+               [nombre]="student.nombreCompleto"
+               [counts]="student.id ? recurrenceCounts[student.id] : undefined"
+              ></app-recurrence-chip>
             </h2>
             @if(!student.validado) {
               <ion-note>Validación de notificaciones pendiente.</ion-note>

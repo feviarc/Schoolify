@@ -38,7 +38,9 @@ import {
 
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
+import { RecurrenceChipComponent } from 'src/app/components/recurrence-chip/recurrence-chip.component';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
+import { RecurrenceCounts, RecurrenceService } from 'src/app/services/recurrence.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 
 
@@ -49,6 +51,7 @@ import { StudentCRUDService, Student } from 'src/app/services/student-crud.servi
   standalone: true,
   imports: [IonBadge,
     FormsModule,
+    RecurrenceChipComponent,
     IonActionSheet,
     IonButton,
     IonButtons,
@@ -83,6 +86,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   private localStorageService = inject(LocalStorageService);
   private formBuilder = inject(FormBuilder);
   private studentCRUDService = inject(StudentCRUDService);
+  private recurrenceService = inject(RecurrenceService);
 
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
@@ -91,6 +95,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   breakpoints = [0, 1];
   cct!: string;
   filteredStudents: Student[] = [];
+  /** Avisos del alumno en el mes, para el chip de reincidencia. */
+  recurrenceCounts: {[sid: string]: RecurrenceCounts} = {};
   formSnapshot: any;
   initialBreakpoint = 1;
   isFirstEmission = true;
@@ -186,6 +192,11 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     const shift = this.localStorageService.getKey(this.SHIFT_KEY);
     this.cct = `${cct}${shift}`;
     this.loadStudents();
+    this.loadRecurrence();
+  }
+
+  ionViewWillEnter() {
+    this.loadRecurrence();
   }
 
   ngOnDestroy() {
@@ -380,6 +391,15 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.isSpinnerActive = false;
     this.isSaving = false;
+  }
+
+  private async loadRecurrence() {
+    try {
+      const {counts} = await this.recurrenceService.getMonth();
+      this.recurrenceCounts = counts;
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-students] reincidencia', error);
+    }
   }
 
   /** Aplica buscador (nombre o grupo) y chips (con/sin grupo) juntos. */

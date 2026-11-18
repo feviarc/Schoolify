@@ -34,6 +34,9 @@ function tokenFor(uid, { emailVerified = true } = {}) {
 const PREFECT = tokenFor('prefecto9');
 const PREFECT_UNVERIFIED = tokenFor('prefecto9', { emailVerified: false });
 const ADMIN = tokenFor('admin9');
+const TUTORREC = tokenFor('tutorrec');
+const MAESTRO = tokenFor('maestro9');
+const MAESTRO_OTRO = tokenFor('maestro-otro');
 
 const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
 
@@ -41,6 +44,7 @@ const str = (value) => ({ stringValue: value });
 const bool = (value) => ({ booleanValue: value });
 const timestamp = () => ({ timestampValue: new Date().toISOString() });
 const num = (value) => ({ integerValue: String(value) });
+const arr = (values) => ({ arrayValue: { values: values.map((value) => str(value)) } });
 
 /** Crea una cuenta en el emulador de Auth y devuelve su uid. */
 async function createAuthUser(email) {
@@ -127,6 +131,14 @@ async function readField(path, field) {
   if (!response.ok) return null;
   const document = await response.json();
   return document.fields?.[field]?.stringValue ?? null;
+}
+
+async function readInt(path, field) {
+  const response = await firestore('GET', path);
+  if (!response.ok) return null;
+  const document = await response.json();
+  const value = document.fields?.[field]?.integerValue;
+  return value === undefined ? null : Number(value);
 }
 
 async function waitUntil(check, timeoutMs = 20000) {
@@ -303,6 +315,63 @@ const scenarioCases = [
       await firestore('DELETE', 'grupos_de_alumnos/gtrigger');
 
       return waitUntil(async () => (await readField('alumnos/atrigger', 'gid')) === '');
+    },
+  },
+  // ==================== reincidencia ====================
+  {
+    name: 'el aviso se enriquece y actualiza el resumen mensual',
+    run: async () => {
+      // Ids unicos: la prueba se puede repetir sin chocar con el resumen anterior.
+      const run = Date.now();
+      const sid = `arec${run}`;
+      const notificationPath = `usuarios/tutorrec/notificaciones/nrec${run}`;
+
+      await firestore('PATCH', 'usuarios/tutorrec', { fields: { rol: str('tutor'), cct: str('CCT1') } });
+      await firestore('PATCH', 'usuarios/maestro9', { fields: { rol: str('maestro'), cct: str('CCT1'), grupos: arr(['grec']) } });
+      await firestore('PATCH', 'usuarios/maestro-otro', { fields: { rol: str('maestro'), cct: str('CCT1'), grupos: arr(['gotro']) } });
+      await firestore('PATCH', 'grupos_de_alumnos/grec', { fields: { cct: str('CCT1'), grado: str('1'), letra: str('A') } });
+      await firestore('PATCH', `alumnos/${sid}`, { fields: { nombre: str('ALUMNO REINCIDENTE'), cct: str('CCT1'), gid: str('grec'), tid: str('tutorrec') } });
+      await firestore('PATCH', notificationPath, {
+        fields: {
+          sid: str(sid),
+          tipo: str('Indisciplina'),
+          gravedad: str('grave'),
+          nombreCompleto: str('ALUMNO REINCIDENTE'),
+          maestroUid: str('prefecto9'),
+        },
+      });
+
+      const enriched = await waitUntil(async () => (await readField(notificationPath, 'periodo')) !== null);
+      if (!enriched) return false;
+
+      const periodo = await readField(notificationPath, 'periodo');
+      const cct = await readField(notificationPath, 'cct');
+      const gid = await readField(notificationPath, 'gid');
+      const autorRol = await readField(notificationPath, 'autorRol');
+
+      if (cct !== 'CCT1' || gid !== 'grec' || autorRol !== 'prefecto') return false;
+
+      const summaryPath = `resumen_alumno/${cct}_${sid}_${periodo}`;
+      const summaryReady = await waitUntil(async () => (await readInt(summaryPath, 'total')) === 1);
+      if (!summaryReady) return false;
+      if ((await readInt(summaryPath, 'indisciplinas')) !== 1) return false;
+      if ((await readInt(summaryPath, 'graves')) !== 1) return false;
+
+      const prefect = await callFunction('getMonthlyRecurrence', { periodo }, PREFECT);
+      if (prefect.body?.result?.counts?.[sid]?.total !== 1) return false;
+
+      const tutor = await callFunction('getMonthlyRecurrence', { periodo }, TUTORREC);
+      if (tutor.body?.result?.counts?.[sid]?.total !== 1) return false;
+
+      const maestro = await callFunction('getMonthlyRecurrence', { periodo }, MAESTRO);
+      if (maestro.body?.result?.counts?.[sid]?.total !== 1) return false;
+
+      const otro = await callFunction('getMonthlyRecurrence', { periodo }, MAESTRO_OTRO);
+      if (otro.body?.result?.counts?.[sid]) return false;
+
+      // Al borrar el aviso, el resumen del mes debe desaparecer.
+      await firestore('DELETE', notificationPath);
+      return waitUntil(async () => !(await firestore('GET', summaryPath)).ok);
     },
   },
 ];

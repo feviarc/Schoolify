@@ -80,6 +80,21 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "resumen_alumno",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "cct",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodo",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "notificaciones",
       "queryScope": "COLLECTION",
       "fields": [
