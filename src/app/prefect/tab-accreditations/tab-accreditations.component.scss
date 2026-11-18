@@ -1,3 +1,9 @@
+/* Las dos listas van a todo el ancho, sin margenes laterales. */
+ion-list.acreditacion-list {
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
 /* El select de estatus usa su propio label: Ionic alinea el valor a la derecha,
    igual que los selects de Grupo y Materia. */
 

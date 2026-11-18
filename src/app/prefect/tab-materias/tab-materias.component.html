@@ -11,7 +11,7 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-list [inset]="true">
+  <ion-list class="materias-list" [inset]="true">
     <!-- <ion-list-header>Materias que impartes</ion-list-header>
     <ion-note>Elige del catálogo; son las que aparecen en el selector de tus avisos.</ion-note> -->
 
@@ -23,7 +23,7 @@
 
     @for(grupo of gruposCatalogo; track grupo.grado) {
       <ion-list-header color="light">
-        <ion-label>{{ gradoLabel(grupo.grado) }}</ion-label>
+        <ion-label class="grade-label">{{ gradoLabel(grupo.grado) }}</ion-label>
       </ion-list-header>
       @for(materia of grupo.materias; track materia.id) {
         <ion-item lines="full">

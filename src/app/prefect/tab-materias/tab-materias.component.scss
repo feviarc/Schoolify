@@ -1,3 +1,23 @@
+/* La lista de materias va a todo el ancho, sin margenes laterales. */
+ion-list.materias-list {
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+/*
+ * En iOS el ion-list-header aplica 29px arriba y 6px abajo al label del grado.
+ * Se igualan a 6px/6px para que no se vea desproporcionado; Android no cambia.
+ */
+:host-context(.ios) ion-list-header .grade-label {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* En Android el grado se muestra mas grande. */
+:host-context(.md) ion-list-header .grade-label {
+  font-size: 1.2rem;
+}
+
 ion-note {
   display: block;
   margin-top: 0.5rem;

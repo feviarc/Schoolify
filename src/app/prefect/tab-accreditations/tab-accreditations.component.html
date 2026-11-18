@@ -10,7 +10,7 @@
 <ion-content class="ion-padding">
   <ion-note>Ciclo {{ ciclo }}</ion-note>
 
-  <ion-list [inset]="true">
+  <ion-list class="acreditacion-list" [inset]="true">
     <ion-item class="item-background__color--surface-light">
       <ion-select
         label="Grupo:"
@@ -53,7 +53,7 @@
     <ion-progress-bar type="indeterminate"></ion-progress-bar>
   }
 
-  <ion-list [inset]="true">
+  <ion-list class="acreditacion-list" [inset]="true">
     @for(student of students; track student.id) {
       <ion-item class="item-background__color--surface-light">
         <ion-label class="ion-text-wrap">{{ student.nombreCompleto }}</ion-label>
