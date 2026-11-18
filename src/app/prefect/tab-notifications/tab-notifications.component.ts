@@ -133,6 +133,8 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
   private allStudentGroups: StudentGroup[] = [];
   /** `true` cuando el que envia avisos es un maestro (solo ve sus grupos). */
   esMaestro = false;
+  /** Hasta leer el perfil no se pinta ningun grupo: evita el flash de todos. */
+  private profileReady = false;
   private misGrupos: string[] = [];
   studentNotifications: CaregiverNotification[] = [];
   /** Datos del maestro que envia: quedan registrados en cada aviso. */
@@ -614,6 +616,7 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
       this.maestroNombre = profile?.nombre ?? '';
       this.esMaestro = profile?.rol === 'maestro';
       this.misGrupos = profile?.grupos ?? [];
+      this.profileReady = true;
 
       this.applyGroupFilter();
       this.applySubjects(profile);
@@ -624,6 +627,12 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
 
   /** El maestro solo ve los grupos de su lista; el prefecto, todos los de la escuela. */
   private applyGroupFilter() {
+    // Sin perfil leido no se sabe si es maestro: no se pinta ningun grupo.
+    if(!this.profileReady) {
+      this.studentGroups = [];
+      return;
+    }
+
     this.studentGroups = this.esMaestro
       ? this.allStudentGroups.filter(group => this.misGrupos.includes(group.gid))
       : this.allStudentGroups;
