@@ -1,0 +1,103 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Acreditación</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-note>Ciclo {{ ciclo }}</ion-note>
+
+  <ion-list [inset]="true">
+    <ion-item class="item-background__color--surface-light">
+      <ion-select
+        label="Grupo:"
+        interface="popover"
+        placeholder="Elige un grupo"
+        [value]="selectedGid"
+        (ionChange)="onGroupChange($event)"
+      >
+        @for(group of grupos; track group.gid) {
+          <ion-select-option [value]="group.gid">
+            {{ group.grado }}° {{ group.letra }}
+          </ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+    <ion-item class="item-background__color--surface-light">
+      <ion-select
+        label="Materia:"
+        interface="popover"
+        placeholder="Elige una materia"
+        [value]="selectedSubjectId"
+        (ionChange)="onSubjectChange($event)"
+      >
+        @for(materia of materias; track materia.id) {
+          <ion-select-option [value]="materia.id ?? ''">
+            {{ materia.nombre }}
+          </ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+  </ion-list>
+
+  @if(grupos.length === 0 || materias.length === 0) {
+    <ion-note>
+      No tienes grupos o materias vinculados. Revisa las pestañas Grupos y Materias.
+    </ion-note>
+  }
+
+  @if(isLoading) {
+    <ion-progress-bar type="indeterminate"></ion-progress-bar>
+  }
+
+  <ion-list [inset]="true">
+    @for(student of students; track student.id) {
+      <ion-item class="item-background__color--surface-light">
+        <ion-label class="ion-text-wrap">{{ student.nombreCompleto }}</ion-label>
+        <ion-select
+          class="estatus-select"
+          [class.aprobado]="estatus[student.id] === 'acreditado'"
+          [class.reprobado]="estatus[student.id] === 'no_acreditado'"
+          [class.sin-registrar]="estatus[student.id] === 'sin_registrar'"
+          label="&#8203;"
+          aria-label="Estatus de acreditación"
+          interface="popover"
+          [value]="estatus[student.id]"
+          (ionChange)="onEstatusChange(student.id, $event)"
+        >
+          <ion-select-option value="sin_registrar">Sin registrar</ion-select-option>
+          <ion-select-option value="acreditado">Aprobado</ion-select-option>
+          <ion-select-option value="no_acreditado">Reprobado</ion-select-option>
+        </ion-select>
+      </ion-item>
+    }
+
+    @if(!isLoading && students.length === 0) {
+      <ion-item class="item-background__color--surface-light" lines="none">
+        <ion-note>No hay alumnos en este grupo.</ion-note>
+      </ion-item>
+    }
+  </ion-list>
+
+  @if(students.length > 0) {
+    <ion-button
+      expand="block"
+      class="ion-margin-top"
+      [disabled]="isSaving || isLoading"
+      (click)="save()"
+    >
+      Guardar acreditación
+    </ion-button>
+  }
+</ion-content>
+
+<ion-toast
+  cssClass="page__toast"
+  [message]="toastMessage"
+  [isOpen]="isToastOpen"
+  [duration]="3000"
+  (didDismiss)="isToastOpen = false"
+></ion-toast>

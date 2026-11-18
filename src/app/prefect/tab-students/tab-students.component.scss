@@ -41,3 +41,15 @@ ion-note {
     font-weight: 600;
   }
 }
+.desenlace-badge {
+  margin-top: 0.25rem;
+}
+
+/* Colores de los resultados en el modal del prefecto. */
+.aprobado {
+  --color: #008000;
+}
+
+.reprobado {
+  --color: #dc0000;
+}

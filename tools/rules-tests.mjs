@@ -129,6 +129,7 @@ async function seed() {
     ['usuarios/tutor1', { rol: str('tutor'), email: str('tutor1@test.mx'), cct: str('CCT1') }],
     ['usuarios/tutor2', { rol: str('tutor'), email: str('tutor2@test.mx'), cct: str('CCT2') }],
     ['usuarios/tutor3', { rol: str('tutor'), email: str('tutor3@test.mx'), cct: str('CCT2') }],
+    ['configuracion/general', { ciclo: str('2026-2027') }],
     ['alumnos/a1', { nombre: str('ALUMNO LIBRE'), cct: str('CCT1'), validado: bool(false) }],
     ['alumnos/a2', { nombre: str('ALUMNO DE TUTOR2'), cct: str('CCT1'), tid: str('tutor2') }],
     ['alumnos/a4', { nombre: str('ALUMNO DE OTRA ESCUELA'), cct: str('CCT2') }],
@@ -195,6 +196,13 @@ const cases = [
   // Reincidencia: el resumen mensual solo lo toca el servidor.
   ['nadie lee el resumen mensual directo', 'list', 'resumen_alumno', { token: ADMIN }, 'denegado'],
   ['nadie escribe el resumen mensual directo', 'post', 'resumen_alumno?documentId=r1', { token: ADMIN, fields: { cct: str('CCT1'), sid: str('a1'), total: num(1) } }, 'denegado'],
+  // Acreditacion, desenlaces y configuracion.
+  ['nadie lee las acreditaciones directo', 'list', 'acreditaciones', { token: ADMIN }, 'denegado'],
+  ['nadie escribe las acreditaciones directo', 'post', 'acreditaciones?documentId=ac1', { token: ADMIN, fields: { cct: str('CCT1'), sid: str('a1'), estatus: str('acreditado') } }, 'denegado'],
+  ['nadie lee los desenlaces directo', 'list', 'desenlaces', { token: ADMIN }, 'denegado'],
+  ['el personal lee la configuracion', 'get', 'configuracion/general', { token: PREFECT }, 'permitido'],
+  ['el prefecto no cambia la configuracion', 'update', 'configuracion/general', { token: PREFECT, fields: { ciclo: str('2027-2028') }, mask: ['ciclo'] }, 'denegado'],
+  ['el admin cambia la configuracion', 'update', 'configuracion/general', { token: ADMIN, fields: { ciclo: str('2027-2028') }, mask: ['ciclo'] }, 'permitido'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
   ['admin1 borra un usuario', 'delete', 'usuarios/tutor2', { token: ADMIN }, 'permitido'],

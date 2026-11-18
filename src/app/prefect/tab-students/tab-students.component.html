@@ -86,12 +86,23 @@
                [counts]="filteredStudent.id ? recurrenceCounts[filteredStudent.id] : undefined"
               ></app-recurrence-chip>
             </h2>
+            @if(filteredStudent.desenlace) {
+              <ion-badge color="warning" class="desenlace-badge">
+                {{ desenlaceLabel(filteredStudent.desenlace.tipo) }}
+              </ion-badge>
+            }
           </ion-label>
           @if(filteredStudent.gid) {
             <ion-chip>{{ getGroupFromSID(filteredStudent.gid) }}</ion-chip>
           }
         </ion-item>
         <ion-item-options side="end">
+          <ion-item-option
+            color="tertiary"
+            id="outcomes-{{ filteredStudent.id }}"
+          >
+            <ion-icon slot="icon-only" name="checkmark-circle"></ion-icon>
+          </ion-item-option>
           <ion-item-option
             id="update-{{ filteredStudent.id }}"
           >
@@ -200,6 +211,108 @@
                 </ion-list>
               }
             </form>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
+
+      <!-- Modal (Resultados: acreditaciones y desenlace) -->
+      <ion-modal
+       trigger="outcomes-{{ filteredStudent.id }}"
+       [initialBreakpoint]="1"
+       [breakpoints]="[0, 1]"
+       (willPresent)="loadOutcomes(filteredStudent)"
+      >
+        <ng-template>
+          <ion-header>
+            <ion-toolbar color="secondary">
+              <ion-buttons slot="start">
+                <ion-button (click)="closeModal('outcomes-'+filteredStudent.id)">
+                  Cerrar
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <ion-note>Resultados de:</ion-note>
+            <ion-list-header>
+              <ion-label>{{ filteredStudent.nombreCompleto }}</ion-label>
+            </ion-list-header>
+            <ion-note>Ciclo {{ ciclo }}</ion-note>
+
+            @if(isLoadingOutcomes) {
+              <ion-progress-bar type="indeterminate"></ion-progress-bar>
+            }
+
+            <ion-list [inset]="true">
+              @for(record of studentAccreditations; track record.subjectId) {
+                <ion-item>
+                  <ion-label class="ion-text-wrap">{{ record.subjectNombre }}</ion-label>
+                  <ion-note
+                    slot="end"
+                    [class.aprobado]="record.estatus === 'acreditado'"
+                    [class.reprobado]="record.estatus === 'no_acreditado'"
+                  >
+                    {{ record.estatus === 'acreditado' ? 'Aprobado' : 'Reprobado' }}
+                  </ion-note>
+                </ion-item>
+              }
+
+              @if(!isLoadingOutcomes && studentAccreditations.length === 0) {
+                <ion-item lines="none">
+                  <ion-note>Sin materias registradas.</ion-note>
+                </ion-item>
+              }
+            </ion-list>
+
+            <ion-list-header>
+              <ion-label><strong>Desenlace</strong></ion-label>
+            </ion-list-header>
+
+            <ion-list [inset]="true">
+              <ion-item>
+                <ion-select
+                  label="Situación:"
+                  interface="popover"
+                  [value]="desenlaceTipo"
+                  (ionChange)="onDesenlaceTipoChange($event)"
+                >
+                  <ion-select-option value="expulsion_temporal">
+                    Expulsión temporal
+                  </ion-select-option>
+                  <ion-select-option value="baja_definitiva">
+                    Baja definitiva
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+
+              @if(desenlaceTipo === 'expulsion_temporal') {
+                <ion-item>
+                  <ion-input
+                    type="date"
+                    label="Inicio:"
+                    [value]="desenlaceInicio"
+                    (ionChange)="desenlaceInicio = $event.detail.value ?? ''"
+                  ></ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-input
+                    type="date"
+                    label="Fin (opcional):"
+                    [value]="desenlaceFin"
+                    (ionChange)="desenlaceFin = $event.detail.value ?? ''"
+                  ></ion-input>
+                </ion-item>
+              }
+            </ion-list>
+
+            <ion-button
+              expand="block"
+              class="ion-margin-top"
+              [disabled]="!desenlaceTipo || isSavingDesenlace"
+              (click)="saveDesenlace()"
+            >
+              Guardar desenlace
+            </ion-button>
           </ion-content>
         </ng-template>
       </ion-modal>

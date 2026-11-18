@@ -29,6 +29,8 @@ import {
   IonNote,
   IonProgressBar,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonSpinner,
   IonTitle,
   IonToast,
@@ -39,8 +41,14 @@ import {
 import { OverlayEventDetail } from '@ionic/core';
 import { Subscription } from 'rxjs';
 import { RecurrenceChipComponent } from 'src/app/components/recurrence-chip/recurrence-chip.component';
+import { DesenlaceTipo } from 'src/app/models/desenlace.model';
+import {
+  AcademicOutcomesService,
+  StudentAccreditationRecord,
+} from 'src/app/services/academic-outcomes.service';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { RecurrenceCounts, RecurrenceService } from 'src/app/services/recurrence.service';
+import { SchoolConfigService } from 'src/app/services/school-config.service';
 import { StudentCRUDService, Student } from 'src/app/services/student-crud.service';
 
 
@@ -73,6 +81,8 @@ import { StudentCRUDService, Student } from 'src/app/services/student-crud.servi
     IonNote,
     IonProgressBar,
     IonSearchbar,
+    IonSelect,
+    IonSelectOption,
     IonSpinner,
     IonTitle,
     IonToast,
@@ -87,6 +97,8 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   private formBuilder = inject(FormBuilder);
   private studentCRUDService = inject(StudentCRUDService);
   private recurrenceService = inject(RecurrenceService);
+  private outcomesService = inject(AcademicOutcomesService);
+  private configService = inject(SchoolConfigService);
 
 
   @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
@@ -97,6 +109,15 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   filteredStudents: Student[] = [];
   /** Avisos del alumno en el mes, para el chip de reincidencia. */
   recurrenceCounts: {[sid: string]: RecurrenceCounts} = {};
+  /** Resultados del alumno que se muestran en el modal. */
+  ciclo = '2026-2027';
+  studentAccreditations: StudentAccreditationRecord[] = [];
+  outcomesStudent: Student | null = null;
+  desenlaceTipo: DesenlaceTipo | '' = '';
+  desenlaceInicio = '';
+  desenlaceFin = '';
+  isLoadingOutcomes = false;
+  isSavingDesenlace = false;
   formSnapshot: any;
   initialBreakpoint = 1;
   isFirstEmission = true;
@@ -193,6 +214,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     this.cct = `${cct}${shift}`;
     this.loadStudents();
     this.loadRecurrence();
+    void this.configService.getCiclo().then(ciclo => this.ciclo = ciclo);
   }
 
   ionViewWillEnter() {
@@ -391,6 +413,76 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
 
     this.isSpinnerActive = false;
     this.isSaving = false;
+  }
+
+  async loadOutcomes(student: Student) {
+    this.outcomesStudent = student;
+    this.desenlaceTipo = student.desenlace?.tipo ?? '';
+    this.desenlaceInicio = student.desenlace?.inicio ?? '';
+    this.desenlaceFin = student.desenlace?.fin ?? '';
+    this.studentAccreditations = [];
+    this.isLoadingOutcomes = true;
+
+    try {
+      const {records, desenlace} = await this.outcomesService.getStudentAccreditations(
+        student.id ?? '',
+        this.ciclo
+      );
+
+      this.studentAccreditations = records;
+
+      if(desenlace) {
+        this.desenlaceTipo = desenlace.tipo;
+        this.desenlaceInicio = desenlace.inicio ?? '';
+        this.desenlaceFin = desenlace.fin ?? '';
+      }
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-students] resultados', error);
+      this.showToast('🛑 No se pudieron cargar los resultados.');
+    } finally {
+      this.isLoadingOutcomes = false;
+    }
+  }
+
+  onDesenlaceTipoChange(event: CustomEvent) {
+    this.desenlaceTipo = event.detail.value;
+
+    if(this.desenlaceTipo !== 'expulsion_temporal') {
+      this.desenlaceInicio = '';
+      this.desenlaceFin = '';
+    }
+  }
+
+  async saveDesenlace() {
+    const sid = this.outcomesStudent?.id;
+
+    if(!sid || !this.desenlaceTipo) {
+      return;
+    }
+
+    this.isSavingDesenlace = true;
+
+    try {
+      await this.outcomesService.saveDesenlace(
+        sid,
+        this.desenlaceTipo,
+        this.desenlaceInicio,
+        this.desenlaceFin,
+        this.ciclo
+      );
+
+      this.showToast('✅ Desenlace guardado.');
+      this.closeModal('outcomes-' + sid);
+    } catch(error) {
+      console.log('❌ Schoolify: [tab-students] desenlace', error);
+      this.showToast('🛑 No se pudo guardar el desenlace.');
+    } finally {
+      this.isSavingDesenlace = false;
+    }
+  }
+
+  desenlaceLabel(tipo: DesenlaceTipo): string {
+    return tipo === 'baja_definitiva' ? 'Baja definitiva' : 'Expulsión temporal';
   }
 
   private async loadRecurrence() {

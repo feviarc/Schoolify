@@ -37,6 +37,7 @@ const ADMIN = tokenFor('admin9');
 const TUTORREC = tokenFor('tutorrec');
 const MAESTRO = tokenFor('maestro9');
 const MAESTRO_OTRO = tokenFor('maestro-otro');
+const MAESTRO_ACRED = tokenFor('maestro-acred');
 
 const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
 
@@ -139,6 +140,13 @@ async function readInt(path, field) {
   const document = await response.json();
   const value = document.fields?.[field]?.integerValue;
   return value === undefined ? null : Number(value);
+}
+
+async function readMapField(path, field, subfield) {
+  const response = await firestore('GET', path);
+  if (!response.ok) return null;
+  const document = await response.json();
+  return document.fields?.[field]?.mapValue?.fields?.[subfield]?.stringValue ?? null;
 }
 
 async function waitUntil(check, timeoutMs = 20000) {
@@ -372,6 +380,81 @@ const scenarioCases = [
       // Al borrar el aviso, el resumen del mes debe desaparecer.
       await firestore('DELETE', notificationPath);
       return waitUntil(async () => !(await firestore('GET', summaryPath)).ok);
+    },
+  },
+  // ==================== acreditacion y desenlaces ====================
+  {
+    name: 'acreditacion por materia y desenlace del prefecto',
+    run: async () => {
+      await firestore('PATCH', 'usuarios/maestro-acred', {
+        fields: {
+          rol: str('maestro'),
+          cct: str('CCT1'),
+          grupos: arr(['gacred']),
+          materias: arr(['MATEMATICAS']),
+          nombre: str('MAESTRO ACREDITA'),
+        },
+      });
+      await firestore('PATCH', 'materias/macred', { fields: { nombre: str('MATEMATICAS'), grado: str('1') } });
+      await firestore('PATCH', 'grupos_de_alumnos/gacred', { fields: { cct: str('CCT1'), grado: str('1'), letra: str('B') } });
+      await firestore('PATCH', 'alumnos/aacred1', { fields: { nombre: str('ALUMNO UNO'), nombreCompleto: str('ALUMNO UNO'), cct: str('CCT1'), gid: str('gacred'), tid: str('tutorrec') } });
+      await firestore('PATCH', 'alumnos/aacred2', { fields: { nombre: str('ALUMNO DOS'), nombreCompleto: str('ALUMNO DOS'), cct: str('CCT1'), gid: str('gacred'), tid: str('tutorrec') } });
+
+      const list = await callFunction('getAccreditations', {gid: 'gacred', subjectId: 'macred', ciclo: '2026-2027'}, MAESTRO_ACRED);
+
+      if (list.status >= 400 || list.body?.result?.students?.length !== 2) return false;
+
+      const saved = await callFunction('saveAccreditations', {
+        gid: 'gacred',
+        subjectId: 'macred',
+        ciclo: '2026-2027',
+        entries: [
+          {sid: 'aacred1', estatus: 'acreditado'},
+          {sid: 'aacred2', estatus: 'no_acreditado'},
+        ],
+      }, MAESTRO_ACRED);
+
+      if (saved.status >= 400) return false;
+
+      const after = await callFunction('getAccreditations', {gid: 'gacred', subjectId: 'macred', ciclo: '2026-2027'}, MAESTRO_ACRED);
+
+      if (after.body?.result?.records?.aacred1 !== 'acreditado') return false;
+      if (after.body?.result?.records?.aacred2 !== 'no_acreditado') return false;
+
+      // Otro maestro no puede ver ni guardar este grupo.
+      const otro = await callFunction('getAccreditations', {gid: 'gacred', subjectId: 'macred', ciclo: '2026-2027'}, MAESTRO_OTRO);
+      if (otro.status < 400) return false;
+
+      // Un tutor tampoco.
+      const tutor = await callFunction('getAccreditations', {gid: 'gacred', subjectId: 'macred', ciclo: '2026-2027'}, TUTORREC);
+      if (tutor.status < 400) return false;
+
+      // El prefecto lee los resultados del alumno.
+      const student = await callFunction('getStudentAccreditations', {sid: 'aacred1', ciclo: '2026-2027'}, PREFECT);
+      if (student.status >= 400 || student.body?.result?.records?.length !== 1) return false;
+
+      // El maestro no marca desenlaces; el prefecto si.
+      const byMaestro = await callFunction('saveDesenlace', {sid: 'aacred1', tipo: 'baja_definitiva', ciclo: '2026-2027'}, MAESTRO_ACRED);
+      if (byMaestro.status < 400) return false;
+
+      const byPrefect = await callFunction('saveDesenlace', {
+        sid: 'aacred1',
+        tipo: 'expulsion_temporal',
+        inicio: '2026-11-20',
+        fin: '2026-11-25',
+        ciclo: '2026-2027',
+      }, PREFECT);
+
+      if (byPrefect.status >= 400) return false;
+
+      const desenlace = await readMapField('alumnos/aacred1', 'desenlace', 'tipo');
+      if (desenlace !== 'expulsion_temporal') return false;
+
+      const events = await firestore('GET', 'desenlaces');
+      if (!events.ok) return false;
+      const body = await events.json();
+
+      return (body.documents?.length ?? 0) >= 1;
     },
   },
 ];

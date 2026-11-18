@@ -24,6 +24,8 @@ import {
   map,
 } from 'rxjs/operators';
 
+import { StudentDesenlace } from 'src/app/models/desenlace.model';
+
 
 // ==================== INTERFACES ====================
 
@@ -42,6 +44,8 @@ export interface Student {
   apellidoMaterno: string;
   nombreCompleto: string;
   nombreTutor?: string;
+  /** Desenlace vigente marcado por el prefecto (expulsion temporal o baja). */
+  desenlace?: StudentDesenlace;
   createdAt?: Date;
   updatedAt?: Date;
 }

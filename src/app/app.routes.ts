@@ -74,6 +74,13 @@ export const routes: Routes = [
         data: {expectedRole: 'maestro'}
       },
       {
+        path: 'tab-accreditations',
+        loadComponent: () => import('./prefect/tab-accreditations/tab-accreditations.component').then((m) => m.TabAccreditationsComponent),
+        // La acreditacion por materia la captura el maestro.
+        canActivate: [AuthGuard],
+        data: {expectedRole: 'maestro'}
+      },
+      {
         path: '',
         redirectTo: '/prefect-dashboard/tab-notifications',
         pathMatch: 'full'

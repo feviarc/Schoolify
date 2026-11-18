@@ -1,0 +1,16 @@
+/* El select de estatus usa su propio label: Ionic alinea el valor a la derecha,
+   igual que los selects de Grupo y Materia. */
+
+/* Color del valor seleccionado en el select de estatus. */
+.estatus-select.aprobado::part(text) {
+  color: #008000;
+}
+
+.estatus-select.reprobado::part(text) {
+  color: #dc0000;
+}
+
+/* "Sin registrar" en gris. */
+.estatus-select.sin-registrar::part(text) {
+  color: #9e9e9e;
+}

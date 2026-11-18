@@ -87,6 +87,13 @@ function isPeriodo(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
+/** Ciclo escolar (`2026-2027`); si el cliente no manda uno valido, se usa el actual. */
+const DEFAULT_CICLO = '2026-2027';
+
+function normalizeCiclo(value: unknown): string {
+  return typeof value === 'string' && /^\d{4}-\d{4}$/.test(value) ? value : DEFAULT_CICLO;
+}
+
 /** Campo del resumen que corresponde a cada tipo de aviso. */
 const SUMMARY_TYPE_FIELDS: {[key: string]: string} = {
   Inasistencia: 'inasistencias',
@@ -1141,7 +1148,8 @@ export const getMonthlyRecurrence = onCall(
     }
 
     const db = getFirestore();
-    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const uid = request.auth.uid;
+    const caller = await db.collection('usuarios').doc(uid).get();
     const callerData = caller.data();
     const rol = callerData?.rol;
 
@@ -1168,7 +1176,7 @@ export const getMonthlyRecurrence = onCall(
       snapshot.forEach((doc) => {
         const data = doc.data();
 
-        if (rol === 'tutor' && data.tid !== request.auth!.uid) return;
+        if (rol === 'tutor' && data.tid !== uid) return;
         if (rol === 'maestro' && !grupos.has(data.gid)) return;
 
         counts[data.sid] = {
@@ -1187,5 +1195,342 @@ export const getMonthlyRecurrence = onCall(
       console.error('❌ Schoolify: [getMonthlyRecurrence]', error);
       throw new HttpsError('internal', 'No se pudo consultar la reincidencia.');
     }
+  }
+);
+
+// ==================== acreditacion y desenlaces ====================
+
+/**
+ * Acreditaciones de un grupo en una materia y ciclo. El maestro solo puede
+ * consultar sus grupos/materias; el prefecto y el admin, su escuela.
+ */
+export const getAccreditations = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const gid = request.data?.gid;
+    const subjectId = request.data?.subjectId;
+    const ciclo = normalizeCiclo(request.data?.ciclo);
+
+    if (typeof gid !== 'string' || typeof subjectId !== 'string') {
+      throw new HttpsError('invalid-argument', 'Faltan el grupo o la materia.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    if (!caller.exists || !(isStaffRole(rol) || rol === 'administrador') || !cct) {
+      throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede consultar la acreditación.');
+    }
+
+    const group = await db.collection('grupos_de_alumnos').doc(gid).get();
+
+    if (!group.exists || group.data()?.cct !== cct) {
+      throw new HttpsError('permission-denied', 'El grupo no pertenece a tu escuela.');
+    }
+
+    const subject = await db.collection('materias').doc(subjectId).get();
+
+    if (!subject.exists) {
+      throw new HttpsError('not-found', 'La materia no existe.');
+    }
+
+    const subjectNombre: string = subject.data()?.nombre ?? '';
+
+    if (rol === 'maestro') {
+      const grupos = Array.isArray(profile.grupos) ? profile.grupos : [];
+      const materias = Array.isArray(profile.materias) ? profile.materias : [];
+
+      if (!grupos.includes(gid) || !materias.includes(subjectNombre)) {
+        throw new HttpsError('permission-denied', 'Solo puedes acreditar tus grupos y materias.');
+      }
+    }
+
+    const studentsSnapshot = await db.collection('alumnos').where('gid', '==', gid).get();
+    const students = studentsSnapshot.docs
+      .filter((doc) => doc.data().cct === cct)
+      .map((doc) => ({
+        id: doc.id,
+        nombreCompleto: doc.data().nombreCompleto ?? doc.data().nombre ?? '',
+      }))
+      .sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto));
+
+    const recordsSnapshot = await db
+      .collection('acreditaciones')
+      .where('gid', '==', gid)
+      .where('subjectId', '==', subjectId)
+      .where('ciclo', '==', ciclo)
+      .get();
+
+    const records: Record<string, string> = {};
+
+    recordsSnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (data.cct === cct) {
+        records[data.sid] = data.estatus;
+      }
+    });
+
+    return {ciclo, subjectNombre, students, records};
+  }
+);
+
+/**
+ * Guarda en lote la acreditacion de un grupo/materia. `sin_registrar` borra el
+ * registro; el resto debe ser `acreditado` o `no_acreditado`.
+ */
+export const saveAccreditations = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const gid = request.data?.gid;
+    const subjectId = request.data?.subjectId;
+    const ciclo = normalizeCiclo(request.data?.ciclo);
+    const entries = request.data?.entries;
+
+    if (typeof gid !== 'string' || typeof subjectId !== 'string' || !Array.isArray(entries)) {
+      throw new HttpsError('invalid-argument', 'Faltan el grupo, la materia o las acreditaciones.');
+    }
+
+    if (entries.length > 200) {
+      throw new HttpsError('invalid-argument', 'Demasiados alumnos en una sola operación.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    if (!caller.exists || !(isStaffRole(rol) || rol === 'administrador') || !cct) {
+      throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede acreditar.');
+    }
+
+    const group = await db.collection('grupos_de_alumnos').doc(gid).get();
+
+    if (!group.exists || group.data()?.cct !== cct) {
+      throw new HttpsError('permission-denied', 'El grupo no pertenece a tu escuela.');
+    }
+
+    const subject = await db.collection('materias').doc(subjectId).get();
+
+    if (!subject.exists) {
+      throw new HttpsError('not-found', 'La materia no existe.');
+    }
+
+    const subjectNombre: string = subject.data()?.nombre ?? '';
+
+    if (rol === 'maestro') {
+      const grupos = Array.isArray(profile.grupos) ? profile.grupos : [];
+      const materias = Array.isArray(profile.materias) ? profile.materias : [];
+
+      if (!grupos.includes(gid) || !materias.includes(subjectNombre)) {
+        throw new HttpsError('permission-denied', 'Solo puedes acreditar tus grupos y materias.');
+      }
+    }
+
+    const studentsSnapshot = await db.collection('alumnos').where('gid', '==', gid).get();
+    const allowedStudents = new Set(
+      studentsSnapshot.docs.filter((doc) => doc.data().cct === cct).map((doc) => doc.id)
+    );
+
+    const batch = db.batch();
+    let saved = 0;
+
+    for (const entry of entries) {
+      const sid = entry?.sid;
+      const estatus = entry?.estatus;
+
+      if (typeof sid !== 'string' || !allowedStudents.has(sid)) {
+        throw new HttpsError('invalid-argument', 'Hay un alumno que no pertenece al grupo.');
+      }
+
+      const ref = db.collection('acreditaciones').doc(`${cct}_${sid}_${subjectId}_${ciclo}`);
+
+      if (estatus === 'sin_registrar') {
+        batch.delete(ref);
+        saved++;
+        continue;
+      }
+
+      if (estatus !== 'acreditado' && estatus !== 'no_acreditado') {
+        throw new HttpsError('invalid-argument', 'Estatus de acreditación inválido.');
+      }
+
+      batch.set(ref, {
+        cct,
+        sid,
+        gid,
+        ciclo,
+        subjectId,
+        subjectNombre,
+        grado: group.data()?.grado ?? '',
+        letra: group.data()?.letra ?? '',
+        estatus,
+        registradoPor: request.auth.uid,
+        registradoPorNombre: profile.nombre ?? '',
+        actualizadoEn: FieldValue.serverTimestamp(),
+      }, {merge: true});
+      saved++;
+    }
+
+    await batch.commit();
+
+    return {saved};
+  }
+);
+
+/** Acreditaciones de un alumno en el ciclo (para el modal del prefecto). */
+export const getStudentAccreditations = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const sid = request.data?.sid;
+    const ciclo = normalizeCiclo(request.data?.ciclo);
+
+    if (typeof sid !== 'string') {
+      throw new HttpsError('invalid-argument', 'Falta el alumno.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    if (!caller.exists || !(isStaffRole(rol) || rol === 'administrador') || !cct) {
+      throw new HttpsError('permission-denied', 'Solo el personal de la escuela puede consultar los resultados.');
+    }
+
+    const student = await db.collection('alumnos').doc(sid).get();
+
+    if (!student.exists || student.data()?.cct !== cct) {
+      throw new HttpsError('permission-denied', 'El alumno no pertenece a tu escuela.');
+    }
+
+    const snapshot = await db
+      .collection('acreditaciones')
+      .where('sid', '==', sid)
+      .where('ciclo', '==', ciclo)
+      .get();
+
+    const records = snapshot.docs
+      .filter((doc) => doc.data().cct === cct)
+      .map((doc) => ({
+        subjectId: doc.data().subjectId,
+        subjectNombre: doc.data().subjectNombre ?? '',
+        estatus: doc.data().estatus,
+      }))
+      .sort((a, b) => a.subjectNombre.localeCompare(b.subjectNombre));
+
+    return {
+      ciclo,
+      records,
+      desenlace: student.data()?.desenlace ?? null,
+    };
+  }
+);
+
+/**
+ * Marca el desenlace del alumno: expulsion temporal (con fechas) o baja
+ * definitiva. Solo el prefecto (o el admin) de la escuela.
+ */
+export const saveDesenlace = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const sid = request.data?.sid;
+    const tipo = request.data?.tipo;
+    const inicio = typeof request.data?.inicio === 'string' && request.data.inicio ? request.data.inicio : null;
+    const fin = typeof request.data?.fin === 'string' && request.data.fin ? request.data.fin : null;
+    const ciclo = normalizeCiclo(request.data?.ciclo);
+
+    if (typeof sid !== 'string' || !['expulsion_temporal', 'baja_definitiva'].includes(tipo)) {
+      throw new HttpsError('invalid-argument', 'Desenlace inválido.');
+    }
+
+    if (inicio && !/^\d{4}-\d{2}-\d{2}$/.test(inicio)) {
+      throw new HttpsError('invalid-argument', 'La fecha de inicio no es válida.');
+    }
+
+    if (fin && !/^\d{4}-\d{2}-\d{2}$/.test(fin)) {
+      throw new HttpsError('invalid-argument', 'La fecha de fin no es válida.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    if (!caller.exists || !(rol === 'prefecto' || rol === 'administrador') || !cct) {
+      throw new HttpsError('permission-denied', 'Solo el prefecto puede registrar desenlaces.');
+    }
+
+    const student = await db.collection('alumnos').doc(sid).get();
+
+    if (!student.exists || student.data()?.cct !== cct) {
+      throw new HttpsError('permission-denied', 'El alumno no pertenece a tu escuela.');
+    }
+
+    const desenlace = {
+      tipo,
+      inicio: tipo === 'expulsion_temporal' ? inicio : null,
+      fin: tipo === 'expulsion_temporal' ? fin : null,
+      actualizadoEn: FieldValue.serverTimestamp(),
+      por: request.auth.uid,
+    };
+
+    const batch = db.batch();
+
+    batch.set(db.collection('desenlaces').doc(), {
+      cct,
+      sid,
+      ciclo,
+      tipo,
+      inicio: desenlace.inicio,
+      fin: desenlace.fin,
+      registradoPor: request.auth.uid,
+      registradoPorNombre: profile.nombre ?? '',
+      registradoEn: FieldValue.serverTimestamp(),
+    });
+
+    batch.update(db.collection('alumnos').doc(sid), {desenlace});
+
+    await batch.commit();
+
+    return {ok: true, desenlace};
   }
 );

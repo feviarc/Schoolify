@@ -95,6 +95,40 @@
       "density": "SPARSE_ALL"
     },
     {
+      "collectionGroup": "acreditaciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subjectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ciclo",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "acreditaciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ciclo",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
       "collectionGroup": "notificaciones",
       "queryScope": "COLLECTION",
       "fields": [
