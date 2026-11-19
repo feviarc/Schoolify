@@ -34,7 +34,7 @@
         [value]="selectedSubjectId"
         (ionChange)="onSubjectChange($event)"
       >
-        @for(materia of materias; track materia.id) {
+        @for(materia of materiasDelGrado; track materia.id) {
           <ion-select-option [value]="materia.id ?? ''">
             {{ materia.nombre }}
           </ion-select-option>
@@ -46,6 +46,12 @@
   @if(grupos.length === 0 || materias.length === 0) {
     <ion-note>
       No tienes grupos o materias vinculados. Revisa las pestañas Grupos y Materias.
+    </ion-note>
+  }
+
+  @if(grupos.length > 0 && materias.length > 0 && materiasDelGrado.length === 0) {
+    <ion-note>
+      No tienes materias de este grado. Elige otro grupo o revisa la pestaña Materias.
     </ion-note>
   }
 

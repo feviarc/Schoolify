@@ -68,6 +68,8 @@ export class TabAccreditationsComponent implements OnInit, OnDestroy {
   ciclo = '2026-2027';
   grupos: StudentGroup[] = [];
   materias: Subject[] = [];
+  /** Materias del maestro que corresponden al grado del grupo elegido. */
+  materiasDelGrado: Subject[] = [];
   selectedGid = '';
   selectedSubjectId = '';
   students: AccreditationStudent[] = [];
@@ -113,6 +115,7 @@ export class TabAccreditationsComponent implements OnInit, OnDestroy {
           this.selectedGid = this.grupos[0].gid;
         }
 
+        this.applyGradeFilter();
         this.maybeLoad();
       },
       error: error => {
@@ -126,10 +129,7 @@ export class TabAccreditationsComponent implements OnInit, OnDestroy {
         .filter(subject => misMaterias.includes(subject.nombre))
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-      if(!this.selectedSubjectId && this.materias.length > 0) {
-        this.selectedSubjectId = this.materias[0].id ?? '';
-      }
-
+      this.applyGradeFilter();
       this.maybeLoad();
     });
 
@@ -142,6 +142,7 @@ export class TabAccreditationsComponent implements OnInit, OnDestroy {
 
   onGroupChange(event: CustomEvent) {
     this.selectedGid = event.detail.value;
+    this.applyGradeFilter();
     this.loadKey = '';
     this.maybeLoad();
   }
@@ -183,6 +184,27 @@ export class TabAccreditationsComponent implements OnInit, OnDestroy {
       this.showToast('🛑 No se pudo guardar la acreditación.');
     } finally {
       this.isSaving = false;
+    }
+  }
+
+  /** El selector de materias solo muestra las del grado del grupo elegido. */
+  private applyGradeFilter() {
+    const group = this.grupos.find(item => item.gid === this.selectedGid);
+    const grado = group?.grado?.trim() ?? '';
+
+    this.materiasDelGrado = grado
+      ? this.materias.filter(materia => String(materia.grado).trim() === grado)
+      : [];
+
+    if(!this.materiasDelGrado.some(materia => materia.id === this.selectedSubjectId)) {
+      this.selectedSubjectId = this.materiasDelGrado[0]?.id ?? '';
+    }
+
+    if(!this.selectedSubjectId) {
+      this.students = [];
+      this.estatus = {};
+      this.loadKey = '';
+      this.isLoading = false;
     }
   }
 
