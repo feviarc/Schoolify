@@ -557,9 +557,9 @@ export class TabNotificationsComponent  implements OnInit, OnDestroy {
     }
 
     if(eventButton.action === 'reject') {
-      await this.studentCRUDService.removeTutor(studentId);
+      await this.studentCRUDService.validateTutor(studentId, false);
     } else {
-      await this.studentCRUDService.validateStudentNotifications(studentId, true);
+      await this.studentCRUDService.validateTutor(studentId, true);
     }
   }
 

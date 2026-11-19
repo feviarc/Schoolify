@@ -15,6 +15,8 @@ import {
   where,
 } from '@angular/fire/firestore';
 
+import { Functions, httpsCallable } from '@angular/fire/functions';
+
 import {
   Observable,
 } from 'rxjs';
@@ -62,6 +64,7 @@ export interface Student {
 
 export class StudentCRUDService {
   private firestore = inject(Firestore);
+  private functions = inject(Functions);
 
 
   private readonly STUDENTS_COLLECTION = 'alumnos';
@@ -226,6 +229,26 @@ export class StudentCRUDService {
    */
   async validateStudentNotifications(studentId: string, validation: boolean): Promise<void> {
     await this.updateStudent(studentId, { validado: validation });
+  }
+
+  /** Acepta o rechaza al tutor de un alumno (callable con auditoria). */
+  async validateTutor(studentId: string, accept: boolean): Promise<void> {
+    const callable = httpsCallable<{sid: string; accept: boolean}, {ok: boolean}>(
+      this.functions,
+      'validateTutor'
+    );
+
+    await callable({sid: studentId, accept});
+  }
+
+  /** Desvincula al tutor de un alumno (callable con auditoria). */
+  async releaseStudent(studentId: string): Promise<void> {
+    const callable = httpsCallable<{sid: string}, {ok: boolean}>(
+      this.functions,
+      'releaseStudent'
+    );
+
+    await callable({sid: studentId});
   }
 
   /**

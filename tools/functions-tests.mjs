@@ -38,6 +38,7 @@ const TUTORREC = tokenFor('tutorrec');
 const MAESTRO = tokenFor('maestro9');
 const MAESTRO_OTRO = tokenFor('maestro-otro');
 const MAESTRO_ACRED = tokenFor('maestro-acred');
+const TUTOR_AUDIT = tokenFor('tutor-audit');
 
 const AUTH_EMULATOR = `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-key`;
 
@@ -147,6 +148,23 @@ async function readMapField(path, field, subfield) {
   if (!response.ok) return null;
   const document = await response.json();
   return document.fields?.[field]?.mapValue?.fields?.[subfield]?.stringValue ?? null;
+}
+
+async function readBool(path, field) {
+  const response = await firestore('GET', path);
+  if (!response.ok) return null;
+  const document = await response.json();
+  return document.fields?.[field]?.booleanValue ?? null;
+}
+
+async function auditActions() {
+  const response = await firestore('GET', 'auditoria');
+  if (!response.ok) return [];
+  const body = await response.json();
+
+  return (body.documents ?? [])
+    .map((document) => document.fields?.accion?.stringValue)
+    .filter(Boolean);
 }
 
 async function waitUntil(check, timeoutMs = 20000) {
@@ -455,6 +473,74 @@ const scenarioCases = [
       const body = await events.json();
 
       return (body.documents?.length ?? 0) >= 1;
+    },
+  },
+  // ==================== auditoria y tutores ====================
+  {
+    name: 'valida tutores, desvincula y deja auditoria',
+    run: async () => {
+      await firestore('PATCH', 'usuarios/tutor-audit', { fields: { rol: str('tutor'), cct: str('CCT1') } });
+      await firestore('PATCH', 'alumnos/a-audit', {
+        fields: {
+          nombre: str('ALUMNO AUDIT'),
+          cct: str('CCT1'),
+          tid: str('tutor-audit'),
+          nombreTutor: str('TUTOR AUDIT'),
+          validado: bool(false),
+        },
+      });
+      await firestore('PATCH', 'alumnos/a-audit2', {
+        fields: {
+          nombre: str('ALUMNO AUDIT 2'),
+          cct: str('CCT1'),
+          tid: str('tutor-audit'),
+          nombreTutor: str('TUTOR AUDIT'),
+          validado: bool(false),
+        },
+      });
+
+      // El maestro no puede validar tutores.
+      const asMaestro = await callFunction('validateTutor', { sid: 'a-audit', accept: true }, MAESTRO_ACRED);
+      if (asMaestro.status < 400) return false;
+
+      // El prefecto valida al tutor.
+      const accept = await callFunction('validateTutor', { sid: 'a-audit', accept: true }, PREFECT);
+      if (accept.status >= 400) return false;
+      if ((await readBool('alumnos/a-audit', 'validado')) !== true) return false;
+
+      // Un tutor no puede soltar a un alumno ya validado.
+      const tutorValidated = await callFunction('releaseStudent', { sid: 'a-audit' }, TUTOR_AUDIT);
+      if (tutorValidated.status < 400) return false;
+
+      // Pero si al pendiente.
+      const release = await callFunction('releaseStudent', { sid: 'a-audit2' }, TUTOR_AUDIT);
+      if (release.status >= 400) return false;
+      if ((await readField('alumnos/a-audit2', 'tid')) !== '') return false;
+
+      // El prefecto puede deshacer el vinculo validado; el maestro no.
+      const staffRelease = await callFunction('releaseStudent', { sid: 'a-audit' }, PREFECT);
+      if (staffRelease.status >= 400) return false;
+
+      const maestroRelease = await callFunction('releaseStudent', { sid: 'a-audit2' }, MAESTRO_ACRED);
+      if (maestroRelease.status < 400) return false;
+
+      // La callable de borrado de cuenta tambien deja auditoria.
+      const borrarUid = await createAuthUser('borrar-audit@test.mx');
+      await firestore('PATCH', `usuarios/${borrarUid}`, { fields: { rol: str('tutor'), cct: str('CCT1') } });
+      const deleted = await callFunction('deleteTeacher', { uid: borrarUid }, ADMIN);
+      if (deleted.status >= 400) return false;
+
+      const actions = await auditActions();
+
+      return [
+        'tutor_validado',
+        'alumno_desvinculado',
+        'usuario_borrado',
+        'usuario_actualizado',
+        'grupo_borrado',
+        'acreditacion_guardada',
+        'desenlace_registrado',
+      ].every((action) => actions.includes(action));
     },
   },
 ];

@@ -379,8 +379,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   }
 
   async onRemoveTutor(studentId: string) {
-    await this.studentCRUDService.validateStudentNotifications(studentId, false);
-    await this.studentCRUDService.removeTutor(studentId);
+    await this.studentCRUDService.releaseStudent(studentId);
   }
 
   async onUpdateStudent(student: Student) {

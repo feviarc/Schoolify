@@ -171,7 +171,7 @@ const cases = [
   ['tutor1 roba el alumno de tutor2', 'update', 'alumnos/a2', { token: TUTOR1, fields: { tid: str('tutor1') }, mask: ['tid'] }, 'denegado'],
   // Quitar de la lista: solo su propio alumno y solo si sigue pendiente de validar.
   ['tutor1 no cambia otros campos al quitar al alumno', 'update', 'alumnos/a5', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str(''), gid: str('g1') }, mask: ['tid', 'nombreTutor', 'gid'] }, 'denegado'],
-  ['tutor1 quita de su lista a un alumno pendiente', 'update', 'alumnos/a5', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'permitido'],
+  ['tutor1 ya no quita directo al alumno (solo por funcion)', 'update', 'alumnos/a5', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'denegado'],
   ['tutor1 no quita a un alumno ya validado', 'update', 'alumnos/a6', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'denegado'],
   ['tutor1 no quita al alumno de otro tutor', 'update', 'alumnos/a2', { token: TUTOR1, fields: { tid: str(''), nombreTutor: str('') }, mask: ['tid', 'nombreTutor'] }, 'denegado'],
   // El tutor solo puede marcar su aviso: visto y enterado.
@@ -203,6 +203,10 @@ const cases = [
   ['el personal lee la configuracion', 'get', 'configuracion/general', { token: PREFECT }, 'permitido'],
   ['el prefecto no cambia la configuracion', 'update', 'configuracion/general', { token: PREFECT, fields: { ciclo: str('2027-2028') }, mask: ['ciclo'] }, 'denegado'],
   ['el admin cambia la configuracion', 'update', 'configuracion/general', { token: ADMIN, fields: { ciclo: str('2027-2028') }, mask: ['ciclo'] }, 'permitido'],
+  // Auditoria: solo el admin la lee y nadie la escribe desde el cliente.
+  ['el admin lee la auditoria', 'list', 'auditoria', { token: ADMIN }, 'permitido'],
+  ['el prefecto no lee la auditoria', 'list', 'auditoria', { token: PREFECT }, 'denegado'],
+  ['nadie escribe la auditoria directo', 'post', 'auditoria?documentId=au1', { token: ADMIN, fields: { accion: str('x') } }, 'denegado'],
   ['admin1 crea una escuela', 'post', 'escuelas?documentId=e8', { token: ADMIN, fields: { cct: str('CCT8'), nombre: str('ESCUELA 8') } }, 'permitido'],
   ['admin1 edita una escuela existente', 'update', 'escuelas/e1', { token: ADMIN, fields: { nombre: str('ESCUELA EDITADA') }, mask: ['nombre'] }, 'permitido'],
   ['admin1 borra un usuario', 'delete', 'usuarios/tutor2', { token: ADMIN }, 'permitido'],

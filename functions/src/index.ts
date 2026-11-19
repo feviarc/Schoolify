@@ -94,6 +94,44 @@ function normalizeCiclo(value: unknown): string {
   return typeof value === 'string' && /^\d{4}-\d{4}$/.test(value) ? value : DEFAULT_CICLO;
 }
 
+// ==================== auditoria ====================
+
+interface AuditInput {
+  accion: string;
+  actorUid: string;
+  actorRol: string;
+  actorNombre?: string;
+  objetivoTipo: string;
+  objetivoId: string;
+  cct?: string;
+  antes?: any;
+  despues?: any;
+}
+
+function auditData(input: AuditInput): any {
+  return {
+    accion: input.accion,
+    actorUid: input.actorUid,
+    actorRol: input.actorRol,
+    actorNombre: input.actorNombre ?? '',
+    objetivoTipo: input.objetivoTipo,
+    objetivoId: input.objetivoId,
+    cct: input.cct ?? '',
+    antes: input.antes ?? null,
+    despues: input.despues ?? null,
+    creadoEn: FieldValue.serverTimestamp(),
+  };
+}
+
+/** Registra una accion sensible. Si falla, no debe tumbar la accion principal. */
+async function writeAudit(db: Firestore, input: AuditInput): Promise<void> {
+  try {
+    await db.collection('auditoria').add(auditData(input));
+  } catch (error) {
+    console.error('❌ No se pudo escribir la auditoria:', error);
+  }
+}
+
 /** Campo del resumen que corresponde a cada tipo de aviso. */
 const SUMMARY_TYPE_FIELDS: {[key: string]: string} = {
   Inasistencia: 'inasistencias',
@@ -630,8 +668,24 @@ export const deleteTeacher = onCall(
     }
 
     try {
+      const target = await db.collection('usuarios').doc(uid).get();
+      const targetData = target.data() ?? {};
+      const callerData = caller.data() ?? {};
+
       await getAuth().deleteUser(uid);
       await db.collection('usuarios').doc(uid).delete();
+
+      await writeAudit(db, {
+        accion: 'usuario_borrado',
+        actorUid: request.auth.uid,
+        actorRol: callerData.rol ?? 'administrador',
+        actorNombre: callerData.nombre ?? '',
+        objetivoTipo: 'usuario',
+        objetivoId: uid,
+        cct: targetData.cct ?? callerData.cct ?? '',
+        antes: {rol: targetData.rol ?? ''},
+      });
+
       console.log(`🗑️ Maestro eliminado correctamente: ${uid}`);
       return {success: true};
     } catch (error) {
@@ -859,11 +913,15 @@ export const updateUserByAdmin = onCall(
     }
 
     const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const callerData = caller.data() ?? {};
     const target = await db.collection('usuarios').doc(uid).get();
 
     if (!target.exists) {
       throw new HttpsError('not-found', 'La cuenta no existe.');
     }
+
+    const targetData = target.data() ?? {};
 
     try {
       if (rol !== undefined) {
@@ -875,6 +933,21 @@ export const updateUserByAdmin = onCall(
         await getAuth().updateUser(uid, {disabled});
         console.log(`👤 Cuenta ${uid} ${disabled ? 'deshabilitada' : 'habilitada'}`);
       }
+
+      await writeAudit(db, {
+        accion: 'usuario_actualizado',
+        actorUid: request.auth.uid,
+        actorRol: callerData.rol ?? 'administrador',
+        actorNombre: callerData.nombre ?? '',
+        objetivoTipo: 'usuario',
+        objetivoId: uid,
+        cct: targetData.cct ?? callerData.cct ?? '',
+        antes: {rol: targetData.rol ?? ''},
+        despues: {
+          rol: rol ?? targetData.rol ?? '',
+          ...(disabled !== undefined ? {disabled} : {}),
+        },
+      });
 
       return {success: true};
     } catch (error) {
@@ -992,6 +1065,21 @@ export const deleteStudentGroup = onCall(
       }
 
       await db.collection('grupos_de_alumnos').doc(gid).delete();
+
+      await writeAudit(db, {
+        accion: 'grupo_borrado',
+        actorUid: request.auth.uid,
+        actorRol: callerData?.rol ?? '',
+        actorNombre: callerData?.nombre ?? '',
+        objetivoTipo: 'grupo',
+        objetivoId: gid,
+        cct: group.data()?.cct ?? callerData?.cct ?? '',
+        antes: {
+          grado: group.data()?.grado ?? '',
+          letra: group.data()?.letra ?? '',
+        },
+      });
+
       console.log(`🗑️ Grupo eliminado: ${gid}`);
 
       return {success: true};
@@ -1392,6 +1480,27 @@ export const saveAccreditations = onCall(
       saved++;
     }
 
+    batch.set(db.collection('auditoria').doc(), auditData({
+      accion: 'acreditacion_guardada',
+      actorUid: request.auth.uid,
+      actorRol: rol ?? '',
+      actorNombre: profile.nombre ?? '',
+      objetivoTipo: 'acreditacion',
+      objetivoId: `${gid}_${subjectId}_${ciclo}`,
+      cct,
+      despues: {
+        gid,
+        subjectId,
+        subjectNombre,
+        ciclo,
+        guardados: saved,
+        entradas: entries.map((entry: any) => ({
+          sid: entry?.sid,
+          estatus: entry?.estatus,
+        })),
+      },
+    }));
+
     await batch.commit();
 
     return {saved};
@@ -1529,8 +1638,192 @@ export const saveDesenlace = onCall(
 
     batch.update(db.collection('alumnos').doc(sid), {desenlace});
 
+    batch.set(db.collection('auditoria').doc(), auditData({
+      accion: 'desenlace_registrado',
+      actorUid: request.auth.uid,
+      actorRol: rol ?? '',
+      actorNombre: profile.nombre ?? '',
+      objetivoTipo: 'alumno',
+      objetivoId: sid,
+      cct,
+      antes: student.data()?.desenlace ?? null,
+      despues: {
+        tipo,
+        inicio: desenlace.inicio,
+        fin: desenlace.fin,
+      },
+    }));
+
     await batch.commit();
 
     return {ok: true, desenlace};
+  }
+);
+
+/**
+ * Acepta o rechaza al tutor que reclamo a un alumno. Solo el prefecto (o admin)
+ * de la escuela. Al aceptar queda `validado`; al rechazar se libera al alumno.
+ */
+export const validateTutor = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const sid = request.data?.sid;
+    const accept = request.data?.accept;
+
+    if (typeof sid !== 'string' || typeof accept !== 'boolean') {
+      throw new HttpsError('invalid-argument', 'Faltan el alumno o la decisión.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    if (!caller.exists || !(rol === 'prefecto' || rol === 'administrador') || !cct) {
+      throw new HttpsError('permission-denied', 'Solo el prefecto puede validar tutores.');
+    }
+
+    const student = await db.collection('alumnos').doc(sid).get();
+
+    if (!student.exists || student.data()?.cct !== cct) {
+      throw new HttpsError('permission-denied', 'El alumno no pertenece a tu escuela.');
+    }
+
+    const data = student.data() ?? {};
+
+    if (!data.tid) {
+      throw new HttpsError('failed-precondition', 'El alumno no tiene un tutor pendiente.');
+    }
+
+    if (data.validado === true) {
+      throw new HttpsError('failed-precondition', 'El tutor ya está validado.');
+    }
+
+    const before = {
+      tid: data.tid,
+      nombreTutor: data.nombreTutor ?? '',
+      validado: false,
+    };
+
+    const updates = accept ?
+      {validado: true, updatedAt: FieldValue.serverTimestamp()} :
+      {tid: '', nombreTutor: '', validado: false, updatedAt: FieldValue.serverTimestamp()};
+
+    const batch = db.batch();
+
+    batch.update(student.ref, updates);
+
+    batch.set(db.collection('auditoria').doc(), auditData({
+      accion: accept ? 'tutor_validado' : 'tutor_rechazado',
+      actorUid: request.auth.uid,
+      actorRol: rol,
+      actorNombre: profile.nombre ?? '',
+      objetivoTipo: 'alumno',
+      objetivoId: sid,
+      cct,
+      antes: before,
+      despues: accept ?
+        {validado: true} :
+        {tid: '', nombreTutor: '', validado: false},
+    }));
+
+    await batch.commit();
+
+    return {ok: true};
+  }
+);
+
+/**
+ * Desvincula al tutor de un alumno. El tutor solo puede soltar a un alumno
+ * pendiente de validar y propio; el prefecto/admin puede deshacer el vinculo en
+ * su escuela. Toda desvinculacion queda auditada.
+ */
+export const releaseStudent = onCall(
+  {region: TRIGGER_REGION},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'El usuario no está autenticado.');
+    }
+
+    if (request.auth.token.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'El correo electrónico no está verificado.');
+    }
+
+    const sid = request.data?.sid;
+
+    if (typeof sid !== 'string') {
+      throw new HttpsError('invalid-argument', 'Falta el alumno.');
+    }
+
+    const db = getFirestore();
+    const caller = await db.collection('usuarios').doc(request.auth.uid).get();
+    const profile = caller.data() ?? {};
+    const rol = profile.rol;
+    const cct = profile.cct;
+
+    const student = await db.collection('alumnos').doc(sid).get();
+
+    if (!student.exists) {
+      throw new HttpsError('not-found', 'El alumno no existe.');
+    }
+
+    const data = student.data() ?? {};
+    const isTutor = rol === 'tutor' && data.tid === request.auth.uid;
+    const isStaff = (rol === 'prefecto' || rol === 'administrador') && data.cct === cct;
+
+    if (!isTutor && !isStaff) {
+      throw new HttpsError('permission-denied', 'No puedes desvincular a este alumno.');
+    }
+
+    if (!data.tid) {
+      throw new HttpsError('failed-precondition', 'El alumno no tiene tutor.');
+    }
+
+    if (isTutor && data.validado === true) {
+      throw new HttpsError(
+        'failed-precondition',
+        'El tutor ya está validado; solo el prefecto puede desvincularlo.'
+      );
+    }
+
+    const before = {
+      tid: data.tid,
+      nombreTutor: data.nombreTutor ?? '',
+      validado: data.validado === true,
+    };
+
+    const batch = db.batch();
+
+    batch.update(student.ref, {
+      tid: '',
+      nombreTutor: '',
+      validado: false,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    batch.set(db.collection('auditoria').doc(), auditData({
+      accion: 'alumno_desvinculado',
+      actorUid: request.auth.uid,
+      actorRol: rol,
+      actorNombre: profile.nombre ?? '',
+      objetivoTipo: 'alumno',
+      objetivoId: sid,
+      cct: data.cct ?? cct ?? '',
+      antes: before,
+      despues: {tid: '', nombreTutor: '', validado: false},
+    }));
+
+    await batch.commit();
+
+    return {ok: true};
   }
 );

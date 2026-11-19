@@ -235,7 +235,7 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     }
 
     try {
-      await this.studentCRUDService.removeTutor(student.id);
+      await this.studentCRUDService.releaseStudent(student.id);
       this.showToast(`✅ Se quitó a ${student.nombreCompleto} de tu lista.`);
     } catch(error) {
       console.log('❌ Schoolify: [tab-students.component.ts]', error);
