@@ -1,5 +1,5 @@
 /** Desenlace disciplinario del alumno para el ciclo. */
-export type DesenlaceTipo = 'expulsion_temporal' | 'baja_definitiva';
+export type DesenlaceTipo = 'expulsion_temporal' | 'baja_definitiva' | 'activo';
 
 export interface StudentDesenlace {
   tipo: DesenlaceTipo;

@@ -524,6 +524,11 @@ const scenarioCases = [
       const maestroRelease = await callFunction('releaseStudent', { sid: 'a-audit2' }, MAESTRO_ACRED);
       if (maestroRelease.status < 400) return false;
 
+      // "Activo" borra la suspension vigente y deja el evento.
+      const active = await callFunction('saveDesenlace', { sid: 'aacred1', tipo: 'activo', ciclo: '2026-2027' }, PREFECT);
+      if (active.status >= 400) return false;
+      if ((await readMapField('alumnos/aacred1', 'desenlace', 'tipo')) !== null) return false;
+
       // La callable de borrado de cuenta tambien deja auditoria.
       const borrarUid = await createAuthUser('borrar-audit@test.mx');
       await firestore('PATCH', `usuarios/${borrarUid}`, { fields: { rol: str('tutor'), cct: str('CCT1') } });

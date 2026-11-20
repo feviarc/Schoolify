@@ -12,6 +12,7 @@ import { addIcons } from 'ionicons';
 
 import {
   add,
+  pause,
   book,
   business,
   calendarNumber,
@@ -81,6 +82,7 @@ export class AppComponent implements OnInit{
   constructor() {
     addIcons({
       add,
+      pause,
       book,
       business,
       calendarNumber,

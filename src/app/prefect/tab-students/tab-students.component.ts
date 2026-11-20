@@ -106,7 +106,13 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   /** Resultados del alumno que se muestran en el modal. */
   ciclo = '2026-2027';
   studentAccreditations: StudentAccreditationRecord[] = [];
-  outcomesStudent: Student | null = null;
+  suspensionStudent: Student | null = null;
+  /** Valores con los que se abrio el modal, para detectar cambios reales. */
+  suspensionOriginal: {tipo: DesenlaceTipo | ''; inicio: string; fin: string} = {
+    tipo: '',
+    inicio: '',
+    fin: '',
+  };
   desenlaceTipo: DesenlaceTipo | '' = '';
   desenlaceInicio = '';
   desenlaceFin = '';
@@ -200,6 +206,20 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
     }
 
     return conditions.length ? `No se encontraron alumnos ${conditions.join(' y ')}.` : 'No se encontraron alumnos.';
+  }
+
+  /** Habilita "Actualizar" solo si el estado o las fechas cambiaron. */
+  get hasSuspensionChanges(): boolean {
+    if(this.desenlaceTipo !== this.suspensionOriginal.tipo) {
+      return true;
+    }
+
+    if(this.desenlaceTipo !== 'expulsion_temporal') {
+      return false;
+    }
+
+    return this.desenlaceInicio !== this.suspensionOriginal.inicio
+      || this.desenlaceFin !== this.suspensionOriginal.fin;
   }
 
   ngOnInit() {
@@ -404,32 +424,35 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   }
 
   async loadOutcomes(student: Student) {
-    this.outcomesStudent = student;
-    this.desenlaceTipo = student.desenlace?.tipo ?? '';
-    this.desenlaceInicio = student.desenlace?.inicio ?? '';
-    this.desenlaceFin = student.desenlace?.fin ?? '';
     this.studentAccreditations = [];
     this.isLoadingOutcomes = true;
 
     try {
-      const {records, desenlace} = await this.outcomesService.getStudentAccreditations(
+      const {records} = await this.outcomesService.getStudentAccreditations(
         student.id ?? '',
         this.ciclo
       );
 
       this.studentAccreditations = records;
-
-      if(desenlace) {
-        this.desenlaceTipo = desenlace.tipo;
-        this.desenlaceInicio = desenlace.inicio ?? '';
-        this.desenlaceFin = desenlace.fin ?? '';
-      }
     } catch(error) {
       console.log('❌ Schoolify: [tab-students] resultados', error);
       this.showToast('🛑 No se pudieron cargar los resultados.');
     } finally {
       this.isLoadingOutcomes = false;
     }
+  }
+
+  /** Carga el desenlace vigente del alumno en su modal de suspensión. */
+  loadSuspension(student: Student) {
+    const tipo = student.desenlace?.tipo ?? 'activo';
+    const inicio = student.desenlace?.inicio ?? '';
+    const fin = student.desenlace?.fin ?? '';
+
+    this.suspensionStudent = student;
+    this.desenlaceTipo = tipo;
+    this.desenlaceInicio = inicio;
+    this.desenlaceFin = fin;
+    this.suspensionOriginal = {tipo, inicio, fin};
   }
 
   onDesenlaceTipoChange(event: CustomEvent) {
@@ -442,9 +465,9 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
   }
 
   async saveDesenlace() {
-    const sid = this.outcomesStudent?.id;
+    const sid = this.suspensionStudent?.id;
 
-    if(!sid || !this.desenlaceTipo) {
+    if(!sid || !this.desenlaceTipo || !this.hasSuspensionChanges) {
       return;
     }
 
@@ -459,18 +482,26 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
         this.ciclo
       );
 
-      this.showToast('✅ Desenlace guardado.');
-      this.closeModal('outcomes-' + sid);
+      this.showToast(
+        this.desenlaceTipo === 'activo'
+          ? '✅ Alumno activo nuevamente.'
+          : '✅ Suspensión registrada.'
+      );
+      this.closeModal('suspension-' + sid);
     } catch(error) {
-      console.log('❌ Schoolify: [tab-students] desenlace', error);
-      this.showToast('🛑 No se pudo guardar el desenlace.');
+      console.log('❌ Schoolify: [tab-students] suspensión', error);
+      this.showToast('🛑 No se pudo registrar la suspensión.');
     } finally {
       this.isSavingDesenlace = false;
     }
   }
 
   desenlaceLabel(tipo: DesenlaceTipo): string {
-    return tipo === 'baja_definitiva' ? 'Baja definitiva' : 'Expulsión temporal';
+    if(tipo === 'activo') {
+      return 'Activo';
+    }
+
+    return tipo === 'baja_definitiva' ? 'Baja definitiva' : 'Suspensión temporal';
   }
 
   /** Aplica buscador (nombre o grupo) y chips (con/sin grupo) juntos. */

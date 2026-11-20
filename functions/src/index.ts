@@ -1566,8 +1566,9 @@ export const getStudentAccreditations = onCall(
 );
 
 /**
- * Marca el desenlace del alumno: expulsion temporal (con fechas) o baja
- * definitiva. Solo el prefecto (o el admin) de la escuela.
+ * Marca la situacion del alumno: expulsion temporal (con fechas), baja
+ * definitiva o activo (cuando termina la suspension). Solo el prefecto (o el
+ * admin) de la escuela.
  */
 export const saveDesenlace = onCall(
   {region: TRIGGER_REGION},
@@ -1586,7 +1587,7 @@ export const saveDesenlace = onCall(
     const fin = typeof request.data?.fin === 'string' && request.data.fin ? request.data.fin : null;
     const ciclo = normalizeCiclo(request.data?.ciclo);
 
-    if (typeof sid !== 'string' || !['expulsion_temporal', 'baja_definitiva'].includes(tipo)) {
+    if (typeof sid !== 'string' || !['expulsion_temporal', 'baja_definitiva', 'activo'].includes(tipo)) {
       throw new HttpsError('invalid-argument', 'Desenlace inválido.');
     }
 
@@ -1622,6 +1623,11 @@ export const saveDesenlace = onCall(
       por: request.auth.uid,
     };
 
+    // "activo" borra la suspension vigente; el evento queda en `desenlaces`.
+    const studentUpdate = tipo === 'activo' ?
+      {desenlace: FieldValue.delete()} :
+      {desenlace};
+
     const batch = db.batch();
 
     batch.set(db.collection('desenlaces').doc(), {
@@ -1636,7 +1642,7 @@ export const saveDesenlace = onCall(
       registradoEn: FieldValue.serverTimestamp(),
     });
 
-    batch.update(db.collection('alumnos').doc(sid), {desenlace});
+    batch.update(db.collection('alumnos').doc(sid), studentUpdate);
 
     batch.set(db.collection('auditoria').doc(), auditData({
       accion: 'desenlace_registrado',
