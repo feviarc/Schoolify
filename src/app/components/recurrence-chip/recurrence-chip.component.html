@@ -1,5 +1,15 @@
-@if(counts && counts.total > 0) {
-  <ion-chip class="recurrence-chip" (click)="openDetail()">
+@if(desenlace?.tipo === 'expulsion_temporal') {
+  <ion-chip class="recurrence-chip" color="warning" (click)="openDetail()">
+    <ion-label>Suspendido</ion-label>
+  </ion-chip>
+}
+@else if(desenlace?.tipo === 'baja_definitiva') {
+  <ion-chip class="recurrence-chip" color="danger" (click)="openDetail()">
+    <ion-label>Baja</ion-label>
+  </ion-chip>
+}
+@else if(counts && counts.total > 0) {
+  <ion-chip class="recurrence-chip recurrence-chip--count" (click)="openDetail()">
     <ion-label>{{ counts.total }} este mes</ion-label>
   </ion-chip>
 }

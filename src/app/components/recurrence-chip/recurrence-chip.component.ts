@@ -15,6 +15,7 @@ import {
   IonToolbar,
 } from '@ionic/angular/standalone';
 
+import { StudentDesenlace } from 'src/app/models/desenlace.model';
 import { RecurrenceCounts, RecurrenceService } from 'src/app/services/recurrence.service';
 
 /**
@@ -45,6 +46,8 @@ export class RecurrenceChipComponent {
   @Input() sid = '';
   @Input() nombre = '';
   @Input() counts?: RecurrenceCounts | null;
+  /** Si el alumno esta suspendido o de baja, el chip muestra ese estado. */
+  @Input() desenlace?: StudentDesenlace | null;
 
   private recurrenceService = inject(RecurrenceService);
 

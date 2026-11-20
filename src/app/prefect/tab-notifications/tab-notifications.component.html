@@ -63,6 +63,7 @@
                        [sid]="student.id ?? ''"
                        [nombre]="student.nombreCompleto"
                        [counts]="student.id ? recurrenceCounts[student.id] : undefined"
+                       [desenlace]="student.desenlace"
                       ></app-recurrence-chip>
                     </h2>
                   </ion-label>
@@ -90,7 +91,7 @@
                     }
                   </ion-item-options>
                 }
-                @if(student.tid && student.validado) {
+                @if(student.tid && student.validado && !student.desenlace) {
                   <ion-item-options side="end">
                     <ion-item-option
                     color="tertiary"

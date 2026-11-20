@@ -4,6 +4,10 @@
   height: 22px;
   font-size: 0.7rem;
   vertical-align: middle;
+}
+
+/* El conteo mensual conserva el fondo claro; los estados usan color de Ionic. */
+.recurrence-chip--count {
   --background: var(--ion-color-light);
 }
 
