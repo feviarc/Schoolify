@@ -94,6 +94,13 @@ function normalizeCiclo(value: unknown): string {
   return typeof value === 'string' && /^\d{4}-\d{4}$/.test(value) ? value : DEFAULT_CICLO;
 }
 
+/** Fecha `YYYY-MM-DD` a `dd/mm/aaaa` para el texto de la notificacion. */
+function formatFecha(value: string | null): string {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  return `${day}/${month}/${year}`;
+}
+
 // ==================== auditoria ====================
 
 interface AuditInput {
@@ -407,8 +414,16 @@ async function handleTutorNotification(
     }
 
     console.log(`📲 Enviando notificación a ${tutorTokens.length} dispositivo(s) del tutor`);
-    const notificationTitle = `Aviso de ${tipo}`;
-    const notificationBody = `Tienes un aviso de ${tipo} para ${nombreCompleto}`;
+    let notificationTitle = `Aviso de ${tipo}`;
+    let notificationBody = `Tienes un aviso de ${tipo} para ${nombreCompleto}`;
+
+    if (tipo === 'Suspensión temporal') {
+      notificationTitle = 'Suspensión temporal';
+      notificationBody = `Se registró una suspensión temporal para ${nombreCompleto}`;
+    } else if (tipo === 'Baja definitiva') {
+      notificationTitle = 'Baja definitiva';
+      notificationBody = `Se registró una baja definitiva para ${nombreCompleto}`;
+    }
 
     const notificationRoute = '/caregiver-dashboard/tab-notifications';
 
@@ -1599,6 +1614,14 @@ export const saveDesenlace = onCall(
       throw new HttpsError('invalid-argument', 'La fecha de fin no es válida.');
     }
 
+    if (tipo === 'expulsion_temporal' && (!inicio || !fin)) {
+      throw new HttpsError('invalid-argument', 'La suspensión temporal requiere fecha de inicio y fin.');
+    }
+
+    if (inicio && fin && fin < inicio) {
+      throw new HttpsError('invalid-argument', 'La fecha de fin no puede ser anterior a la de inicio.');
+    }
+
     const db = getFirestore();
     const caller = await db.collection('usuarios').doc(request.auth.uid).get();
     const profile = caller.data() ?? {};
@@ -1614,6 +1637,8 @@ export const saveDesenlace = onCall(
     if (!student.exists || student.data()?.cct !== cct) {
       throw new HttpsError('permission-denied', 'El alumno no pertenece a tu escuela.');
     }
+
+    const studentData = student.data() ?? {};
 
     const desenlace = {
       tipo,
@@ -1659,6 +1684,28 @@ export const saveDesenlace = onCall(
         fin: desenlace.fin,
       },
     }));
+
+    // Aviso automatico al tutor; no se crea para "activo" ni si no hay tutor.
+    if (studentData.tid && tipo !== 'activo') {
+      const notificationType = tipo === 'expulsion_temporal' ? 'Suspensión' : 'Baja';
+      const suspensionText = `Debido a una situación sensible y al cumplimiento del reglamento escolar, su hijo(a) se ha hecho acreedor(a) a una sanción académica que comprende una suspensión temporal que inicia el día ${formatFecha(inicio)} y termina el día ${formatFecha(fin)}. Por lo anterior, estaremos comunicándonos con ustedes vía telefónica para agendar una cita y tratar el tema personalmente.`;
+      const bajaText = 'Derivado de una situación sensible y del cumplimiento del reglamento escolar, su hijo(a) se ha hecho acreedor(a) a una baja definitiva. Por lo anterior, estaremos comunicándonos con ustedes vía telefónica para agendar una cita y tratar el tema personalmente.';
+      const notificationRef = db.collection('usuarios').doc(studentData.tid).collection('notificaciones').doc();
+
+      batch.set(notificationRef, {
+        sid,
+        tipo: notificationType,
+        nombreCompleto: studentData.nombreCompleto ?? studentData.nombre ?? '',
+        observaciones: tipo === 'expulsion_temporal' ? suspensionText : bajaText,
+        materias: [],
+        maestroUid: request.auth.uid,
+        maestroNombre: profile.nombre ?? '',
+        leido: false,
+        acknowledged: false,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
 
     await batch.commit();
 

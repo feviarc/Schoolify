@@ -471,6 +471,10 @@ export class TabStudentsComponent  implements OnInit, OnDestroy {
       return;
     }
 
+    if(this.desenlaceTipo === 'expulsion_temporal' && (!this.desenlaceInicio || !this.desenlaceFin)) {
+      return;
+    }
+
     this.isSavingDesenlace = true;
 
     try {

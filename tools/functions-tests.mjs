@@ -468,6 +468,37 @@ const scenarioCases = [
       const desenlace = await readMapField('alumnos/aacred1', 'desenlace', 'tipo');
       if (desenlace !== 'expulsion_temporal') return false;
 
+      // El aviso al tutor se crea con la nota automatica y sus fechas.
+      const notificationsResponse = await firestore('GET', 'usuarios/tutorrec/notificaciones');
+      if (!notificationsResponse.ok) return false;
+      const notificationsBody = await notificationsResponse.json();
+      const suspensionNotification = (notificationsBody.documents ?? []).find(
+        (doc) => doc.fields?.tipo?.stringValue === 'Suspensión temporal'
+      );
+      if (!suspensionNotification) return false;
+
+      const suspensionText = suspensionNotification.fields?.observaciones?.stringValue ?? '';
+      if (!suspensionText.includes('20/11/2026') || !suspensionText.includes('25/11/2026')) return false;
+
+      // La baja definitiva tambien avisa al tutor.
+      const baja = await callFunction('saveDesenlace', {
+        sid: 'aacred2',
+        tipo: 'baja_definitiva',
+        ciclo: '2026-2027',
+      }, PREFECT);
+      if (baja.status >= 400) return false;
+
+      const afterBaja = await firestore('GET', 'usuarios/tutorrec/notificaciones');
+      if (!afterBaja.ok) return false;
+      const afterBajaBody = await afterBaja.json();
+      const bajaNotification = (afterBajaBody.documents ?? []).find(
+        (doc) => doc.fields?.tipo?.stringValue === 'Baja definitiva'
+      );
+      if (!bajaNotification) return false;
+
+      const bajaText = bajaNotification.fields?.observaciones?.stringValue ?? '';
+      if (!bajaText.includes('baja definitiva')) return false;
+
       const events = await firestore('GET', 'desenlaces');
       if (!events.ok) return false;
       const body = await events.json();

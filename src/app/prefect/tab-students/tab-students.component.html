@@ -290,7 +290,7 @@
               <ion-buttons slot="end">
                 <ion-button
                   [strong]="true"
-                  [disabled]="!desenlaceTipo || isSavingDesenlace || !hasSuspensionChanges"
+                  [disabled]="!desenlaceTipo || isSavingDesenlace || !hasSuspensionChanges || (desenlaceTipo === 'expulsion_temporal' && (!desenlaceInicio || !desenlaceFin))"
                   (click)="saveDesenlace()"
                 >
                   Actualizar
@@ -327,6 +327,7 @@
                   <ion-input
                     type="date"
                     label="Inicio:"
+                    required
                     [value]="desenlaceInicio"
                     (ionChange)="desenlaceInicio = $event.detail.value ?? ''"
                   ></ion-input>
@@ -334,7 +335,8 @@
                 <ion-item>
                   <ion-input
                     type="date"
-                    label="Fin (opcional):"
+                    label="Fin:"
+                    required
                     [value]="desenlaceFin"
                     (ionChange)="desenlaceFin = $event.detail.value ?? ''"
                   ></ion-input>

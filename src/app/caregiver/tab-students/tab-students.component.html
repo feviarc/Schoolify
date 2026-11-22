@@ -39,6 +39,7 @@
                [sid]="student.id ?? ''"
                [nombre]="student.nombreCompleto"
                [counts]="student.id ? recurrenceCounts[student.id] : undefined"
+               [desenlace]="student.desenlace"
               ></app-recurrence-chip>
             </h2>
             @if(!student.validado) {

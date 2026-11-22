@@ -41,7 +41,7 @@ import {
 export interface CaregiverNotification {
   id?: string; // Autogenerado por Firestore
   sid: string;
-  tipo: 'Inasistencia' | 'Incumplimiento' | 'Indisciplina'; // Tipos permitidos
+  tipo: 'Inasistencia' | 'Incumplimiento' | 'Indisciplina' | 'Suspensión temporal' | 'Baja definitiva';
   /** Gravedad del incidente; los avisos viejos pueden no tenerla. */
   gravedad?: 'leve' | 'media' | 'grave';
   /** Plantilla que origino el texto, si se uso alguna. */
